@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { ArrowUpIcon, CheckIcon, SparkleIcon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import './Chat.css';
@@ -38,11 +39,11 @@ export function Chat() {
           <span className="chat__breadcrumb">Chat</span>
           <div className="chat__title-row">
             <h1 className="chat__title">Ask your documents</h1>
-            <a href="#documents" className="chat__indexed-pill">
+            <Link to="/documents" className="chat__indexed-pill">
               <StatusPill variant="accent" dot>
                 3 documents indexed · 45 chunks
               </StatusPill>
-            </a>
+            </Link>
             <span className="chat__session mono">session ses_5d21</span>
           </div>
         </div>
@@ -94,7 +95,7 @@ export function Chat() {
               </p>
               <div className="citation-card__foot">
                 <span className="mono">doc_7f3a21c9 · chunk 3 of 14</span>
-                <a href="#documents">Open in Documents →</a>
+                <Link to="/documents">Open in Documents →</Link>
               </div>
             </div>
           </div>
@@ -186,7 +187,7 @@ export function Chat() {
                 {posted ? (
                   <span className="tool-card__posted">
                     <CheckIcon size={14} /> Posted as <span className="mono">pst_98f102a4</span>
-                    <a href="#ledger">View in Ledger →</a>
+                    <Link to="/ledger">View in Ledger →</Link>
                   </span>
                 ) : (
                   <>
@@ -217,7 +218,7 @@ export function Chat() {
               Best match 0.41 · below relevance threshold 0.70
             </div>
             <div className="chat__no-answer-nudge">
-              Have a donation receipt? <a href="#documents">Upload in Documents →</a>
+              Have a donation receipt? <Link to="/documents">Upload in Documents →</Link>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { CheckIcon, LockIcon, SearchIcon } from '../components/Icons';
 import { CopyButton } from '../components/CopyButton';
 import { StatusPill, type StatusVariant } from '../components/StatusPill';
@@ -431,8 +432,8 @@ export function Ledger() {
                     <dd className="mono">{selected.provenance.session}</dd>
                   </dl>
                   <div className="ledger__detail-links">
-                    <a href="#tool-invocation">View tool invocation →</a>
-                    <a href="#source">View source document →</a>
+                    <Link to="/chat">View tool invocation →</Link>
+                    <Link to="/documents">View source document →</Link>
                   </div>
                 </>
               ) : (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { CheckIcon, UploadIcon } from '../components/Icons';
 import { CopyButton } from '../components/CopyButton';
 import { StatusPill } from '../components/StatusPill';
@@ -365,7 +366,7 @@ export function Documents() {
                         {u.toolInvocation} → posting {u.posting}
                       </div>
                     </div>
-                    <a href="#posting">View posting →</a>
+                    <Link to="/ledger">View posting →</Link>
                   </div>
                 ))
               )}
