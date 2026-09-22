@@ -46,6 +46,109 @@ reordering, only the scheduling is.
 
 ---
 
+## PureFacts alignment + Thursday screen MVP (added 2026-09-22)
+
+**Hard deadline: PureFacts recruiter screen, Thu 2026-09-24.** Both halves of
+this project (Ledger, Document Intelligence) need a real, running v1 by then
+— something to point at in both fintech vocabulary ("Revenue Book of Record,"
+"auditable AI decision") and technical-seniority vocabulary (idempotency,
+citation-grounded retrieval, tool-call provenance) on the same call. This
+section is the cut-down, JD-aligned scope that actually ships by Thursday.
+It supersedes the Week 1/Week 2/Iteration 3 pacing below for scheduling
+purposes only — those sections stay as the fuller reference plan and the
+source for anything marked **deferred** here.
+
+**Current real state (verified 2026-09-22):** Epics 1.1 (schema/migrations)
+and 1.2 (balance-invariant deferred trigger) are done, with DAO + tests.
+`POST /postings` (1.3) is not built. Zero Document Intelligence code exists
+yet. The frontend already has static chat/documents/ledger screens scaffolded
+(commit `e03f653`) — wire real endpoints into these rather than building new
+UI, that's most of the UI cost already paid.
+
+### Stack deltas for this MVP (vs. the locked table above)
+
+| Layer | Original plan | Thursday MVP | Why the change |
+|---|---|---|---|
+| OCR/extraction | AWS Textract (sync `AnalyzeDocument`) | **LlamaParse** (vision-LLM parsing) | No AWS IAM/boto3 setup to debug against a deadline; handles multi-page natively (Textract's single-page sync limit was a named risk in Epic 2.1); matches your stated direction. **Trade-off, stated honestly**: no per-region confidence score the way Textract gives one — confidence-filtering (Epic 2.2) is deferred, not silently dropped. |
+| Vector store | pgvector (same Postgres instance) | **Pinecone** | Literal match to the JD's named stack (Pinecone/Weaviate) — worth having the real vendor name to say on the call. **Trade-off, stated honestly**: gives up pgvector's same-instance transactional consistency (the same reasoning that rejected the S3-ARN rule-governance design in the Icebox applies here in miniature) — a real, conscious trade for a 2-day demo, not an oversight, and worth naming if asked why. |
+| LLM integration | LiteLLM gateway | **Raw OpenAI SDK** | JD reads as wanting literal OpenAI SDK hands-on time, not a gateway abstraction. Confirmed with you: framework choice (LangChain/LlamaIndex/LangGraph) was never actually a screen blocker either way — so simplifying to the raw SDK is strictly less to build, not a downgrade. |
+| Embedding model | (unnamed) | **OpenAI `text-embedding-3-small`**, pinned in the migration | Same vendor as generation — one API key, one bill, one less integration to debug this week. |
+
+Everything else in the locked stack table (Postgres, FastAPI, Alembic, pytest,
+in-process transport, HTTPS/TLS) is unchanged.
+
+### Ledger MVP — must land by Thursday
+
+- [ ] `POST /postings` (Epic 1.3 as written) — idempotency key, payload-hash
+      409 on divergent retry. This is the one missing piece between "schema
+      exists" and "there's an API to demo."
+- [ ] Concurrency proof, **trimmed** Epic 1.4: `asyncio.gather` + `httpx.AsyncClient`,
+      a few hundred requests mixing new postings, exact-duplicate retries, and
+      a hot-account scenario. Capture real N / duplicate count / imbalance
+      count / p99 latency. Skip the deep bottleneck-mechanism profiling and
+      the Aurora re-run — local numbers are enough for Thursday, real numbers
+      beat rounded ones regardless of scale.
+- [ ] Compensating reversal (Epic 1.7 as written) — stretch, only after the
+      two items above are solid. Cheap (reuses existing schema/idempotency),
+      but not the thing that sinks the call if cut.
+- [ ] One short README section: the one invariant proven, the real captured
+      numbers, an explicit "Out of scope for this demo" line (Aurora, event
+      streaming, reconciliation — point at Week 2 below as the stated roadmap).
+
+**Deferred, mention only as roadmap on the call:** Aurora deployment (Epic
+1.5), correlation-ID logging + CI gate (Epic 1.8), and all of Week 2
+(transactional outbox, reconciliation matcher, observability, fault
+injection) below — unchanged, still real, just not needed to demo Thursday.
+
+### Document Intelligence MVP — must land by Thursday
+
+- [ ] Ingest 3–5 real sample tax-style documents (mix of clean + messy,
+      at least one genuinely multi-page — LlamaParse removes the single-page
+      constraint that gated the sample set under Textract) through LlamaParse
+      → markdown output.
+- [ ] Chunk by LlamaParse's own markdown structure (headers, tables) — no
+      custom Textract-LAYOUT chunker to build; this is most of the time
+      Epic 2.2 originally budgeted, saved by the OCR swap.
+- [ ] Embed chunks with `text-embedding-3-small`, index into Pinecone,
+      storing document id / page / section per chunk (citation depends on this).
+- [ ] Chat endpoint: top-k retrieval → OpenAI chat completion. Every answer
+      cites document/page/section — no answer without a citation. Explicit
+      "I don't know" fallback when nothing clears the relevance threshold —
+      same fail-safe-over-fabrication rule as MediCoord.
+- [ ] Wire the existing static chat/documents React screens to this endpoint
+      — real demo traffic through the real UI, not a new screen to build.
+- [ ] **One deterministic tool**, a single computed figure (e.g. total
+      reported income) as a pure Python function. Signature takes
+      `document_id` only, never a model-asserted amount — the concrete,
+      literal answer to "how is AI governed here."
+- [ ] **`tool_invocations` table** — append-only: id, session_id, tool_name,
+      document_id, result, created_at. This is the artifact for "log every
+      AI decision" — the single most direct answer to PureFacts' "AI must be
+      practical, governed, and auditable" line, and it's cheap (one table,
+      one insert per call).
+- [ ] 5–8 manually-verified sanity Q&A pairs as a mini golden set — enough to
+      say "evaluated," not the full 15–20-question set.
+
+**Stretch, only attempt once everything above works:** post the tool's
+validated figure back into the ledger via the existing `POST /postings`,
+idempotency key = `(document_id, tool_invocation_id)`. This is the single
+highest-value demo beat if reached — it's the literal Revenue-Book-of-Record
+story, an AI-derived figure that can't land in the ledger except through the
+same audited, idempotent path every other posting uses. Build it last, cut it
+first if short on time; the chat + citations + tool_invocations trio above is
+already a complete, honest story without it.
+
+**Deferred, mention only as roadmap or honest known-gap on the call:** S3
+storage/retention policy (local disk for now, documented as the next step),
+Textract-style confidence filtering (LlamaParse doesn't expose per-region
+confidence the same way — state this as a known, named gap, not a miss),
+`rule_versions` governance table, the dual-LLM prompt-injection defense,
+max-iteration/token-budget caps, the three adversarial ingestion test
+categories, the full 15–20 golden-set eval, and adopting LangChain/
+LlamaIndex/LangGraph (confirmed not required for this screen).
+
+---
+
 ## Week 1 — MVP: Ledger Core, hardened (Days 1–5, hard cap)
 
 **Why this order:** double-entry ledger, idempotency, and transaction/audit
