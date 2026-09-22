@@ -43,3 +43,8 @@
   background: var(--color-accent-tint);
   color: var(--color-accent);
 }
+
+.status-pill--purple {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+}

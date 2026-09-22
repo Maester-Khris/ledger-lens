@@ -1,252 +1,247 @@
 import { useState } from 'react';
-import { ArrowUpIcon, LockIcon, PaperclipIcon, SearchIcon, SparkleIcon, UploadIcon } from '../components/Icons';
+import { ArrowUpIcon, CheckIcon, SparkleIcon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
 import './Chat.css';
 
-const SUGGESTED_PROMPTS = [
+const SUGGESTED_QUESTIONS = [
   'What was my total reported income on the 2024 T4?',
-  'Show me the withholding summary',
-  'Which documents still need review?',
+  'How much income tax was deducted on my W-2?',
+  'Post my T4 total income to the ledger',
+  'What was my charitable donation amount in 2024?',
 ];
+
+type AssistantHeadProps = {
+  label: string;
+  variant: 'neutral' | 'accent' | 'warning';
+  detail?: string;
+};
+
+function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
+  return (
+    <div className="chat__assistant-head">
+      <SparkleIcon size={15} className="chat__sparkle" />
+      <StatusPill variant={variant}>{label}</StatusPill>
+      {detail && <span className="chat__tag mono">{detail}</span>}
+    </div>
+  );
+}
 
 export function Chat() {
   const [inputValue, setInputValue] = useState('');
+  // ponytail: local toggle only so both footer states of the tool card can be shown; wired to POST /postings later
+  const [posted, setPosted] = useState(false);
 
   return (
     <div className="chat">
-      <div className="chat__topbar">
-        <span className="chat__breadcrumb">
-          Workspace / <span>Engagement 2024-W2-CORP</span>
-        </span>
-        <div className="chat__topbar-actions">
-          <div className="chat__search">
-            <SearchIcon size={14} />
-            <input type="text" placeholder="Search vouchers, codes..." readOnly />
-          </div>
-          <span className="chat__avatar" aria-hidden="true" />
-        </div>
-      </div>
-
       <div className="chat__header">
-        <div>
-          <h1 className="chat__title">
-            Tax Assistant <span className="chat__title-sep">·</span> Tax Year 2024
-          </h1>
-          <StatusPill variant="accent" dot>
-            3 documents indexed (T4, T777S, W-2)
-          </StatusPill>
+        <div className="chat__header-main">
+          <span className="chat__breadcrumb">Chat</span>
+          <div className="chat__title-row">
+            <h1 className="chat__title">Ask your documents</h1>
+            <a href="#documents" className="chat__indexed-pill">
+              <StatusPill variant="accent" dot>
+                3 documents indexed · 45 chunks
+              </StatusPill>
+            </a>
+            <span className="chat__session mono">session ses_5d21</span>
+          </div>
         </div>
-        <div className="chat__header-actions">
-          <button type="button" className="btn btn-secondary">
-            <UploadIcon size={14} /> Upload document
-          </button>
-          <button type="button" className="btn btn-secondary">
-            Reset context
-          </button>
-        </div>
+        <button type="button" className="btn btn-secondary chat__new-session">
+          + New session
+        </button>
       </div>
 
       <div className="chat__scroll">
-        <div className="chat__prompts">
-          <span className="chat__prompts-label mono">SUGGESTED AUDIT INQUIRIES</span>
-          <div className="chat__prompt-chips">
-            {SUGGESTED_PROMPTS.map((prompt) => (
-              <button type="button" className="chat__prompt-chip" key={prompt}>
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="chat__session-marker mono">SESSION INITIALIZED · 10:20 AM</div>
-
-        {/* Turn 1 — user */}
-        <div className="chat__turn chat__turn--user">
-          <div className="chat__bubble chat__bubble--user">
-            What was my total reported employment income for 2024 across documents?
-          </div>
-          <div className="chat__turn-meta mono">You · 10:23 AM</div>
-        </div>
-
-        {/* Turn 2 — assistant with citation card */}
-        <div className="chat__turn chat__turn--assistant">
-          <div className="chat__assistant-head">
-            <SparkleIcon size={15} className="chat__sparkle" />
-            <span className="chat__assistant-name">Ledger Assistant</span>
-            <span className="chat__turn-meta mono">10:24 AM</span>
-            <span className="chat__tag mono">Deterministic Match</span>
-          </div>
-          <p className="chat__prose">
-            Based on your filed documents, your total reported employment income for tax year
-            2024 is <span className="mono chat__figure">$94,500.00 CAD</span>. This reflects Box
-            14 on your primary T4 statement from Acme Corp Technologies.
-          </p>
-          <div className="citation-card">
-            <div className="citation-card__head">
-              <span className="citation-card__doc">2024_T4_AcmeCorp.pdf</span>
-              <span className="mono citation-card__loc">p. 1 · Box 14</span>
-              <StatusPill variant="success" dot>
-                98% Confidence Match
-              </StatusPill>
+        <div className="chat__thread">
+          <div className="chat__prompts">
+            <span className="chat__prompts-label mono">Suggested questions</span>
+            <div className="chat__prompt-chips">
+              {SUGGESTED_QUESTIONS.map((question) => (
+                <button
+                  type="button"
+                  className="chat__prompt-chip"
+                  key={question}
+                  onClick={() => setInputValue(question)}
+                >
+                  {question}
+                </button>
+              ))}
             </div>
-            <p className="mono citation-card__excerpt">
-              "Box 14 - Employment income: 94,500.00 CAD (Location: Top-left summary block, line
-              14)"
+          </div>
+
+          {/* Turn 1 — retrieval answer with citation */}
+          <div className="chat__turn chat__turn--user">
+            <div className="chat__bubble--user">
+              What was my total reported employment income on the 2024 T4?
+            </div>
+          </div>
+
+          <div className="chat__turn chat__turn--assistant">
+            <AssistantHead label="Answer" variant="neutral" detail="1 citation" />
+            <p className="chat__prose">
+              Your total reported employment income on the 2024 T4 is{' '}
+              <span className="mono chat__figure">94,500.00 CAD</span> (Box 14, Acme Corp
+              Technologies).
             </p>
-            <div className="citation-card__foot">
-              <span className="mono">SHA-256: 4f89d...3c9a · Indexed 2h ago</span>
-              <a href="#source">View source rect ↗</a>
+            <div className="citation-card">
+              <div className="citation-card__head">
+                <span className="citation-card__doc">2024_T4_AcmeCorp.pdf</span>
+                <span className="citation-card__loc">p.1 · Employment income</span>
+                <span className="citation-card__score mono">relevance 0.89</span>
+              </div>
+              <p className="mono citation-card__excerpt">
+                Box 14 Employment income 94,500.00 · Box 22 Income tax deducted 18,212.40
+              </p>
+              <div className="citation-card__foot">
+                <span className="mono">doc_7f3a21c9 · chunk 3 of 14</span>
+                <a href="#documents">Open in Documents →</a>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Turn 3 — user */}
-        <div className="chat__turn chat__turn--user">
-          <div className="chat__bubble chat__bubble--user">
-            Calculate my eligible home office deduction under the simplified flat rate method and
-            prepare it for my ledger.
-          </div>
-          <div className="chat__turn-meta mono">You · 10:25 AM</div>
-        </div>
-
-        {/* Turn 4 — assistant with tool-result receipt card */}
-        <div className="chat__turn chat__turn--assistant">
-          <div className="chat__assistant-head">
-            <SparkleIcon size={15} className="chat__sparkle" />
-            <span className="chat__assistant-name">Ledger Assistant</span>
-            <span className="chat__turn-meta mono">10:26 AM</span>
-            <span className="chat__tag mono">Rule Engine T777S</span>
-          </div>
-          <p className="chat__prose">
-            I've evaluated your 2024 work-from-home declaration against the CRA 2024 rule engine
-            (Form T777S guidelines: 210 qualifying workdays at the standard statutory rate of{' '}
-            <span className="mono chat__figure">$2.00/day</span>). Here is the proposed entry for
-            your expense ledger:
-          </p>
-
-          <div className="receipt-card">
-            <div className="receipt-card__head">
-              <span className="mono">RULE EXECUTION #RE-8821 · 2024-10-31</span>
-              <StatusPill variant="success">Verified CRA Rule</StatusPill>
+          {/* Turn 2 — deterministic tool call, logged */}
+          <div className="chat__turn chat__turn--user">
+            <div className="chat__bubble--user">
+              Compute my total reported income from the T4 and prepare it for the ledger.
             </div>
-            <div className="receipt-card__amount-row">
-              <div>
-                <div className="receipt-card__label mono">CALCULATED DEDUCTION</div>
-                <div className="receipt-card__title">Home Office Expense (Form T777S)</div>
-                <div className="receipt-card__sub mono">
-                  210 qualifying days × $2.00/day · Source: 2024_T777S_Declaration.pdf (p. 2, Sec.
-                  B)
+          </div>
+
+          <div className="chat__turn chat__turn--assistant">
+            <AssistantHead label="Tool call" variant="accent" />
+            <p className="chat__prose">
+              I ran the <span className="mono">total_reported_income</span> tool on your T4. The
+              figure is computed from the document, not written by the model.
+            </p>
+
+            <div className="tool-card">
+              <div className="tool-card__head">
+                <span className="mono tool-card__name">Tool call · total_reported_income</span>
+                <span className="tool-card__head-right">
+                  <span className="mono">ti_0192e4b1</span>
+                  <StatusPill variant="success">Logged</StatusPill>
+                </span>
+              </div>
+
+              <dl className="tool-card__facts">
+                <div>
+                  <dt>Input</dt>
+                  <dd>
+                    <span className="mono">document_id = doc_7f3a21c9</span> (only input)
+                  </dd>
+                </div>
+                <div>
+                  <dt>Result</dt>
+                  <dd className="mono tool-card__result">94,500.00 CAD</dd>
+                </div>
+                <div>
+                  <dt>Source</dt>
+                  <dd>2024_T4_AcmeCorp.pdf · p.1 · Employment income</dd>
+                </div>
+                <div>
+                  <dt>Logged at</dt>
+                  <dd className="mono">Sep 22, 14:21:58 UTC</dd>
+                </div>
+              </dl>
+
+              <div className="tool-card__section">
+                <div className="tool-card__section-head">
+                  <span className="mono">Proposed journal entry</span>
+                  <StatusPill variant="success">Balanced</StatusPill>
+                </div>
+                <table className="tool-card__table">
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th className="num">Debit</th>
+                      <th className="num">Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Employment Income Receivable</td>
+                      <td className="num mono">94,500.00</td>
+                      <td className="num mono">—</td>
+                    </tr>
+                    <tr>
+                      <td>Reported Income</td>
+                      <td className="num mono">—</td>
+                      <td className="num mono">94,500.00</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td>Total</td>
+                      <td className="num mono">94,500.00</td>
+                      <td className="num mono">94,500.00</td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <div className="tool-card__key">
+                  <span className="tool-card__key-label">Idempotency key</span>
+                  <span className="mono">doc_7f3a21c9:ti_0192e4b1</span>
                 </div>
               </div>
-              <div className="receipt-card__amount mono">
-                $420.00 <span>CAD</span>
+
+              <div className="tool-card__actions">
+                {posted ? (
+                  <span className="tool-card__posted">
+                    <CheckIcon size={14} /> Posted as <span className="mono">pst_98f102a4</span>
+                    <a href="#ledger">View in Ledger →</a>
+                  </span>
+                ) : (
+                  <>
+                    <button type="button" className="btn btn-primary" onClick={() => setPosted(true)}>
+                      Post to ledger
+                    </button>
+                    <span className="tool-card__help">
+                      Goes through the same idempotent POST /postings as every other entry. Posting
+                      twice has no effect.
+                    </span>
+                  </>
+                )}
               </div>
             </div>
-
-            <table className="receipt-card__table mono">
-              <thead>
-                <tr>
-                  <th>Account / Description</th>
-                  <th>Debit (DR)</th>
-                  <th>Credit (CR)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <span className="receipt-card__acct">GL 5410 · Office Supplies &amp; Remote Work</span>
-                    <span className="receipt-card__acct-sub">Category: Statutory Deduction WFH</span>
-                  </td>
-                  <td className="num">$420.00</td>
-                  <td className="num">—</td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="receipt-card__acct">GL 2100 · Tax Liability Offset</span>
-                    <span className="receipt-card__acct-sub">Contra Account: Individual Tax Payable</span>
-                  </td>
-                  <td className="num">—</td>
-                  <td className="num">$420.00</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="receipt-card__balance">
-              <span>✓ Trial Balance: Equal DR / CR ($420.00)</span>
-              <span>Posting period: 2024-Q4</span>
-            </div>
-
-            <div className="receipt-card__notice">
-              <LockIcon size={12} /> Requires explicit manual confirmation before committing to
-              the immutable general ledger.
-            </div>
-
-            <div className="receipt-card__actions">
-              <button type="button" className="btn btn-primary">
-                Post to ledger ($420.00)
-              </button>
-              <button type="button" className="btn btn-secondary">
-                Edit parameters
-              </button>
-              <span className="mono receipt-card__stamp">Audit Stamp #9910-AUT</span>
-            </div>
           </div>
-        </div>
 
-        {/* Turn 5 — user */}
-        <div className="chat__turn chat__turn--user">
-          <div className="chat__bubble chat__bubble--user">
-            What was my charitable donation amount in 2024?
+          {/* Turn 3 — no answer: nothing cleared the relevance threshold */}
+          <div className="chat__turn chat__turn--user">
+            <div className="chat__bubble--user">What was my charitable donation amount in 2024?</div>
           </div>
-          <div className="chat__turn-meta mono">You · 10:28 AM</div>
-        </div>
 
-        {/* Turn 6 — assistant, no citation, honest "not found" */}
-        <div className="chat__turn chat__turn--assistant">
-          <div className="chat__assistant-head">
-            <SparkleIcon size={15} className="chat__sparkle" />
-            <span className="chat__assistant-name">Ledger Assistant</span>
-            <span className="chat__turn-meta mono">10:28 AM</span>
-            <span className="chat__tag mono">Exhaustive Search</span>
-          </div>
-          <p className="chat__prose">
-            I couldn't find any charitable donation receipts or gift declarations in your 3
-            indexed tax documents for 2024. If you have an official tax receipt or donation slip,
-            please upload it to the Documents section to include it in your calculations.
-          </p>
-          <div className="chat__upload-nudge">
-            <PaperclipIcon size={16} />
-            <div>
-              <div className="chat__upload-nudge-title">Add official donation receipt (PDF)</div>
-              <div className="chat__upload-nudge-sub">
-                Supported: registered charity slips, CRA Schedule 9
-              </div>
+          <div className="chat__turn chat__turn--assistant">
+            <AssistantHead label="No answer" variant="warning" />
+            <p className="chat__prose">
+              I couldn't find this in your indexed documents, so I won't guess.
+            </p>
+            <div className="chat__no-answer-meta mono">
+              Best match 0.41 · below relevance threshold 0.70
             </div>
-            <button type="button" className="btn btn-secondary chat__upload-nudge-btn">
-              <UploadIcon size={13} /> Upload
-            </button>
+            <div className="chat__no-answer-nudge">
+              Have a donation receipt? <a href="#documents">Upload in Documents →</a>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="chat__composer">
-        <div className="chat__composer-bar">
-          <PaperclipIcon size={16} className="chat__composer-icon" />
-          <input
-            type="text"
-            className="chat__composer-input"
-            placeholder="Ask about your W-2, T4, 1099, or tax rules..."
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-          />
-          <span className="mono chat__composer-tag">CRA/IRS 2024</span>
-          <button type="button" className="chat__composer-send" aria-label="Send message">
-            <ArrowUpIcon size={16} />
-          </button>
-        </div>
-        <div className="chat__composer-foot">
-          <span>Ledger Assistant provides audit-backed answers derived directly from indexed source records.</span>
-          <span className="chat__composer-guardrail">● Zero-hallucination guardrail active</span>
+        <div className="chat__composer-inner">
+          <div className="chat__composer-bar">
+            <input
+              type="text"
+              className="chat__composer-input"
+              placeholder="Ask about your indexed documents…"
+              aria-label="Ask about your indexed documents"
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+            />
+            <button type="button" className="chat__composer-send" aria-label="Send message">
+              <ArrowUpIcon size={16} />
+            </button>
+          </div>
+          <div className="chat__composer-foot">
+            Answers come only from your indexed documents and always cite their source. If nothing
+            relevant is found, the assistant says so.
+          </div>
         </div>
       </div>
     </div>

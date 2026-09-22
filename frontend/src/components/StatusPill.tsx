@@ -1,6 +1,6 @@
 import './StatusPill.css';
 
-export type StatusVariant = 'success' | 'warning' | 'error' | 'neutral' | 'accent';
+export type StatusVariant = 'success' | 'warning' | 'error' | 'neutral' | 'accent' | 'purple';
 
 type StatusPillProps = {
   variant: StatusVariant;

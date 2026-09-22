@@ -128,3 +128,12 @@ export function RefreshIcon({ size = 14, className }: IconProps) {
     </svg>
   );
 }
+
+export function CopyIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <rect x="9" y="9" width="11" height="11" rx="1.5" />
+      <path d="M5 15V5a1 1 0 011-1h10" />
+    </svg>
+  );
+}
