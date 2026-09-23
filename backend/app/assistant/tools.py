@@ -1,7 +1,9 @@
+RESULT_KEY = "@result"
 import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from app.ledger.dao import EntryInput
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, Field
@@ -29,7 +31,10 @@ class ToolContext:
 class ToolOutcome:
     content: str  # JSON the model reads
     sources: dict[str, str] = field(default_factory=dict)  # citable id -> text the verifier checks numbers against
-    citations: dict[str, dict] = field(default_factory=dict)  # citable id -> payload the client renders
+    citations: dict[str, dict] = field(default_factory=dict)
+    result_amount_minor: int | None = None
+    result_currency: str | None = None
+    proposed_entries: tuple[EntryInput, ...] | None = None  # citable id -> payload the client renders
 
 
 @dataclass(frozen=True)
@@ -104,9 +109,19 @@ def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
     }
     parsed = spec.args_model.model_validate(tokenised)
     outcome = spec.run(ctx, parsed)
-    record_invocation(ctx.session, InvocationRecord(
+    invocation = record_invocation(ctx.session, InvocationRecord(
         tenant_id=ctx.tenant_id, session_id=ctx.session_id, tool_name=spec.name, tool_version=spec.version,
         model=ctx.model, input={"turn_id": str(ctx.turn_id), **parsed.model_dump(mode="json")},
-        citation={"ids": sorted(outcome.citations)} if outcome.citations else None,
+        result_amount_minor=outcome.result_amount_minor, result_currency=outcome.result_currency,
+        citation={"ids": sorted(k for k in outcome.citations if k != RESULT_KEY)} if outcome.citations else None,
+        proposed_entries=outcome.proposed_entries,
     ))
-    return outcome
+    invocation_id = str(invocation.id)
+    return ToolOutcome(
+        outcome.content.replace(RESULT_KEY, invocation_id),
+        sources={(invocation_id if k == RESULT_KEY else k): v for k, v in outcome.sources.items()},
+        citations={(invocation_id if k == RESULT_KEY else k): v | ({"invocation_id": invocation_id} if k == RESULT_KEY else {})
+                   for k, v in outcome.citations.items()},
+        result_amount_minor=outcome.result_amount_minor, result_currency=outcome.result_currency,
+        proposed_entries=outcome.proposed_entries,
+    )
