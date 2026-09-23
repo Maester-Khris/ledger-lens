@@ -1,0 +1,20 @@
+{
+  "run_at": "2026-09-23T13:54:30.545696+00:00",
+  "requests": 500,
+  "distinct_keys": 400,
+  "postings_created": 400,
+  "duplicate_postings": 0,
+  "imbalanced_currencies": 0,
+  "hot_account_lost_updates": 0,
+  "status_counts": {
+    "200": 100,
+    "201": 400
+  },
+  "latency_ms": {
+    "p50": 153.6,
+    "p99": 395.4,
+    "max": 430.1
+  },
+  "concurrency": 50,
+  "workers": 4
+}

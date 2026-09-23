@@ -2463,7 +2463,7 @@ git commit -m "feat(api): idempotent POST /postings, reversal and read endpoints
 - Consumes: `POST /postings` from Task 4 (with `"source": "stress_test"`), `create_account` from Task 3, and the `migrated_test_database` / `db_session` fixtures.
 - Produces: `backend/reports/concurrency.json` with keys `run_at`, `requests`, `distinct_keys`, `postings_created`, `duplicate_postings`, `imbalanced_currencies`, `hot_account_lost_updates`, `status_counts`, `latency_ms` (`p50`, `p99`, `max`), `concurrency`, `workers`.
 
-- [ ] **Step 1: Create `backend/pytest.ini`**
+- [x] **Step 1: Create `backend/pytest.ini`**
 
 ```ini
 [pytest]
@@ -2472,7 +2472,7 @@ markers =
 addopts = -m "not stress"
 ```
 
-- [ ] **Step 2: Write the stress test (`backend/tests/stress/test_concurrency.py`)**
+- [x] **Step 2: Write the stress test (`backend/tests/stress/test_concurrency.py`)**
 
 ```python
 import asyncio
@@ -2656,19 +2656,19 @@ def test_concurrent_postings_keep_every_invariant(live_server, db_session):
     assert int(hot_debits) == hot_total
 ```
 
-- [ ] **Step 3: Confirm the default run skips it**
+- [x] **Step 3: Confirm the default run skips it**
 
 Run: `.venv/bin/pytest -v`
 Expected: PASS, with `tests/stress/test_concurrency.py` deselected.
 
-- [ ] **Step 4: Run the stress proof**
+- [x] **Step 4: Run the stress proof**
 
 Run: `.venv/bin/pytest -m stress -v -s`
 Expected: PASS, with `reports/concurrency.json` written. Open it and check that `duplicate_postings`, `imbalanced_currencies` and `hot_account_lost_updates` are all 0.
 
 If a 409 survives 5 retries, the assertion `set(statuses) <= {200, 201}` fails. That means lock waits exceed 2s under this load. Lower `CONCURRENCY` to 25 and record the change in the report. **Don't raise `LOCK_TIMEOUT`.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pytest.ini tests/stress/__init__.py tests/stress/test_concurrency.py reports/concurrency.json
