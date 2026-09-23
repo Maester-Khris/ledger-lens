@@ -11,6 +11,7 @@ from app import config as app_config  # noqa: E402
 from app.ledger.models import Base  # noqa: E402
 import app.billing.models  # noqa: E402, F401
 import app.governance.models  # noqa: E402,F401
+import app.reporting.models  # noqa: E402,F401
 
 alembic_config = context.config
 

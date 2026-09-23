@@ -1,11 +1,12 @@
+from dataclasses import dataclass
 import dataclasses
 import uuid
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, date, time, timedelta, timezone
 
-from sqlalchemy import select, text, tuple_
+from sqlalchemy import select, text, tuple_, distinct, func, case
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session, selectinload
 
@@ -311,3 +312,64 @@ def reversal_ids_for(session: Session, posting_ids: Sequence[uuid.UUID]) -> dict
         select(Posting.reverses_posting_id, Posting.id).where(Posting.reverses_posting_id.in_(posting_ids))
     )
     return {original_id: reversal_id for original_id, reversal_id in rows}
+
+@dataclasses.dataclass(frozen=True)
+class GlCodeTotal:
+    gl_code: str
+    account_names: tuple[str, ...]
+    debit_minor: int
+    credit_minor: int
+    posting_count: int
+
+
+@dataclasses.dataclass(frozen=True)
+class GlTotals:
+    lines: tuple[GlCodeTotal, ...]
+    accounts_missing_gl_code: tuple[uuid.UUID, ...]
+
+
+def sum_entries_by_gl_code(
+    session: Session,
+    *,
+    tenant_id: uuid.UUID,
+    currency: str,
+    period_start: date,
+    period_end: date,
+    cutoff: datetime,
+) -> GlTotals:
+    """Per-GL-code totals for postings effective in [period_start, period_end] (UTC days)
+    and recorded at or before cutoff. Stress-test traffic is always excluded."""
+    window_start = datetime.combine(period_start, time.min, tzinfo=timezone.utc)
+    window_end = datetime.combine(period_end + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    in_scope = (
+        Posting.tenant_id == tenant_id,
+        Account.currency == currency,
+        Posting.effective_at >= window_start,
+        Posting.effective_at < window_end,
+        Posting.created_at <= cutoff,
+        Posting.source != PostingSource.stress_test,
+    )
+
+    def joined(*columns):
+        return (
+            select(*columns)
+            .select_from(Entry)
+            .join(Posting, Posting.id == Entry.posting_id)
+            .join(Account, Account.id == Entry.account_id)
+        )
+
+    missing = session.scalars(joined(distinct(Account.id)).where(*in_scope, Account.gl_code.is_(None))).all()
+
+    debit = func.coalesce(func.sum(case((Entry.direction == Direction.debit, Entry.amount), else_=0)), 0)
+    credit = func.coalesce(func.sum(case((Entry.direction == Direction.credit, Entry.amount), else_=0)), 0)
+    rows = session.execute(
+        joined(Account.gl_code, func.array_agg(distinct(Account.name)), debit, credit, func.count(distinct(Posting.id)))
+        .where(*in_scope, Account.gl_code.is_not(None))
+        .group_by(Account.gl_code)
+        .order_by(Account.gl_code)
+    ).all()
+    lines = tuple(
+        GlCodeTotal(gl_code, tuple(sorted(names)), int(debit_sum), int(credit_sum), int(count))
+        for gl_code, names, debit_sum, credit_sum, count in rows
+    )
+    return GlTotals(lines=lines, accounts_missing_gl_code=tuple(sorted(missing, key=str)))
