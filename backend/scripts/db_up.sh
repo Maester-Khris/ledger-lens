@@ -62,7 +62,6 @@ for db in $DATABASES; do
   psql_admin "ALTER DATABASE ${db} OWNER TO ledger_owner" > /dev/null
 done
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/..") && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ALEMBIC="$SCRIPT_DIR/.venv/bin/alembic"
 OWNER_URL="postgresql+psycopg://ledger_owner:${ROLE_PASSWORD}@localhost:${PG_PORT}"

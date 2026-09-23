@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from decimal import ROUND_FLOOR, ROUND_HALF_EVEN, Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from fractions import Fraction
 
 from app.billing.types import FeeMethod

@@ -57,10 +57,14 @@ an approved plan — don't re-litigate scope that's already decided there.
 - **TypeScript:** no explicit `strict` flag is set in `tsconfig.app.json` yet
   (`noUnusedLocals`/`noUnusedParameters` are) — don't rely on that gap, still
   avoid `any` and define prop interfaces for every component regardless.
-- **Layering:** routes stay thin (parse request → call a `ledger` module
-  function → return) — no business logic in `app/routes/`, no direct DB
-  access outside `app/ledger/dao.py`. This is a two-file pattern today
-  (`models.py`/`dao.py`); keep new domain logic in that module, not in routes.
+- **Layering:** routes stay thin (parse request → call a package function →
+  return) — no business logic in `app/routes/`. No direct DB access outside
+  each package's own `dao.py` (`app/ledger`, `app/billing`, `app/governance`,
+  `app/reporting`). Dependencies point only toward `ledger`; the ledger imports
+  no other package. Pure logic lives in framework-free files
+  (`ledger/fingerprint.py`, `billing/fee_math.py`, `reporting/gl_csv.py`).
+  Postings are written only through `ledger.dao.create_posting` inside
+  `ledger.dao.ledger_transaction`.
 - No new Python dependency without adding it to `backend/requirements.txt`.
   No new npm package without noting it in the task/PR summary.
 
