@@ -1,3 +1,5 @@
+from fastapi.testclient import TestClient
+
 import pytest
 from alembic import command
 
@@ -48,3 +50,21 @@ def owner_session(owner_session_factory):
 def tenant_id(db_session):
     """A fresh tenant per test, so assertions never see other tests' rows."""
     return make_tenant(db_session)
+
+@pytest.fixture()
+def client(session_factory, tenant_id):
+    from app.deps import get_session, get_tenant_id
+    from app.main import app
+
+    def test_session():
+        session = session_factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_session] = test_session
+    app.dependency_overrides[get_tenant_id] = lambda: tenant_id
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()

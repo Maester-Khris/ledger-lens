@@ -1946,7 +1946,7 @@ git commit -m "feat(ledger): single idempotent posting write path with payload f
 - Produces (`app.routes.postings`): `router`, `PostingOut`, `posting_out(posting: Posting, reversed_by: uuid.UUID | None) -> PostingOut`, `mark_replay(response: Response, replayed: bool) -> None`.
 - Produces fixture: `client` (FastAPI `TestClient` whose session and tenant are overridden to the test's own).
 
-- [ ] **Step 1: Add the dependency**
+- [x] **Step 1: Add the dependency**
 
 Append this line to `backend/requirements.txt`:
 
@@ -1956,7 +1956,7 @@ httpx
 
 Run: `.venv/bin/pip install -r requirements.txt`
 
-- [ ] **Step 2: Add the `client` fixture to `backend/tests/conftest.py`**
+- [x] **Step 2: Add the `client` fixture to `backend/tests/conftest.py`**
 
 Append:
 
@@ -1985,7 +1985,7 @@ def client(session_factory, tenant_id):
 
 Move the import to the top of the file.
 
-- [ ] **Step 3: Write the failing API tests (`backend/tests/test_api_postings.py`)**
+- [x] **Step 3: Write the failing API tests (`backend/tests/test_api_postings.py`)**
 
 ```python
 import uuid
@@ -2148,12 +2148,12 @@ def test_get_unknown_posting_is_404(client):
     assert client.get(f"/postings/{uuid.uuid4()}").status_code == 404
 ```
 
-- [ ] **Step 4: Run to confirm it fails**
+- [x] **Step 4: Run to confirm it fails**
 
 Run: `.venv/bin/pytest tests/test_api_postings.py -v`
 Expected: ERROR `ModuleNotFoundError: No module named 'app.deps'`.
 
-- [ ] **Step 5: Create `backend/app/deps.py`**
+- [x] **Step 5: Create `backend/app/deps.py`**
 
 ```python
 import uuid
@@ -2181,7 +2181,7 @@ def get_tenant_id() -> uuid.UUID:
     return DEMO_TENANT_ID
 ```
 
-- [ ] **Step 6: Create `backend/app/problem.py`**
+- [x] **Step 6: Create `backend/app/problem.py`**
 
 ```python
 import logging
@@ -2227,7 +2227,7 @@ def install_problem_handlers(app: FastAPI) -> None:
         )
 ```
 
-- [ ] **Step 7: Create `backend/app/routes/postings.py`**
+- [x] **Step 7: Create `backend/app/routes/postings.py`**
 
 ```python
 import base64
@@ -2415,7 +2415,7 @@ def get_posting_endpoint(posting_id: uuid.UUID, session: SessionDep, tenant_id: 
     return posting_out(posting, reversal_ids_for(session, [posting.id]).get(posting.id))
 ```
 
-- [ ] **Step 8: Replace `backend/app/main.py`**
+- [x] **Step 8: Replace `backend/app/main.py`**
 
 ```python
 from fastapi import FastAPI
@@ -2430,19 +2430,19 @@ app.include_router(health.router)
 app.include_router(postings.router)
 ```
 
-- [ ] **Step 9: Run the API tests**
+- [x] **Step 9: Run the API tests**
 
 Run: `.venv/bin/pytest tests/test_api_postings.py -v`
 Expected: PASS. The 409 test takes about 2s.
 
 A subtle case to check: if the paging test ever fails because it returns 4 postings, `include_stress` is being ignored. `list_postings` must exclude `stress_test` when `source is None`.
 
-- [ ] **Step 10: Run the full suite**
+- [x] **Step 10: Run the full suite**
 
 Run: `.venv/bin/pytest -v`
 Expected: PASS.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add requirements.txt app/deps.py app/problem.py app/routes/postings.py app/main.py tests/conftest.py tests/test_api_postings.py
