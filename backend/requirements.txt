@@ -6,3 +6,8 @@ psycopg[binary]>=3.1
 python-dotenv
 pytest
 httpx
+python-multipart==0.0.32
+pypdf==6.19.0
+docling==2.130.0
+presidio-analyzer==2.2.364
+cryptography==50.0.1

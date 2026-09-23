@@ -32,3 +32,21 @@ MIGRATION_ROUNDTRIP_DATABASE_URL = os.environ.get(
     "MIGRATION_ROUNDTRIP_DATABASE_URL",
     f"postgresql+psycopg://ledger_owner:localdev@{_LOCAL}/ledger_migration_test",
 )
+
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+# Original PDFs, content-addressed. Holds raw PII: never commit, back up like the database.
+DOCUMENT_STORE_DIR = Path(os.environ.get("DOCUMENT_STORE_DIR", str(BACKEND_DIR / "var" / "documents")))
+
+# Secrets: no defaults on purpose. Required only by code paths that tokenise or reveal PII.
+PII_HMAC_KEY = os.environ.get("PII_HMAC_KEY")
+PII_VAULT_KEY = os.environ.get("PII_VAULT_KEY")  # a Fernet key: Fernet.generate_key().decode()
+
+
+def require(name: str) -> str:
+    value = globals().get(name)
+    if not value:
+        raise RuntimeError(f"{name} is not set; see backend/.env.example")
+    return value
