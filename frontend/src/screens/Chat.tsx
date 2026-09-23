@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowUpIcon, CheckIcon, SparkleIcon } from '../components/Icons';
+import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { StatusPill } from '../components/StatusPill';
+import { type ChatEvent, type Citation, fileUrl, streamChat } from '../api';
 import './Chat.css';
 
 const SUGGESTED_QUESTIONS = [
-  'What was my total reported income on the 2024 T4?',
-  'How much income tax was deducted on my W-2?',
-  'Post my T4 total income to the ledger',
-  'What was my charitable donation amount in 2024?',
+  'What is the fee schedule in the Tremblay agreement?',
+  'How much notice is needed to terminate the Tremblay agreement?',
+  'Which law governs the Tremblay agreement?',
+  'What is the Calamos fund’s rate in excess of $26 billion?',
 ];
 
 type AssistantHeadProps = {
@@ -27,10 +28,72 @@ function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
   );
 }
 
+type Turn = {
+  question: string;
+  step: string | null;
+  outcome: 'pending' | 'answer' | 'refused' | 'error';
+  text: string;
+  citations: Citation[];
+};
+
+interface CitationCardProps {
+  citation: Citation;
+}
+
+function CitationCard({ citation }: CitationCardProps) {
+  const href = fileUrl(citation);
+  return (
+    <div className="citation-card">
+      <div className="citation-card__head">
+        <span className="citation-card__doc">{citation.document_title ?? citation.tool}</span>
+        {citation.page !== undefined && (
+          <span className="citation-card__loc">
+            v{citation.version} · p.{citation.page}
+            {citation.section ? ` · ${citation.section}` : ''}
+          </span>
+        )}
+      </div>
+      {citation.quote && <p className="mono citation-card__excerpt">{citation.quote}</p>}
+      <div className="citation-card__foot">
+        <span className="mono">{citation.id}</span>
+        {href && (
+          <a href={href} target="_blank" rel="noreferrer">
+            Open page →
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function newSessionId(): string {
+  return `ses_${crypto.randomUUID().slice(0, 8)}`;
+}
+
 export function Chat() {
   const [inputValue, setInputValue] = useState('');
-  // ponytail: local toggle only so both footer states of the tool card can be shown; wired to POST /postings later
-  const [posted, setPosted] = useState(false);
+  const [sessionId, setSessionId] = useState(newSessionId);
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const busy = turns.some((t) => t.outcome === 'pending');
+
+  const updateLast = (patch: Partial<Turn>) =>
+    setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, ...patch } : t)));
+
+  const ask = async (question: string) => {
+    if (!question.trim() || busy) return;
+    setInputValue('');
+    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [] }]);
+    const onEvent = (event: ChatEvent) => {
+      if (event.type === 'progress') updateLast({ step: event.data.step });
+      else if (event.type === 'error') updateLast({ outcome: 'error', text: event.data.text });
+      else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations });
+    };
+    try {
+      await streamChat(sessionId, question, onEvent);
+    } catch (error) {
+      updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
+    }
+  };
 
   return (
     <div className="chat">
@@ -38,212 +101,97 @@ export function Chat() {
         <div className="chat__header-main">
           <span className="chat__breadcrumb">Chat</span>
           <div className="chat__title-row">
-            <h1 className="chat__title">Ask your documents</h1>
+            <h1 className="chat__title">Ask your contracts</h1>
             <Link to="/documents" className="chat__indexed-pill">
               <StatusPill variant="accent" dot>
-                3 documents indexed · 45 chunks
+                Indexed contracts
               </StatusPill>
             </Link>
-            <span className="chat__session mono">session ses_5d21</span>
+            <span className="chat__session mono">session {sessionId}</span>
           </div>
         </div>
-        <button type="button" className="btn btn-secondary chat__new-session">
+        <button
+          type="button"
+          className="btn btn-secondary chat__new-session"
+          onClick={() => {
+            setSessionId(newSessionId());
+            setTurns([]);
+          }}
+        >
           + New session
         </button>
       </div>
 
       <div className="chat__scroll">
         <div className="chat__thread">
-          <div className="chat__prompts">
-            <span className="chat__prompts-label mono">Suggested questions</span>
-            <div className="chat__prompt-chips">
-              {SUGGESTED_QUESTIONS.map((question) => (
-                <button
-                  type="button"
-                  className="chat__prompt-chip"
-                  key={question}
-                  onClick={() => setInputValue(question)}
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Turn 1 — retrieval answer with citation */}
-          <div className="chat__turn chat__turn--user">
-            <div className="chat__bubble--user">
-              What was my total reported employment income on the 2024 T4?
-            </div>
-          </div>
-
-          <div className="chat__turn chat__turn--assistant">
-            <AssistantHead label="Answer" variant="neutral" detail="1 citation" />
-            <p className="chat__prose">
-              Your total reported employment income on the 2024 T4 is{' '}
-              <span className="mono chat__figure">94,500.00 CAD</span> (Box 14, Acme Corp
-              Technologies).
-            </p>
-            <div className="citation-card">
-              <div className="citation-card__head">
-                <span className="citation-card__doc">2024_T4_AcmeCorp.pdf</span>
-                <span className="citation-card__loc">p.1 · Employment income</span>
-                <span className="citation-card__score mono">relevance 0.89</span>
-              </div>
-              <p className="mono citation-card__excerpt">
-                Box 14 Employment income 94,500.00 · Box 22 Income tax deducted 18,212.40
-              </p>
-              <div className="citation-card__foot">
-                <span className="mono">doc_7f3a21c9 · chunk 3 of 14</span>
-                <Link to="/documents">Open in Documents →</Link>
+          {turns.length === 0 && (
+            <div className="chat__prompts">
+              <span className="chat__prompts-label mono">Suggested questions</span>
+              <div className="chat__prompt-chips">
+                {SUGGESTED_QUESTIONS.map((question) => (
+                  <button type="button" className="chat__prompt-chip" key={question} onClick={() => ask(question)}>
+                    {question}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Turn 2 — deterministic tool call, logged */}
-          <div className="chat__turn chat__turn--user">
-            <div className="chat__bubble--user">
-              Compute my total reported income from the T4 and prepare it for the ledger.
-            </div>
-          </div>
-
-          <div className="chat__turn chat__turn--assistant">
-            <AssistantHead label="Tool call" variant="accent" />
-            <p className="chat__prose">
-              I ran the <span className="mono">total_reported_income</span> tool on your T4. The
-              figure is computed from the document, not written by the model.
-            </p>
-
-            <div className="tool-card">
-              <div className="tool-card__head">
-                <span className="mono tool-card__name">Tool call · total_reported_income</span>
-                <span className="tool-card__head-right">
-                  <span className="mono">ti_0192e4b1</span>
-                  <StatusPill variant="success">Logged</StatusPill>
-                </span>
+          {turns.map((turn, index) => (
+            <div key={index}>
+              <div className="chat__turn chat__turn--user">
+                <div className="chat__bubble--user">{turn.question}</div>
               </div>
-
-              <dl className="tool-card__facts">
-                <div>
-                  <dt>Input</dt>
-                  <dd>
-                    <span className="mono">document_id = doc_7f3a21c9</span> (only input)
-                  </dd>
-                </div>
-                <div>
-                  <dt>Result</dt>
-                  <dd className="mono tool-card__result">94,500.00 CAD</dd>
-                </div>
-                <div>
-                  <dt>Source</dt>
-                  <dd>2024_T4_AcmeCorp.pdf · p.1 · Employment income</dd>
-                </div>
-                <div>
-                  <dt>Logged at</dt>
-                  <dd className="mono">Sep 22, 14:21:58 UTC</dd>
-                </div>
-              </dl>
-
-              <div className="tool-card__section">
-                <div className="tool-card__section-head">
-                  <span className="mono">Proposed journal entry</span>
-                  <StatusPill variant="success">Balanced</StatusPill>
-                </div>
-                <table className="tool-card__table">
-                  <thead>
-                    <tr>
-                      <th>Account</th>
-                      <th className="num">Debit</th>
-                      <th className="num">Credit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Employment Income Receivable</td>
-                      <td className="num mono">94,500.00</td>
-                      <td className="num mono">—</td>
-                    </tr>
-                    <tr>
-                      <td>Reported Income</td>
-                      <td className="num mono">—</td>
-                      <td className="num mono">94,500.00</td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td>Total</td>
-                      <td className="num mono">94,500.00</td>
-                      <td className="num mono">94,500.00</td>
-                    </tr>
-                  </tfoot>
-                </table>
-                <div className="tool-card__key">
-                  <span className="tool-card__key-label">Idempotency key</span>
-                  <span className="mono">doc_7f3a21c9:ti_0192e4b1</span>
-                </div>
-              </div>
-
-              <div className="tool-card__actions">
-                {posted ? (
-                  <span className="tool-card__posted">
-                    <CheckIcon size={14} /> Posted as <span className="mono">pst_98f102a4</span>
-                    <Link to="/ledger">View in Ledger →</Link>
-                  </span>
-                ) : (
+              <div className="chat__turn chat__turn--assistant" aria-live="polite">
+                {turn.outcome === 'pending' && <AssistantHead label={turn.step ?? 'thinking'} variant="accent" />}
+                {turn.outcome === 'answer' && (
                   <>
-                    <button type="button" className="btn btn-primary" onClick={() => setPosted(true)}>
-                      Post to ledger
-                    </button>
-                    <span className="tool-card__help">
-                      Goes through the same idempotent POST /postings as every other entry. Posting
-                      twice has no effect.
-                    </span>
+                    <AssistantHead label="Answer" variant="neutral" detail={`${turn.citations.length} citation(s)`} />
+                    <p className="chat__prose">{turn.text}</p>
+                    {turn.citations.map((c) => (
+                      <CitationCard key={c.id} citation={c} />
+                    ))}
+                  </>
+                )}
+                {(turn.outcome === 'refused' || turn.outcome === 'error') && (
+                  <>
+                    <AssistantHead label={turn.outcome === 'refused' ? 'No answer' : 'Error'} variant="warning" />
+                    <p className="chat__prose">{turn.text}</p>
                   </>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Turn 3 — no answer: nothing cleared the relevance threshold */}
-          <div className="chat__turn chat__turn--user">
-            <div className="chat__bubble--user">What was my charitable donation amount in 2024?</div>
-          </div>
-
-          <div className="chat__turn chat__turn--assistant">
-            <AssistantHead label="No answer" variant="warning" />
-            <p className="chat__prose">
-              I couldn't find this in your indexed documents, so I won't guess.
-            </p>
-            <div className="chat__no-answer-meta mono">
-              Best match 0.41 · below relevance threshold 0.70
-            </div>
-            <div className="chat__no-answer-nudge">
-              Have a donation receipt? <Link to="/documents">Upload in Documents →</Link>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       <div className="chat__composer">
-        <div className="chat__composer-inner">
+        <form
+          className="chat__composer-inner"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void ask(inputValue);
+          }}
+        >
           <div className="chat__composer-bar">
             <input
               type="text"
               className="chat__composer-input"
-              placeholder="Ask about your indexed documents…"
-              aria-label="Ask about your indexed documents"
+              placeholder="Ask about your indexed contracts…"
+              aria-label="Ask about your indexed contracts"
               value={inputValue}
+              disabled={busy}
               onChange={(event) => setInputValue(event.target.value)}
             />
-            <button type="button" className="chat__composer-send" aria-label="Send message">
+            <button type="submit" className="chat__composer-send" aria-label="Send message" disabled={busy}>
               <ArrowUpIcon size={16} />
             </button>
           </div>
           <div className="chat__composer-foot">
-            Answers come only from your indexed documents and always cite their source. If nothing
-            relevant is found, the assistant says so.
+            Answers come only from your indexed contracts, every number is checked against the cited text, and the
+            assistant says so when it can't find an answer.
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
