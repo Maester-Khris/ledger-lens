@@ -70,18 +70,22 @@ reproducible GL-ready export. 135 tests plus a live concurrency proof (0 duplica
 Frontend: static screens redesigned to the MVP scope and routed with react-router
 (PR #3); Vercel is fixed (single `ledger-lens` project, root `frontend/`, SPA rewrite).
 
-▶ **Next: Document Intelligence MVP** (below): ingestion → chunking → Pinecone →
-cited chat → wire the React screens. The governance side is already built:
-`governance.dao.record_invocation()` and the approve-to-post path are ready for
+▶ **Next: Document Intelligence MVP** (below), **re-scoped 2026-09-23** to contracts
+(investment advisory / fee agreements from SEC EDGAR) on a local-first pipeline:
+Docling → Presidio → structured extraction → hybrid retrieval → LangGraph cited chat.
+Research and every decision behind it (D1–D19, plus deferrals with revisit triggers):
+`artifacts/research/2026-09-23-document-intelligence.md`. The governance side is already
+built: `governance.dao.record_invocation()` and the approve-to-post path are ready for
 the chat pipeline to call in-process.
 
 ### Stack deltas for this MVP (vs. the locked table above)
 
 | Layer | Original plan | Thursday MVP | Why the change |
 |---|---|---|---|
-| OCR/extraction | AWS Textract (sync `AnalyzeDocument`) | **LlamaParse** (vision-LLM parsing) | No AWS IAM/boto3 setup to debug against a deadline; handles multi-page natively (Textract's single-page sync limit was a named risk in Epic 2.1); matches your stated direction. **Trade-off, stated honestly**: no per-region confidence score the way Textract gives one — confidence-filtering (Epic 2.2) is deferred, not silently dropped. |
-| Vector store | pgvector (same Postgres instance) | **Pinecone** | Literal match to the JD's named stack (Pinecone/Weaviate) — worth having the real vendor name to say on the call. **Trade-off, stated honestly**: gives up pgvector's same-instance transactional consistency (the same reasoning that rejected the S3-ARN rule-governance design in the Icebox applies here in miniature) — a real, conscious trade for a 2-day demo, not an oversight, and worth naming if asked why. |
-| LLM integration | LiteLLM gateway | **Raw OpenAI SDK** | JD reads as wanting literal OpenAI SDK hands-on time, not a gateway abstraction. Confirmed with you: framework choice (LangChain/LlamaIndex/LangGraph) was never actually a screen blocker either way — so simplifying to the raw SDK is strictly less to build, not a downgrade. |
+| OCR/extraction | AWS Textract (sync `AnalyzeDocument`) | ~~LlamaParse~~ → **Docling (local parsing)** + **Presidio** (PII tokenization) — *revised 2026-09-23 (D2, D3)* | LlamaParse/LlamaExtract run on LlamaIndex's cloud; Docling keeps document content on the box and only redacted text reaches the LLM. Docling gives page-level confidence (layout/OCR/parse); per-field confidence is built from that + grounding + validators (D9), so confidence routing is **back in scope**, not deferred. Scanned documents deferred (see below). |
+| PII protection | (none) | **Presidio analyzer + anonymizer**, reversible tokens, vault table in Postgres, `CA_SIN` enabled | OpenAI and Pinecone only ever see tokens (D3). New dependency. |
+| Vector store | pgvector (same Postgres instance) | **Pinecone** | Literal match to the JD's named stack (Pinecone/Weaviate) — worth having the real vendor name to say on the call. **Trade-off, stated honestly**: gives up pgvector's same-instance transactional consistency (the same reasoning that rejected the S3-ARN rule-governance design in the Icebox applies here in miniature) — a real, conscious trade for a 2-day demo, not an oversight, and worth naming if asked why. **2026-09-23 (D13):** hybrid retrieval = Pinecone dense + Postgres full-text search, merged with rank fusion. Postgres stays the source of truth (chunk text, current-version filter), so a stale Pinecone vector is filtered out rather than served. |
+| LLM integration | LiteLLM gateway | ~~Raw OpenAI SDK~~ → **LangGraph chat agent + LangChain `ChatOpenAI.with_structured_output(..., method="json_schema")`** over hosted OpenAI — *revised 2026-09-23 (D5, D6)* | **Reverses** the earlier "framework not required" call: the senior PureFacts posting (2026-09-15) asks for deep hands-on LangGraph experience with custom orchestration, and it adds a skill beyond MediCoord's pure-SDK build. Extraction stays a plain Python pipeline; no LangChain retriever/vector-store wrappers; the DB approval path stays (no `interrupt()`). Pin exact versions. No local model (no GPU on the dev machine, D4). |
 | Embedding model | (unnamed) | **OpenAI `text-embedding-3-small`**, pinned in the migration | Same vendor as generation — one API key, one bill, one less integration to debug this week. |
 
 Everything else in the locked stack table (Postgres, FastAPI, Alembic, pytest,
@@ -112,54 +116,103 @@ injection) below — unchanged, still real, just not needed to demo Thursday.
 
 ### Document Intelligence MVP — must land by Thursday
 
-- [ ] Ingest 3–5 real sample tax-style documents (mix of clean + messy,
-      at least one genuinely multi-page — LlamaParse removes the single-page
-      constraint that gated the sample set under Textract) through LlamaParse
-      → markdown output.
-- [ ] Chunk by LlamaParse's own markdown structure (headers, tables) — no
-      custom Textract-LAYOUT chunker to build; this is most of the time
-      Epic 2.2 originally budgeted, saved by the OCR swap.
-- [ ] Embed chunks with `text-embedding-3-small`, index into Pinecone,
-      storing document id / page / section per chunk (citation depends on this).
-- [ ] Chat endpoint: top-k retrieval → OpenAI chat completion. Every answer
-      cites document/page/section — no answer without a citation. Explicit
-      "I don't know" fallback when nothing clears the relevance threshold —
-      same fail-safe-over-fabrication rule as MediCoord.
-- [ ] Wire the existing static chat/documents React screens to this endpoint
-      — real demo traffic through the real UI, not a new screen to build.
-- [ ] **One deterministic tool**, a single computed figure (e.g. total
-      reported income) as a pure Python function. Signature takes
-      `document_id` only, never a model-asserted amount — the concrete,
-      literal answer to "how is AI governed here."
-- [x] **`tool_invocations` table** — append-only: id, session_id, tool_name,
-      document_id, result, created_at. **Built in the ledger sprint** (also stores tool,
-      model, prompt version and temperature; `document_id` lives in `input`, plus a
-      `tool_invocation_decisions` table for human approval). Remaining: call it from the chat pipeline. This is the artifact for "log every
-      AI decision" — the single most direct answer to PureFacts' "AI must be
-      practical, governed, and auditable" line, and it's cheap (one table,
-      one insert per call).
-- [ ] 5–8 manually-verified sanity Q&A pairs as a mini golden set — enough to
-      say "evaluated," not the full 15–20-question set.
+**Re-scoped 2026-09-23** from tax slips to contracts. The full reasoning and every
+decision (D1–D19) are in `artifacts/research/2026-09-23-document-intelligence.md`.
+The full pipeline gets a spec. Thursday builds one thin end-to-end slice. The
+"after Thursday" items below are **specified but not built**.
 
-**Stretch, only attempt once everything above works** (ledger side ✅ built:
-approving a critical invocation posts its proposed entries with key `ai:<invocation_id>`;
-remaining work is producing the invocation from the chat tool): post the tool's
-validated figure back into the ledger via the existing `POST /postings`,
-idempotency key = `(document_id, tool_invocation_id)`. This is the single
-highest-value demo beat if reached — it's the literal Revenue-Book-of-Record
-story, an AI-derived figure that can't land in the ledger except through the
-same audited, idempotent path every other posting uses. Build it last, cut it
-first if short on time; the chat + citations + tool_invocations trio above is
-already a complete, honest story without it.
+**Build before Thursday (thin vertical slice):**
+- [ ] **Sample set**: 3–5 investment advisory agreements with tiered fee schedules
+      from **SEC EDGAR** (exhibit (d) to Form N-1A / 485BPOS; public, real, no
+      personal PII), plus **one synthetic individual-client agreement** to
+      exercise PII detection. Digitally created documents only. Open design
+      item: EDGAR exhibits are often HTML, which has no page numbers, so decide
+      between rendering them to PDF (the PDF becomes canonical) and citing by
+      section.
+- [ ] **Ingestion (a pipeline, not an agent — D7)**: detect format from the file's
+      first bytes (not the extension); page count and text-layer check with
+      `pypdf` (a scan is rejected at upload with 422, nothing stored); document type declared at
+      upload (`contract`); SHA-256 content-addressed local storage; a `documents`
+      metadata row (D8).
+- [ ] **Docling parse** → document structure/markdown, plus page-level confidence.
+- [ ] **Presidio** analyze + anonymize with reversible tokens (vault table,
+      `CA_SIN` enabled) **before** any text reaches OpenAI or Pinecone (D3).
+- [ ] **Extraction**: a Pydantic contract schema (parties, effective date, fee
+      schedule tiers/breakpoints, termination, signatories) via
+      `with_structured_output`. Per-field confidence = Docling page score +
+      grounding (the value appears in the cited text) + deterministic
+      validators; a threshold routes each field to `accepted` or
+      `needs_review`. Each extraction run is logged append-only for lineage
+      (D9, D11).
+- [ ] **Chunking** on Docling's structure: sections → clauses, `page_start`/`page_end`,
+      heading breadcrumb in front of each chunk, parent-child (index the clause,
+      send the section as context) (D12). Embed with `text-embedding-3-small` →
+      Pinecone; Postgres full-text search on the same chunks.
+- [ ] **Hybrid retrieval**: Postgres full-text + Pinecone dense, merged with
+      reciprocal rank fusion and filtered to current versions from Postgres,
+      which is the source of truth (D13).
+- [ ] **LangGraph chat agent** with tools `search_contracts`, `get_contract_fields`
+      (accepted fields only), and `compare_contract_to_billing` (**IDs only, never
+      amounts**; the maths runs in `billing/fee_math.py`) (D14, D15). Every answer
+      cites doc · page · section. Explicit "I don't know" below the relevance
+      threshold. Every number in an answer must appear in cited text.
+      `recursion_limit` caps the loop. Force `tool_choice` for calculable
+      questions.
+- [x] **`tool_invocations` table** — built in the ledger sprint. Remaining: call
+      `governance.dao.record_invocation()` from the chat tools.
+- [ ] **Wire the existing React chat/documents screens**: a citation chip opens
+      the original at `#page=N` and highlights the quoted text (D18).
+- [ ] **5–8 manually verified golden Q&A pairs** spanning fact, calculation,
+      interpretive and mixed questions.
 
-**Deferred, mention only as roadmap or honest known-gap on the call:** S3
-storage/retention policy (local disk for now, documented as the next step),
-Textract-style confidence filtering (LlamaParse doesn't expose per-region
-confidence the same way — state this as a known, named gap, not a miss),
-`rule_versions` governance table, the dual-LLM prompt-injection defense,
-max-iteration/token-budget caps, the three adversarial ingestion test
-categories, the full 15–20 golden-set eval, and adopting LangChain/
-LlamaIndex/LangGraph (confirmed not required for this screen).
+**Stretch (only once everything above works):** `compare_contract_to_billing`
+finds a gap between the contract's fee schedule and the configured `billing`
+schedule ("revenue leakage"), records a `critical` invocation, and after human
+approval posts the correction through the existing approve-to-post path
+(`ai:<invocation_id>` idempotency key). Build it last, cut it first.
+
+**After Thursday (specified in the spec, not built):**
+- [ ] **Document versioning** (D17): a new version is a new row (`document_key`,
+      `version`, `supersedes_id`); keep the records, delete derived vectors of
+      old versions; partial `GIN(tsv) WHERE is_current` index.
+- [ ] **LLM-judge / escalation cascade** (D10): validators → grounding →
+      re-extract with a stronger model, accept if both agree → human. Background
+      extraction only, never on the chat path.
+- [ ] **CI eval gate** (D19): hash the config (model + snapshot, prompt version,
+      embedding model, Docling version); a change runs the golden set; the
+      workflow triggers only when the config file changes.
+- [ ] **Review UI** for `needs_review` fields: the source page side by side with
+      the extracted value; decisions logged append-only.
+- [ ] **Agent serving upgrade path** (decided 2026-09-23, research:
+      `artifacts/research/2026-09-23-agent-deployment.md`). Today the chat agent
+      runs **in the API process** as an async LangGraph stream over **SSE**: a
+      60 s timeout for the whole turn, `recursion_limit`, each step saved to
+      `chat_turns`, and a dropped connection means the turn is cancelled. That
+      is LangGraph's "single host" mode, which its own docs call suitable for
+      low traffic. **Next step:** the same graph moves into the worker process
+      with a **Postgres checkpointer** (`langgraph-checkpoint-postgres`). Stream
+      events go out through **Postgres `LISTEN/NOTIFY`**, so still no Redis. The
+      client **reconnects from a cursor** (last event ID), and closing the tab
+      stops being a cancel: stopping needs an explicit stop endpoint. This is
+      the consensus production shape (LangGraph Agent Server, OpenAI background
+      mode, Vercel resumable streams). Trigger: turns longer than about 60 s,
+      more than one API instance, or a need to reconnect after a refresh.
+
+**Deferred (reasoning and revisit trigger in the research file):** scanned
+documents / OCR (the EDGAR set is digitally created; the text-layer check
+rejects scans instead of producing garbage; revisit at the first real scanned
+contract), Presidio image redactor, highlighting the exact spot on the PDF,
+automatic document-type classification (only one type), local LLM (no GPU),
+dual-LLM / CaMeL injection defense (structural controls cover it until the agent
+gets a write tool), Pinecone single-index hybrid, current/archived
+partitioning, LangGraph `interrupt()` (the checkpointer is covered by the
+agent-serving upgrade path above), Temporal durable execution for
+pipeline or agent failures (resumable stages plus the event log cover it at
+this scale; revisit for long-running or human-waiting workflows or multiple
+workers), WebSocket transport (nothing sends input during a run; approvals go
+through the DB), S3 storage/retention
+(local disk for now), `rule_versions` table, the three adversarial ingestion
+test categories, and the full 15–20 question golden set.
 
 ---
 
