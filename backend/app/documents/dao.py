@@ -219,3 +219,8 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
     known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(candidates))))
     return apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
 
+
+
+def find_document(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> Document | None:
+    document = session.get(Document, document_id)
+    return document if document is not None and document.tenant_id == tenant_id else None
