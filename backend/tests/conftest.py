@@ -68,3 +68,15 @@ def client(session_factory, tenant_id):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+from cryptography.fernet import Fernet  # noqa: E402
+
+
+@pytest.fixture(scope="session", autouse=True)
+def document_settings(tmp_path_factory):
+    """Per-run secrets and store dir: tests never touch real keys or backend/var."""
+    config.PII_HMAC_KEY = "test-hmac-key-" + "0" * 32
+    config.PII_VAULT_KEY = Fernet.generate_key().decode()
+    config.DOCUMENT_STORE_DIR = tmp_path_factory.mktemp("document-store")
+    return config.DOCUMENT_STORE_DIR
