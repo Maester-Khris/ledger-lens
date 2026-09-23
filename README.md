@@ -137,3 +137,12 @@ npm run dev
 ```
 
 Opens at `http://127.0.0.1:5173`.
+
+### Extraction
+
+The worker's `extract` stage asks the model to copy fee terms verbatim with a quote and element ids per value.
+Code converts band wording to billing tiers (`app/contracts/fee_text.py`) and routes every field:
+`accepted` only if the quote is found in the cited elements, all validators pass (including billing's own
+`validate_tiers`), and the cited pages were parsed at grade GOOD or better — otherwise `needs_review`.
+Only accepted (or human-reviewed) fields are served to the agent. The comparison tool computes the contract-vs-billing
+fee gap with `fee_math.annual_fee`; a positive gap can be proposed as a correction that a human approves before it posts.
