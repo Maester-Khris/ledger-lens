@@ -1914,12 +1914,12 @@ def reversal_ids_for(session: Session, posting_ids: Sequence[uuid.UUID]) -> dict
 Run: `.venv/bin/pytest tests/test_ledger_dao.py tests/test_fingerprint.py -v`
 Expected: PASS. `test_concurrent_duplicate_times_out_as_request_in_progress` takes about 2s.
 
-- [ ] **Step 11: Run the full suite**
+- [x] **Step 11: Run the full suite**
 
 Run: `.venv/bin/pytest -v`
 Expected: PASS.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add app/errors.py app/ledger/errors.py app/ledger/fingerprint.py app/ledger/dao.py tests/test_fingerprint.py tests/test_ledger_dao.py
