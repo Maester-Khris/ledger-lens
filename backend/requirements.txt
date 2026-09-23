@@ -11,3 +11,7 @@ pypdf==6.19.0
 docling==2.130.0
 presidio-analyzer==2.2.364
 cryptography==50.0.1
+langchain-core==1.6.4
+langchain-openai==1.6.5
+langgraph==1.2.12
+pinecone==10.0.0

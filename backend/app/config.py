@@ -50,3 +50,12 @@ def require(name: str) -> str:
     if not value:
         raise RuntimeError(f"{name} is not set; see backend/.env.example")
     return value
+
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
+PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "contracts")
+# Exact snapshot, never an alias: tool_invocations and chat_turns record it for audit.
+CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-4.1-2025-04-14")
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_DIMENSIONS = 1536
