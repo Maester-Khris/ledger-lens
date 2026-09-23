@@ -58,12 +58,22 @@ It supersedes the Week 1/Week 2/Iteration 3 pacing below for scheduling
 purposes only — those sections stay as the fuller reference plan and the
 source for anything marked **deferred** here.
 
-**Current real state (verified 2026-09-22):** Epics 1.1 (schema/migrations)
-and 1.2 (balance-invariant deferred trigger) are done, with DAO + tests.
-`POST /postings` (1.3) is not built. Zero Document Intelligence code exists
-yet. The frontend already has static chat/documents/ledger screens scaffolded
-(commit `e03f653`) — wire real endpoints into these rather than building new
-UI, that's most of the UI cost already paid.
+**Current real state (updated 2026-09-23):** ✅ **Ledger half done and merged to `preview`**
+(PR #5, merge `cefb745`; spec `docs/superpowers/specs/2026-09-22-ledger-sprint-design.md`,
+plan `docs/superpowers/plans/2026-09-22-ledger-sprint.md`). That covers Epics 1.1–1.4 and 1.7,
+plus the research-driven additions: Postgres 18 with a least-privilege app role,
+append-only history enforced by triggers and revoked privileges, per-currency balance
+checks, reversals, household fee billing on versioned schedules (temporal keys),
+AI tool-invocation governance tables with human approval before posting, and a
+reproducible GL-ready export. 135 tests plus a live concurrency proof (0 duplicates,
+0 imbalances, 0 lost updates).
+Frontend: static screens redesigned to the MVP scope and routed with react-router
+(PR #3); Vercel is fixed (single `ledger-lens` project, root `frontend/`, SPA rewrite).
+
+▶ **Next: Document Intelligence MVP** (below): ingestion → chunking → Pinecone →
+cited chat → wire the React screens. The governance side is already built:
+`governance.dao.record_invocation()` and the approve-to-post path are ready for
+the chat pipeline to call in-process.
 
 ### Stack deltas for this MVP (vs. the locked table above)
 
@@ -79,19 +89,19 @@ in-process transport, HTTPS/TLS) is unchanged.
 
 ### Ledger MVP — must land by Thursday
 
-- [ ] `POST /postings` (Epic 1.3 as written) — idempotency key, payload-hash
+- [x] `POST /postings` (Epic 1.3 as written; divergent retry is **422**, not 409, per the IETF draft) — idempotency key, payload-hash
       409 on divergent retry. This is the one missing piece between "schema
       exists" and "there's an API to demo."
-- [ ] Concurrency proof, **trimmed** Epic 1.4: `asyncio.gather` + `httpx.AsyncClient`,
+- [x] Concurrency proof, **trimmed** Epic 1.4: `asyncio.gather` + `httpx.AsyncClient`,
       a few hundred requests mixing new postings, exact-duplicate retries, and
       a hot-account scenario. Capture real N / duplicate count / imbalance
       count / p99 latency. Skip the deep bottleneck-mechanism profiling and
       the Aurora re-run — local numbers are enough for Thursday, real numbers
       beat rounded ones regardless of scale.
-- [ ] Compensating reversal (Epic 1.7 as written) — stretch, only after the
+- [x] Compensating reversal (Epic 1.7 as written) — stretch, only after the
       two items above are solid. Cheap (reuses existing schema/idempotency),
       but not the thing that sinks the call if cut.
-- [ ] One short README section: the one invariant proven, the real captured
+- [x] One short README section: the one invariant proven, the real captured
       numbers, an explicit "Out of scope for this demo" line (Aurora, event
       streaming, reconciliation — point at Week 2 below as the stated roadmap).
 
@@ -121,15 +131,19 @@ injection) below — unchanged, still real, just not needed to demo Thursday.
       reported income) as a pure Python function. Signature takes
       `document_id` only, never a model-asserted amount — the concrete,
       literal answer to "how is AI governed here."
-- [ ] **`tool_invocations` table** — append-only: id, session_id, tool_name,
-      document_id, result, created_at. This is the artifact for "log every
+- [x] **`tool_invocations` table** — append-only: id, session_id, tool_name,
+      document_id, result, created_at. **Built in the ledger sprint** (also stores tool,
+      model, prompt version and temperature; `document_id` lives in `input`, plus a
+      `tool_invocation_decisions` table for human approval). Remaining: call it from the chat pipeline. This is the artifact for "log every
       AI decision" — the single most direct answer to PureFacts' "AI must be
       practical, governed, and auditable" line, and it's cheap (one table,
       one insert per call).
 - [ ] 5–8 manually-verified sanity Q&A pairs as a mini golden set — enough to
       say "evaluated," not the full 15–20-question set.
 
-**Stretch, only attempt once everything above works:** post the tool's
+**Stretch, only attempt once everything above works** (ledger side ✅ built:
+approving a critical invocation posts its proposed entries with key `ai:<invocation_id>`;
+remaining work is producing the invocation from the chat tool): post the tool's
 validated figure back into the ledger via the existing `POST /postings`,
 idempotency key = `(document_id, tool_invocation_id)`. This is the single
 highest-value demo beat if reached — it's the literal Revenue-Book-of-Record
@@ -161,33 +175,33 @@ without adding new infrastructure — everything below reuses what Epics
 1.1–1.5 already built.
 
 ### Epic 1.1 — Schema & migrations (Day 1 morning)
-- [ ] `accounts` table: id, name, currency, created_at
-- [ ] `postings` table: id, idempotency_key (UNIQUE), description, created_at — no updated_at, no update path at all
-- [ ] `entries` table: id, posting_id (FK), account_id (FK), direction (enum: `debit`|`credit`), amount (integer, minor units), created_at
-- [ ] Migration tool decided and wired (Alembic recommended — matches FastAPI/SQLAlchemy conventions, avoids hand-rolling migration tracking)
+- [x] `accounts` table: id, name, currency, created_at
+- [x] `postings` table: id, idempotency_key (UNIQUE), description, created_at — no updated_at, no update path at all
+- [x] `entries` table: id, posting_id (FK), account_id (FK), direction (enum: `debit`|`credit`), amount (integer, minor units), created_at
+- [x] Migration tool decided and wired (Alembic recommended — matches FastAPI/SQLAlchemy conventions, avoids hand-rolling migration tracking) — **Alembic.**
 
 ### Epic 1.2 — Balance invariant enforcement (Day 1 afternoon)
-- [ ] Application-level check: within the same DB transaction as the insert, sum(debit entries) must equal sum(credit entries) for the posting being created, or the transaction rolls back
-- [ ] **Must be a real `CREATE CONSTRAINT TRIGGER ... INITIALLY DEFERRED`, not a plain `AFTER INSERT` trigger.** A plain trigger fires per-row, immediately — it will reject a posting after its first entry lands but before its balancing entry is inserted in the same transaction. This is a one-line DDL mistake that ships a broken invariant while unit tests (which likely insert all rows in one statement) pass anyway. Verify in code review, not by trusting the ticket description.
-- [ ] **State the isolation level explicitly, in code and in the README: `READ COMMITTED` is correct and sufficient here** — there is no read-then-conditional-write step (no balance-check gating the insert). If a future feature adds an overdraft/limit check that reads current balance before allowing a posting, that decision reverses immediately and needs re-opening then, not assumed away now.
-- [ ] Atomic write pattern: insert-with-`ON CONFLICT DO NOTHING RETURNING id` on `postings`, entries inserted only if a row came back — via one atomic CTE (`WITH ins AS (INSERT INTO postings ... RETURNING id) INSERT INTO entries SELECT ... FROM ins`), not two separate round-trips gated by an app-level `if`. Two round-trips reopens the exact race the UNIQUE constraint was supposed to close.
-- [ ] Unit tests: balanced posting succeeds, unbalanced posting is rejected, rejection leaves zero partial rows
+- [x] Application-level check: within the same DB transaction as the insert, sum(debit entries) must equal sum(credit entries) for the posting being created, or the transaction rolls back
+- [x] **Must be a real `CREATE CONSTRAINT TRIGGER ... INITIALLY DEFERRED`, not a plain `AFTER INSERT` trigger.** A plain trigger fires per-row, immediately — it will reject a posting after its first entry lands but before its balancing entry is inserted in the same transaction. This is a one-line DDL mistake that ships a broken invariant while unit tests (which likely insert all rows in one statement) pass anyway. Verify in code review, not by trusting the ticket description.
+- [x] **State the isolation level explicitly, in code and in the README: `READ COMMITTED` is correct and sufficient here** — there is no read-then-conditional-write step (no balance-check gating the insert). If a future feature adds an overdraft/limit check that reads current balance before allowing a posting, that decision reverses immediately and needs re-opening then, not assumed away now. — stated in README.
+- [x] Atomic write pattern: insert-with-`ON CONFLICT DO NOTHING RETURNING id` on `postings`, entries inserted only if a row came back — via one atomic CTE (`WITH ins AS (INSERT INTO postings ... RETURNING id) INSERT INTO entries SELECT ... FROM ins`), not two separate round-trips gated by an app-level `if`. Two round-trips reopens the exact race the UNIQUE constraint was supposed to close. — **Done differently:** one transaction, posting inserted under a savepoint; a UNIQUE conflict rolls back only the savepoint and the original is replayed. Same race closed, no CTE.
+- [x] Unit tests: balanced posting succeeds, unbalanced posting is rejected, rejection leaves zero partial rows
 
 ### Epic 1.3 — Idempotent posting endpoint (Day 2 morning)
-- [ ] `POST /postings` — accepts `{ idempotency_key, entries: [{account_id, direction, amount}] }`
-- [ ] Request validation (entries non-empty, amounts positive integers, valid account references)
-- [ ] Idempotency handling: duplicate `idempotency_key` returns the original posting, does not attempt a second insert — implemented via the UNIQUE constraint + conflict handling, not a check-then-insert race
-- [ ] **Payload-hash check on key reuse**: store a hash of the request body alongside the idempotency key at first insert. If the same key arrives again with a *different* payload (client bug, corrected-amount retry, replay), return 409, not the silently-cached original posting — a silent mismatch here is exactly the kind of bug that surfaces as "why doesn't the customer's statement match what we sent" months later.
-- [ ] Unit tests: duplicate key (sequential) returns same posting; new key creates new posting; duplicate key with a different payload returns 409
+- [x] `POST /postings` — accepts `{ idempotency_key, entries: [{account_id, direction, amount}] }` — idempotency key moved to the `Idempotency-Key` header (IETF draft).
+- [x] Request validation (entries non-empty, amounts positive integers, valid account references)
+- [x] Idempotency handling: duplicate `idempotency_key` returns the original posting, does not attempt a second insert — implemented via the UNIQUE constraint + conflict handling, not a check-then-insert race
+- [x] **Payload-hash check on key reuse**: store a hash of the request body alongside the idempotency key at first insert. If the same key arrives again with a *different* payload (client bug, corrected-amount retry, replay), return 409, not the silently-cached original posting — a silent mismatch here is exactly the kind of bug that surfaces as "why doesn't the customer's statement match what we sent" months later. — **Changed to 422** (IETF draft) for a reused key with a different payload; **409 + `Retry-After`** now means a duplicate still in flight.
+- [x] Unit tests: duplicate key (sequential) returns same posting; new key creates new posting; duplicate key with a different payload returns 409 — asserts 422, see above.
 
 ### Epic 1.4 — Concurrency + idempotency stress test (Day 2 afternoon)
-- [ ] Test harness: fire N concurrent requests at `POST /postings` via `asyncio.gather` + `httpx.AsyncClient`, mixing genuinely-new postings with exact duplicate retries of already-sent idempotency keys
-- [ ] **Include a hot-account scenario explicitly**: many concurrent postings targeting the *same* account, not just N independent accounts. Every entry insert takes a `FOR KEY SHARE` lock on its parent account row to protect the FK — this is the textbook ledger contention point, and a test using only independent accounts will never trigger it, producing a falsely optimistic "scales linearly" read.
-- [ ] Assertion 1: distinct postings created == unique idempotency keys sent
-- [ ] Assertion 2: every account's derived balance (sum credits − sum debits from `entries`) matches the independently pre-computed expected value
-- [ ] Assertion 3: zero postings exist anywhere with debits ≠ credits
-- [ ] Run it for real, capture the actual numbers (request count, duplicate count, imbalance count, p99 latency) — these numbers go in the README verbatim, not rounded or estimated
-- [ ] **Identify the actual bottleneck mechanism as concurrency scales** — connection pool exhaustion, row-lock contention on a hot account, or the deferred trigger's own overhead — by profiling the run, not asserting one. "It just worked" is not an acceptable answer here; this is the first thing a technical interviewer will probe on the stress test, and a placeholder answer reads as an unverified claim, not evidence.
+- [x] Test harness: fire N concurrent requests at `POST /postings` via `asyncio.gather` + `httpx.AsyncClient`, mixing genuinely-new postings with exact duplicate retries of already-sent idempotency keys
+- [x] **Include a hot-account scenario explicitly**: many concurrent postings targeting the *same* account, not just N independent accounts. Every entry insert takes a `FOR KEY SHARE` lock on its parent account row to protect the FK — this is the textbook ledger contention point, and a test using only independent accounts will never trigger it, producing a falsely optimistic "scales linearly" read.
+- [x] Assertion 1: distinct postings created == unique idempotency keys sent
+- [ ] Assertion 2: every account's derived balance (sum credits − sum debits from `entries`) matches the independently pre-computed expected value — **Partial:** only the hot account's balance is checked against the expected value; per-account check for every account not done.
+- [x] Assertion 3: zero postings exist anywhere with debits ≠ credits
+- [x] Run it for real, capture the actual numbers (request count, duplicate count, imbalance count, p99 latency) — these numbers go in the README verbatim, not rounded or estimated — **Local run only** (`backend/reports/concurrency.json`); Aurora run pending Epic 1.5.
+- [ ] **Identify the actual bottleneck mechanism as concurrency scales** — connection pool exhaustion, row-lock contention on a hot account, or the deferred trigger's own overhead — by profiling the run, not asserting one. "It just worked" is not an acceptable answer here; this is the first thing a technical interviewer will probe on the stress test, and a placeholder answer reads as an unverified claim, not evidence. — **Deferred** (the shortened Epic 1.4 skipped profiling).
 
 ### Epic 1.5 — Aurora deployment (Day 3 morning)
 - [ ] Provision a minimal Aurora PostgreSQL instance (Serverless v2, smallest capacity — this is a demo run, not a standing service)
@@ -198,22 +212,22 @@ without adding new infrastructure — everything below reuses what Epics
 - [ ] Tear down or pause the Aurora instance after capturing results — cost control, this is a portfolio artifact, not a running service
 
 ### Epic 1.6 — README (Day 3 afternoon)
-- [ ] States the one invariant proven, in one sentence
-- [ ] Real captured numbers from both the local and Aurora stress-test runs
+- [x] States the one invariant proven, in one sentence
+- [ ] Real captured numbers from both the local and Aurora stress-test runs — **Partial:** local numbers in README; Aurora numbers pending Epic 1.5.
 - [ ] **State the Aurora motivation transparently**: closing a named gap from two real prior rejections, not a scale requirement this project has. Say this outright rather than let a reader infer resume-driven development.
-- [ ] Explicit "Out of scope" section (see Icebox below) — named, not silently absent
+- [x] Explicit "Out of scope" section (see Icebox below) — named, not silently absent
 - [ ] Stop. Do not start Days 4-5 in the same sitting if it can be avoided — evaluate the numbers first.
 
 ### Epic 1.7 — Compensating-reversal posting (Day 4 morning)
-- [ ] `reverses_posting_id` nullable FK on `postings`; reversing a posting never mutates it, it inserts a new posting with swapped debit/credit entries referencing the original. Reuses the existing schema, invariant, and idempotency mechanism entirely — no new infrastructure.
-- [ ] This is the cheap, correctly-scoped version of the pending/settled-funds/audit-trail signal from the research; a full saga orchestrator is explicitly *not* this ticket (see Icebox — held, not reversed, even against Loop's Temporal.io mention).
-- [ ] **Decide reversal-of-a-reversal explicitly, don't let it fall out of the schema by accident.** `reverses_posting_id` is not restricted to pointing only at non-reversal postings, so a reversal can itself be reversed by default — this is the deliberate choice: restricting it would need a `posting_type` check with no stated business justification for the restriction. State this as a decision in the README, not an untested edge case.
-- [ ] Unit test: reversing a posting produces a new, correctly-inverted posting; original is untouched; net balance across both equals zero. **Second test: reverse a reversal** (a chain of two), assert the net balance across all three postings is still zero and the chain is traceable via `reverses_posting_id`.
+- [x] `reverses_posting_id` nullable FK on `postings`; reversing a posting never mutates it, it inserts a new posting with swapped debit/credit entries referencing the original. Reuses the existing schema, invariant, and idempotency mechanism entirely — no new infrastructure.
+- [x] This is the cheap, correctly-scoped version of the pending/settled-funds/audit-trail signal from the research; a full saga orchestrator is explicitly *not* this ticket (see Icebox — held, not reversed, even against Loop's Temporal.io mention).
+- [ ] **Decide reversal-of-a-reversal explicitly, don't let it fall out of the schema by accident.** `reverses_posting_id` is not restricted to pointing only at non-reversal postings, so a reversal can itself be reversed by default — this is the deliberate choice: restricting it would need a `posting_type` check with no stated business justification for the restriction. State this as a decision in the README, not an untested edge case. — **Decided** (reversal of a reversal allowed; each posting reversed at most once, enforced by UNIQUE) and tested; **README sentence still missing.**
+- [x] Unit test: reversing a posting produces a new, correctly-inverted posting; original is untouched; net balance across both equals zero. **Second test: reverse a reversal** (a chain of two), assert the net balance across all three postings is still zero and the chain is traceable via `reverses_posting_id`.
 
 ### Epic 1.8 — Correlation-ID logging + CI gate (Day 4 afternoon – Day 5)
 - [ ] Pulled forward from "Technical battle-test findings." Structured logging on every write path with a request-to-DB-row correlation ID — trace a posting back to the request that created it without relying on `created_at` timestamp matching.
 - [ ] A CI pipeline (even minimal — GitHub Actions running pytest) gating Epics 1.1–1.7's test suite on every change. Doesn't need Textract/LiteLLM mocking yet since nothing in Week 1 calls either.
-- [ ] **Standing rule for every migration from here forward, including Week 2 and Iteration 3's**: an up/down migration test in the same CI gate — apply, verify schema, roll back, verify clean. Not a one-off ticket, a policy this gate enforces going forward.
+- [ ] **Standing rule for every migration from here forward, including Week 2 and Iteration 3's**: an up/down migration test in the same CI gate — apply, verify schema, roll back, verify clean. Not a one-off ticket, a policy this gate enforces going forward. — **Partial:** the migration up→down→up test exists and runs in the local suite; no CI gate yet.
 - [ ] Both give the "audit trail" and "transaction integrity" claims something demonstrable behind them before this is shown to anyone, at low cost.
 
 **What's deliberately cut from Week 1: all of the Document Intelligence Chat
