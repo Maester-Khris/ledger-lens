@@ -1,0 +1,452 @@
+.chat {
+  display: flex;
+  flex-direction: column;
+  /* fixed viewport height (no flex-grow) so the thread scrolls and the composer stays pinned */
+  height: 100vh;
+}
+
+.chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 12px var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.chat__breadcrumb {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.chat__title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chat__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chat__indexed-pill:hover .status-pill {
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.chat__session {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.chat__new-session {
+  font-size: 13px;
+  padding: 7px 12px;
+}
+
+/* min-height: 0 lets this flex child shrink, so the composer stays pinned in view */
+.chat__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+}
+
+.chat__thread {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chat__prompts-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.chat__prompt-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat__prompt-chip {
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+.chat__prompt-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.chat__turn {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat__turn--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat__bubble--user {
+  background: var(--color-accent);
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  border-bottom-right-radius: 2px;
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 520px;
+}
+
+.chat__assistant-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.chat__sparkle {
+  color: var(--color-accent);
+}
+
+.chat__tag {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  background: #f4f4f5;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.chat__prose {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.chat__figure {
+  font-weight: 600;
+}
+
+.citation-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 12px var(--space-2);
+}
+
+.citation-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.citation-card__doc {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.citation-card__loc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.citation-card__score {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: #f4f4f5;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.citation-card__excerpt {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.citation-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.citation-card__foot a {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Tool-call card — visually distinct from a retrieval answer */
+.tool-card {
+  background: #ffffff;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.tool-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 10px var(--space-2);
+  background: var(--color-accent-tint);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 12px;
+}
+
+.tool-card__name {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tool-card__head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+}
+
+.tool-card__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px var(--space-3);
+  margin: 0;
+  padding: 12px var(--space-2);
+  font-size: 12px;
+}
+
+.tool-card__facts div {
+  display: flex;
+  gap: 6px;
+}
+
+.tool-card__facts dt {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tool-card__facts dt::after {
+  content: ':';
+}
+
+.tool-card__facts dd {
+  margin: 0;
+}
+
+.tool-card__result {
+  font-weight: 700;
+}
+
+.tool-card__section {
+  padding: 12px var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.tool-card__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.tool-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.tool-card__table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  padding: 6px 10px;
+}
+
+.tool-card__table td {
+  padding: 7px 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.tool-card__table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tool-card__table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-text-primary);
+}
+
+.tool-card__key {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.tool-card__key-label {
+  color: var(--color-text-secondary);
+}
+
+.tool-card__key .mono {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.tool-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 12px var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.tool-card__help {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.tool-card__posted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-success);
+}
+
+.tool-card__posted a {
+  margin-left: 8px;
+}
+
+.chat__no-answer-meta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.chat__no-answer-nudge {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.chat__no-answer-nudge a {
+  font-weight: 500;
+}
+
+.chat__composer {
+  border-top: 1px solid var(--color-border);
+  padding: 12px var(--space-3);
+  background: #ffffff;
+}
+
+.chat__composer-inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.chat__composer-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: 8px 8px 8px 14px;
+}
+
+.chat__composer-bar:focus-within {
+  border-color: var(--color-accent);
+}
+
+.chat__composer-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  min-width: 0;
+}
+
+.chat__composer-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: var(--color-accent);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.chat__composer-send:hover {
+  background: var(--color-accent-hover);
+}
+
+.chat__composer-foot {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .chat {
+    height: calc(100vh - 64px);
+  }
+
+  .tool-card__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-card__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
