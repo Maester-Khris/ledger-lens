@@ -203,3 +203,20 @@ a:hover {
 .scroll-x {
   overflow-x: auto;
 }
+
+/* Small inline copy-to-clipboard button */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.copy-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-tint);
+}

@@ -1,15 +1,9 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router';
 import { CheckIcon, LockIcon, SparkleIcon, PaperclipIcon, LedgerIcon, DocumentsIcon } from '../components/Icons';
 import './Landing.css';
 
-type LandingProps = {
-  onEnterApp: () => void;
-};
-
-// ponytail: onEnterApp is unused while all three CTAs are the no-link copy —
-// kept in the props/type so App.tsx doesn't need a change when a CTA is
-// wired back to onEnterApp.
-export function Landing({ onEnterApp: _onEnterApp }: LandingProps) {
+export function Landing() {
   useEffect(() => {
     const targets = document.querySelectorAll('.reveal');
     const io = new IntersectionObserver(
@@ -40,15 +34,9 @@ export function Landing({ onEnterApp: _onEnterApp }: LandingProps) {
           <a href="#security">Security</a>
           <a href="#docs">Docs</a>
         </nav>
-        {/* ponytail: previous version linked straight to the dashboard — kept
-        commented for rollback until the no-link copy is confirmed
-        <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+        <Link to="/dashboard" className="btn btn-primary">
           See it in action
-        </button>
-        */}
-        <button type="button" className="btn btn-primary">
-          See it in action
-        </button>
+        </Link>
       </header>
 
       <section className="landing__hero">
@@ -63,15 +51,9 @@ export function Landing({ onEnterApp: _onEnterApp }: LandingProps) {
           exact page and location, and prepares a balanced journal entry for your review.
         </p>
         <div className="landing__hero-actions">
-          {/* ponytail: previous version linked straight to the dashboard — kept
-          commented for rollback until the no-link copy is confirmed
-          <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+          <Link to="/dashboard" className="btn btn-primary">
             See it in action
-          </button>
-          */}
-          <button type="button" className="btn btn-primary">
-            See it in action
-          </button>
+          </Link>
           <span className="landing__hero-note mono">
             <CheckIcon size={14} /> DOUBLE-ENTRY BALANCE ENFORCED
           </span>
@@ -267,15 +249,9 @@ export function Landing({ onEnterApp: _onEnterApp }: LandingProps) {
               <li><CheckIcon size={14} className="landing__cta-check" /> Posts to a real double-entry ledger, not a mock</li>
             </ul>
             <div className="landing__cta-actions">
-              {/* ponytail: previous version linked straight to the dashboard — kept
-              commented for rollback until the no-link copy is confirmed
-              <button type="button" className="btn btn-primary btn-lg" onClick={onEnterApp}>
+              <Link to="/dashboard" className="btn btn-primary btn-lg">
                 See it in action
-              </button>
-              */}
-              <button type="button" className="btn btn-primary btn-lg">
-                See it in action
-              </button>
+              </Link>
             </div>
           </div>
           <div className="landing__cta-visual">

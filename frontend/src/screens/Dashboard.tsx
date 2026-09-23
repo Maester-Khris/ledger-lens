@@ -1,11 +1,7 @@
-import type { Screen } from '../App';
+import { Link } from 'react-router';
 import { StatusPill } from '../components/StatusPill';
 import { RefreshIcon, UploadIcon } from '../components/Icons';
 import './Dashboard.css';
-
-type DashboardProps = {
-  onNavigate: (screen: Screen) => void;
-};
 
 const STAT_TILES = [
   {
@@ -96,7 +92,7 @@ const RECENT_ACTIVITY = [
   },
 ];
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard__topbar">
@@ -130,9 +126,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <button type="button" className="btn btn-secondary">
               <UploadIcon size={14} /> Export run log
             </button>
-            <button type="button" className="btn btn-primary" onClick={() => onNavigate('chat')}>
+            <Link to="/chat" className="btn btn-primary">
               Ask Assistant <span className="mono">⌘K</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -183,7 +179,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     </div>
                     <div className="attention-list__side">
                       <span className="mono attention-list__ts">{row.timestamp}</span>
-                      <a href="#detail">{row.action} →</a>
+                      <Link to="/documents">{row.action} →</Link>
                     </div>
                   </li>
                 ))}
@@ -222,9 +218,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   </tbody>
                 </table>
               </div>
-              <a className="panel__footer-link" href="#audit">
+              <Link className="panel__footer-link" to="/ledger">
                 View immutable audit journal →
-              </a>
+              </Link>
             </section>
           </div>
 
