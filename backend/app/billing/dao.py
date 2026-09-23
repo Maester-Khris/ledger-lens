@@ -1,8 +1,9 @@
+from app.ledger.models import Account
 import dataclasses
 from datetime import datetime, time, timezone
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.billing.errors import (
     AlreadyBilled,
@@ -240,3 +241,25 @@ def get_fee_calculation(session: Session, *, tenant_id: uuid.UUID, calculation_i
     if calculation is None or calculation.tenant_id != tenant_id:
         raise FeeCalculationNotFound(f"Fee calculation {calculation_id} does not exist.")
     return calculation
+
+def schedule_in_effect(session: Session, household_id: uuid.UUID, on: date) -> tuple[FeeSchedule, FeeScheduleVersion, tuple[Tier, ...]]:
+    """Public read for other packages (contracts): the schedule version a household is billed on, on a date."""
+    return _effective_version(session, household_id, on)
+
+
+def household_accounts(session: Session, household_id: uuid.UUID, as_of: date) -> tuple[AccountValue, ...]:
+    return _member_values(session, household_id, as_of)
+
+
+def revenue_currency(session: Session, schedule_id: uuid.UUID) -> str:
+    schedule = session.get(FeeSchedule, schedule_id)
+    return session.get(Account, schedule.revenue_account_id).currency
+
+
+def latest_valuation_date(session: Session, household_id: uuid.UUID) -> date | None:
+    return session.scalar(
+        select(func.max(AccountValuation.as_of))
+        .join(ClientAccount, ClientAccount.account_id == AccountValuation.account_id)
+        .join(Client, Client.id == ClientAccount.client_id)
+        .where(Client.household_id == household_id)
+    )
