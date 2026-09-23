@@ -70,7 +70,7 @@ Inputs the spec doesn't mention but a real user will send. Each has a test in th
 - Produces: `tests.support.alembic_config(database_url: str) -> alembic.config.Config`, `tests.support.reset_schema(owner_url: str) -> None`, `tests.support.BACKEND_DIR: Path`.
 - Produces fixtures (in `tests/conftest.py`): `migrated_test_database` (session), `session_factory` (session, app role), `owner_session_factory` (session), `db_session` (function, app role), `owner_session` (function).
 
-- [ ] **Step 1: Recreate the database container on Postgres 18**
+- [x] **Step 1: Recreate the database container on Postgres 18**
 
 The old container runs `postgres:16`, and there are no volumes, so local dev data is disposable. Run:
 
@@ -78,7 +78,7 @@ The old container runs `postgres:16`, and there are no volumes, so local dev dat
 docker rm -f fintech-ledger-db
 ```
 
-- [ ] **Step 2: Replace `backend/scripts/db_up.sh`**
+- [x] **Step 2: Replace `backend/scripts/db_up.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -157,7 +157,7 @@ done
 echo "Done. ledger_dev and ledger_test are up to date (ledger_migration_test is managed by the test suite)."
 ```
 
-- [ ] **Step 3: Replace `backend/app/config.py`**
+- [x] **Step 3: Replace `backend/app/config.py`**
 
 ```python
 import os
@@ -196,7 +196,7 @@ MIGRATION_ROUNDTRIP_DATABASE_URL = os.environ.get(
 )
 ```
 
-- [ ] **Step 4: Replace `backend/.env.example`**
+- [x] **Step 4: Replace `backend/.env.example`**
 
 ```
 DATABASE_URL=postgresql+psycopg://ledger_app:localdev@localhost:5432/ledger_dev
@@ -208,7 +208,7 @@ MIGRATION_ROUNDTRIP_DATABASE_URL=postgresql+psycopg://ledger_owner:localdev@loca
 
 If a local `backend/.env` exists (gitignored), update it to the same values or delete it. The defaults in `config.py` already match.
 
-- [ ] **Step 5: Point Alembic at the owner URL, overridable per call**
+- [x] **Step 5: Point Alembic at the owner URL, overridable per call**
 
 In `backend/alembic/env.py`, replace `get_database_url`:
 
@@ -222,7 +222,7 @@ def get_database_url() -> str:
     )
 ```
 
-- [ ] **Step 6: Create `backend/alembic/versions/0003_app_role_grants.py`**
+- [x] **Step 6: Create `backend/alembic/versions/0003_app_role_grants.py`**
 
 ```python
 """grant the runtime app role read + insert only
@@ -255,7 +255,7 @@ def downgrade() -> None:
     op.execute("REVOKE USAGE ON SCHEMA public FROM ledger_app")
 ```
 
-- [ ] **Step 7: Create `backend/tests/support.py`**
+- [x] **Step 7: Create `backend/tests/support.py`**
 
 ```python
 from pathlib import Path
@@ -283,7 +283,7 @@ def reset_schema(owner_url: str) -> None:
         engine.dispose()
 ```
 
-- [ ] **Step 8: Replace `backend/tests/conftest.py`**
+- [x] **Step 8: Replace `backend/tests/conftest.py`**
 
 ```python
 import pytest
@@ -332,7 +332,7 @@ def owner_session(owner_session_factory):
         session.close()
 ```
 
-- [ ] **Step 9: Write the failing role tests (replace `backend/tests/test_db_session.py`)**
+- [x] **Step 9: Write the failing role tests (replace `backend/tests/test_db_session.py`)**
 
 ```python
 import pytest
@@ -354,7 +354,7 @@ def test_owner_session_connects_as_schema_owner(owner_session):
     assert owner_session.execute(text("SELECT current_user")).scalar_one() == "ledger_owner"
 ```
 
-- [ ] **Step 10: Write the failing migration round-trip test (`backend/tests/test_migrations.py`)**
+- [x] **Step 10: Write the failing migration round-trip test (`backend/tests/test_migrations.py`)**
 
 ```python
 from alembic import command
@@ -373,7 +373,7 @@ def test_migrations_upgrade_downgrade_upgrade():
     command.upgrade(alembic, "head")
 ```
 
-- [ ] **Step 11: Make the existing DAO test independent of other tests' rows**
+- [x] **Step 11: Make the existing DAO test independent of other tests' rows**
 
 In `backend/tests/test_ledger_dao.py`, replace the last two lines of `test_unbalanced_posting_leaves_zero_partial_rows` with:
 
@@ -388,17 +388,17 @@ In `backend/tests/test_ledger_dao.py`, replace the last two lines of `test_unbal
     )
 ```
 
-- [ ] **Step 12: Run the tests before bringing the database up, to confirm they fail**
+- [x] **Step 12: Run the tests before bringing the database up, to confirm they fail**
 
 Run: `.venv/bin/pytest -v`
 Expected: FAIL/ERROR with a connection error (role `ledger_app` / database not found), since the container isn't up yet.
 
-- [ ] **Step 13: Bring up the database and run the full suite**
+- [x] **Step 13: Bring up the database and run the full suite**
 
 Run: `./scripts/db_up.sh && .venv/bin/pytest -v`
 Expected: PASS. That's 3 role tests, 1 migration round-trip, and the 4 existing DAO tests.
 
-- [ ] **Step 14: Commit**
+- [x] **Step 14: Commit**
 
 ```bash
 git add scripts/db_up.sh app/config.py .env.example alembic/env.py alembic/versions/0003_app_role_grants.py tests/support.py tests/conftest.py tests/test_db_session.py tests/test_migrations.py tests/test_ledger_dao.py
@@ -426,7 +426,7 @@ git commit -m "chore(db): move to Postgres 18 with owner and least-privilege app
 - Produces fixture: `tenant_id` (function scope: a new tenant per test).
 - Produces database objects later tasks rely on: `forbid_mutation()` (trigger function raising SQLSTATE 23001), constraint names `uq_postings_tenant_idempotency_key` and `uq_postings_reverses_posting_id`, the check-violation SQLSTATE 23514 from `assert_posting_valid`.
 
-- [ ] **Step 1: Create `backend/app/ledger/types.py`**
+- [x] **Step 1: Create `backend/app/ledger/types.py`**
 
 ```python
 import enum
@@ -454,7 +454,7 @@ class PostingSource(str, enum.Enum):
     stress_test = "stress_test"
 ```
 
-- [ ] **Step 2: Add the test helpers to `backend/tests/support.py`**
+- [x] **Step 2: Add the test helpers to `backend/tests/support.py`**
 
 Append:
 
@@ -527,7 +527,7 @@ def insert_raw_posting(
 
 Move the new imports to the top of the file, next to the existing ones.
 
-- [ ] **Step 3: Add the `tenant_id` fixture to `backend/tests/conftest.py`**
+- [x] **Step 3: Add the `tenant_id` fixture to `backend/tests/conftest.py`**
 
 Append:
 
@@ -543,7 +543,7 @@ def tenant_id(db_session):
 
 Move the import to the top of the file.
 
-- [ ] **Step 4: Write the failing invariant tests (`backend/tests/test_ledger_invariants.py`)**
+- [x] **Step 4: Write the failing invariant tests (`backend/tests/test_ledger_invariants.py`)**
 
 ```python
 import pytest
@@ -716,12 +716,12 @@ def test_unknown_currency_is_rejected(db_session, tenant_id):
     assert _sqlstate(exc_info) == "23503"
 ```
 
-- [ ] **Step 5: Run the tests to confirm they fail**
+- [x] **Step 5: Run the tests to confirm they fail**
 
 Run: `.venv/bin/pytest tests/test_ledger_invariants.py -v`
 Expected: ERROR, with `ImportError: cannot import name 'Tenant' from 'app.ledger.models'`.
 
-- [ ] **Step 6: Replace `backend/app/ledger/models.py`**
+- [x] **Step 6: Replace `backend/app/ledger/models.py`**
 
 ```python
 import uuid
@@ -837,7 +837,7 @@ class Entry(Base):
     __table_args__ = (CheckConstraint("amount > 0", name="ck_entries_amount_positive"),)
 ```
 
-- [ ] **Step 7: Create `backend/alembic/versions/0004_ledger_core.py`**
+- [x] **Step 7: Create `backend/alembic/versions/0004_ledger_core.py`**
 
 ```python
 """ledger core: tenants, currencies, fingerprints, append-only facts, posting validity
@@ -1120,7 +1120,7 @@ def downgrade() -> None:
     )
 ```
 
-- [ ] **Step 8: Delete the obsolete DAO tests**
+- [x] **Step 8: Delete the obsolete DAO tests**
 
 ```bash
 git rm tests/test_ledger_dao.py
@@ -1128,12 +1128,12 @@ git rm tests/test_ledger_dao.py
 
 These tests call `create_account(session, name, currency)` and `create_posting(session, key, description, entries)`, which can no longer satisfy the new NOT NULL columns. Task 3 rewrites the DAO and adds a complete replacement test file.
 
-- [ ] **Step 9: Run the invariant tests and the migration round-trip**
+- [x] **Step 9: Run the invariant tests and the migration round-trip**
 
 Run: `.venv/bin/pytest tests/test_ledger_invariants.py tests/test_migrations.py tests/test_db_session.py -v`
 Expected: PASS (all tests, including 3 parametrized owner cases).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add app/ledger/types.py app/ledger/models.py alembic/versions/0004_ledger_core.py tests/support.py tests/conftest.py tests/test_ledger_invariants.py

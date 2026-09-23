@@ -3,7 +3,7 @@ from alembic import command
 
 from app import config
 from app.ledger.db import make_session_factory
-from tests.support import alembic_config, reset_schema
+from tests.support import alembic_config, make_tenant, reset_schema
 
 
 @pytest.fixture(scope="session")
@@ -42,3 +42,9 @@ def owner_session(owner_session_factory):
     finally:
         session.rollback()
         session.close()
+
+
+@pytest.fixture()
+def tenant_id(db_session):
+    """A fresh tenant per test, so assertions never see other tests' rows."""
+    return make_tenant(db_session)
