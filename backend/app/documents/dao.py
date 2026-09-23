@@ -191,3 +191,8 @@ def get_version_by_number(session: Session, tenant_id: uuid.UUID, document_id: u
         raise VersionNotFound(f"Document {document_id} has no version {version}.")
     return row
 
+
+def current_version_id(session: Session, document_id: uuid.UUID) -> uuid.UUID:
+    return session.scalars(
+        select(DocumentVersion.id).where(DocumentVersion.document_id == document_id).order_by(DocumentVersion.version.desc())
+    ).first()
