@@ -18,8 +18,11 @@ from app.ledger.db import SessionLocal  # noqa: E402
 from langchain_openai import OpenAIEmbeddings  # noqa: E402
 from app.retrieval.index import index_version  # noqa: E402
 from app.retrieval.vector_index import PineconeVectorIndex  # noqa: E402
+from langchain_openai import ChatOpenAI  # noqa: E402
+from app.contracts.extract import run_extraction  # noqa: E402
 
 EMBEDDING_TIMEOUT_SECONDS = 15
+EXTRACTION_TIMEOUT_SECONDS = 60
 MAX_RETRIES = 3
 
 POLL_SECONDS = 2.0
@@ -35,6 +38,12 @@ def build_runners() -> dict[str, StageRunner]:
             index_version,
             embeddings=OpenAIEmbeddings(model=config.EMBEDDING_MODEL, timeout=EMBEDDING_TIMEOUT_SECONDS, max_retries=MAX_RETRIES),
             vector_index=PineconeVectorIndex(config.require("PINECONE_API_KEY"), config.PINECONE_INDEX),
+        ),
+        "extract": partial(
+            run_extraction,
+            chat_model=ChatOpenAI(model=config.EXTRACTION_MODEL, temperature=0,
+                                  timeout=EXTRACTION_TIMEOUT_SECONDS, max_retries=MAX_RETRIES),
+            model_id=config.EXTRACTION_MODEL,
         ),
     }
 

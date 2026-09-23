@@ -28,7 +28,8 @@ class StageSpec:
 
 PARSE_REDACT = StageSpec("parse_redact", VersionStage.stored, VersionStage.parsed)
 INDEX = StageSpec("index", VersionStage.parsed, VersionStage.indexed)
-PIPELINE: tuple[StageSpec, ...] = (PARSE_REDACT, INDEX)
+EXTRACT = StageSpec("extract", VersionStage.parsed, VersionStage.extracted)
+PIPELINE: tuple[StageSpec, ...] = (PARSE_REDACT, INDEX, EXTRACT)
 
 
 class EventLike(Protocol):

@@ -59,3 +59,5 @@ PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "contracts")
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-4.1-2025-04-14")
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSIONS = 1536
+
+EXTRACTION_MODEL = os.environ.get('EXTRACTION_MODEL', CHAT_MODEL)
