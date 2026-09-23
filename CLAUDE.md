@@ -28,9 +28,10 @@ fintech-prod/
 |---|---|
 | Backend | Python 3.11 + FastAPI |
 | Frontend | React (Vite), no framework beyond React itself |
-| DB | PostgreSQL 18 + pgvector — localhost for dev (roles: ledger_owner migrates, ledger_app runs the API with SELECT/INSERT only), Aurora PostgreSQL for the demo/deploy run (verify 18 support before Epic 1.5) |
-| OCR | AWS Textract, synchronous API (AnalyzeDocument) |
-| LLM gateway | LiteLLM |
+| DB | PostgreSQL 18 — localhost for dev (roles: ledger_owner migrates, ledger_app runs the API with SELECT/INSERT only, plus DELETE on the derived `element_search` table), Aurora PostgreSQL for the demo/deploy run (verify 18 support before Epic 1.5) |
+| Parsing / PII | Docling (local) + Presidio analyzer with deterministic HMAC tokens; runs only in `scripts/ingestion_worker.py` |
+| Vector store / search | Pinecone (dense) + Postgres full-text search, merged with reciprocal rank fusion |
+| LLM | OpenAI via LangChain `ChatOpenAI` (structured output) and LangGraph (chat agent) |
 | Migrations | Alembic |
 | Testing | pytest; concurrency stress test via `asyncio` + `httpx.AsyncClient` |
 | Transport between ledger/document phases | none — in-process calls, no gRPC/internal API |
@@ -60,7 +61,7 @@ an approved plan — don't re-litigate scope that's already decided there.
 - **Layering:** routes stay thin (parse request → call a package function →
   return) — no business logic in `app/routes/`. No direct DB access outside
   each package's own `dao.py` (`app/ledger`, `app/billing`, `app/governance`,
-  `app/reporting`). Dependencies point only toward `ledger`; the ledger imports
+  `app/reporting`, `app/documents`, `app/contracts`, `app/retrieval`, `app/assistant`). Dependencies point only toward `ledger`; the ledger imports
   no other package. Pure logic lives in framework-free files
   (`ledger/fingerprint.py`, `billing/fee_math.py`, `reporting/gl_csv.py`).
   Postings are written only through `ledger.dao.create_posting` inside

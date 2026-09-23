@@ -52,6 +52,20 @@ Without them, the first upload either downloads the models mid-request
 (Docling) or fails to start the PII analyzer (Presidio). Downloading them up
 front keeps ingestion predictable and able to run offline.
 
+### Document ingestion (local run)
+
+1. Set `PII_HMAC_KEY` and `PII_VAULT_KEY` in `backend/.env` (generation commands are in `.env.example`).
+2. Start the API: `.venv/bin/uvicorn app.main:app --reload`
+3. Start the worker in a second terminal: `.venv/bin/python scripts/ingestion_worker.py`
+   (the only process that loads Docling and spaCy; the API stays light)
+4. Load the samples: `SEC_USER_AGENT="Name email" .venv/bin/python scripts/prepare_samples.py --upload http://127.0.0.1:8000`
+   — three single-fund EDGAR advisory agreements (rendered to PDF so every citation has a page)
+   plus the synthetic Tremblay agreement (PII + a deliberate fee mismatch with the seeded billing schedule).
+5. Watch status: `curl -s http://127.0.0.1:8000/documents | python -m json.tool`
+
+Scanned PDFs (no text layer) and non-PDF files are rejected at upload with a 422.
+Multi-fund EDGAR exhibits are out of scope for now: the extraction schema models one fee schedule per contract.
+
 ## Local development — ledger DB core
 
 Prerequisites: Docker running locally.
