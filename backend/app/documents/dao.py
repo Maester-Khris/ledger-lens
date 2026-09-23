@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,9 +8,10 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.documents import store
-from app.documents.errors import VersionNotFound
-from app.documents.models import Document, DocumentVersion, VersionEvent
+from app.documents import store, vault
+from app.documents.errors import DocumentNotFound, VersionNotFound
+from app.documents.models import Document, DocumentElement, DocumentVersion, PiiToken, VersionEvent
+from app.documents.redact import TOKEN_PATTERN
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
 
@@ -99,3 +101,93 @@ def get_version(session: Session, version_id: uuid.UUID) -> DocumentVersion:
 def all_version_ids(session: Session) -> list[uuid.UUID]:
     # ponytail: scans every version on each worker poll; add a "pending" query when the corpus grows past hundreds
     return list(session.scalars(select(DocumentVersion.id).order_by(DocumentVersion.created_at)))
+
+
+# ---------- PII vault ----------
+
+def save_tokens(session: Session, tenant_id: uuid.UUID, tokens: Mapping[str, tuple[str, str]], key: str) -> None:
+    """No commit. A token already in the vault is left alone (same value, same token)."""
+    if not tokens:
+        return
+    rows = [
+        {"tenant_id": tenant_id, "token": token, "entity_type": entity_type, "value_encrypted": vault.encrypt_value(value, key)}
+        for token, (entity_type, value) in tokens.items()
+    ]
+    session.execute(insert(PiiToken).values(rows).on_conflict_do_nothing(index_elements=["tenant_id", "token"]))
+
+
+def reveal(session: Session, tenant_id: uuid.UUID, texts: Sequence[str], key: str) -> list[str]:
+    """Display only: swap tokens back to values. Unknown tokens stay as they are."""
+    wanted = {match.group(0) for text in texts for match in TOKEN_PATTERN.finditer(text)}
+    if not wanted:
+        return list(texts)
+    values = {
+        row.token: vault.decrypt_value(row.value_encrypted, key)
+        for row in session.scalars(select(PiiToken).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(wanted)))
+    }
+    return [TOKEN_PATTERN.sub(lambda m: values.get(m.group(0), m.group(0)), text) for text in texts]
+
+
+# ---------- Element queries ----------
+
+def list_elements(session: Session, version_id: uuid.UUID) -> list[DocumentElement]:
+    return list(
+        session.scalars(select(DocumentElement).where(DocumentElement.version_id == version_id).order_by(DocumentElement.ordinal))
+    )
+
+
+def get_document_for_version(session: Session, version_id: uuid.UUID) -> Document:
+    return session.scalars(
+        select(Document).join(DocumentVersion, DocumentVersion.document_id == Document.id).where(DocumentVersion.id == version_id)
+    ).one()
+
+
+def parsed_detail(session: Session, version_id: uuid.UUID) -> dict:
+    event = session.scalars(
+        select(VersionEvent)
+        .where(VersionEvent.version_id == version_id, VersionEvent.stage == VersionStage.parsed)
+        .order_by(VersionEvent.id.desc())
+    ).first()
+    return {} if event is None else dict(event.detail)
+
+
+# ---------- Document listing ----------
+
+@dataclass(frozen=True)
+class DocumentRow:
+    document: Document
+    version: DocumentVersion
+    events: list[VersionEvent]
+    element_count: int
+
+
+def _row(session: Session, document: Document) -> DocumentRow:
+    version = session.scalars(
+        select(DocumentVersion).where(DocumentVersion.document_id == document.id).order_by(DocumentVersion.version.desc())
+    ).first()
+    count = session.scalar(select(func.count()).select_from(DocumentElement).where(DocumentElement.version_id == version.id))
+    return DocumentRow(document, version, version_events(session, version.id), count)
+
+
+def list_documents(session: Session, tenant_id: uuid.UUID) -> list[DocumentRow]:
+    # ponytail: N+1 queries per document; fine for a handful of contracts, one grouped query when it isn't
+    documents = session.scalars(select(Document).where(Document.tenant_id == tenant_id).order_by(Document.created_at.desc()))
+    return [_row(session, document) for document in documents]
+
+
+def get_document_row(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> DocumentRow:
+    document = session.get(Document, document_id)
+    if document is None or document.tenant_id != tenant_id:
+        raise DocumentNotFound(f"Document {document_id} does not exist.")
+    return _row(session, document)
+
+
+def get_version_by_number(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, version: int) -> DocumentVersion:
+    get_document_row(session, tenant_id, document_id)  # tenant check
+    row = session.scalars(
+        select(DocumentVersion).where(DocumentVersion.document_id == document_id, DocumentVersion.version == version)
+    ).one_or_none()
+    if row is None:
+        raise VersionNotFound(f"Document {document_id} has no version {version}.")
+    return row
+
