@@ -6,6 +6,20 @@ from pathlib import Path
 from app.documents.types import ElementKind
 
 GRADES = ("POOR", "FAIR", "GOOD", "EXCELLENT")
+MAX_HEADING_CHARS = 80
+SENTENCE_ENDINGS = (".", ";", ":", ",")
+# Docling reports its own section headers at level 1 (the title included); numbered sections nest under them.
+NUMBERED_HEADING_LEVEL = 2
+
+
+def numbered_heading(text: str, marker: str | None, enumerated: bool) -> str | None:
+    """Docling returns numbered section headings ("4. Termination") as enumerated list items and strips
+    the number. A short enumerated item that doesn't read as a sentence is a heading; return it renumbered.
+    ponytail: a short numbered list entry without punctuation would also qualify; tighten if real lists suffer."""
+    text = text.strip()
+    if not enumerated or not text or len(text) > MAX_HEADING_CHARS or text.endswith(SENTENCE_ENDINGS):
+        return None
+    return f"{marker} {text}" if marker else text
 
 
 @dataclass(frozen=True)
@@ -48,12 +62,18 @@ def parse_pdf(path: Path) -> ParsedDocument:
     elements: list[ParsedElement] = []
     for item, _depth in document.iterate_items():
         pages = [prov.page_no for prov in getattr(item, "prov", [])] or [1]
+        heading, level = None, 0
         if item.label in heading_labels:
+            heading = item.text.strip()
             level = 0 if item.label is DocItemLabel.TITLE else getattr(item, "level", 1)
+        elif item.label is DocItemLabel.LIST_ITEM:
+            heading = numbered_heading(item.text, getattr(item, "marker", None), getattr(item, "enumerated", False))
+            level = NUMBERED_HEADING_LEVEL
+        if heading is not None:
             while stack and stack[-1][0] >= level:
                 stack.pop()
-            stack.append((level, item.text.strip()))
-            kind, text = ElementKind.heading, item.text.strip()
+            stack.append((level, heading))
+            kind, text = ElementKind.heading, heading
         elif isinstance(item, TableItem):
             kind, text = ElementKind.table, item.export_to_markdown(doc=document).strip()
         elif item.label in text_labels:
