@@ -32,6 +32,26 @@ python3 -m venv .venv
 
 Health check: `GET http://127.0.0.1:8000/health`
 
+### Document-intelligence models (one-time download)
+
+Document parsing and PII detection run **locally**. Document content never
+leaves the machine; only redacted text reaches the LLM. Both libraries need
+model files that pip does not install, so fetch them once after
+`pip install`. They arrive with the ingestion phase (`docling`,
+`presidio-analyzer` and `presidio-anonymizer` in `requirements.txt`):
+
+```bash
+cd backend
+# Docling layout and table-structure models (~1 GB): turn a PDF into headings, paragraphs and tables with page numbers.
+.venv/bin/docling-tools models download
+# spaCy English model used by Presidio's analyzer to detect names, organisations and locations (~800 MB in RAM).
+.venv/bin/python -m spacy download en_core_web_lg
+```
+
+Without them, the first upload either downloads the models mid-request
+(Docling) or fails to start the PII analyzer (Presidio). Downloading them up
+front keeps ingestion predictable and able to run offline.
+
 ## Local development — ledger DB core
 
 Prerequisites: Docker running locally.
