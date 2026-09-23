@@ -5,6 +5,8 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 from app.assistant.tools import RESULT_KEY, ToolContext, ToolOutcome, ToolSpec
+from app.ledger.dao import EntryInput
+from app.ledger.types import Direction
 from app.contracts import dao as contracts_dao
 from app.contracts.compare import compare_contract_to_billing, comparison_to_json
 from app.contracts.errors import ContractNotComparable
@@ -63,6 +65,10 @@ def _compare(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
         citations=citations | {RESULT_KEY: {"kind": "tool", "tool": "compare_contract_to_billing",
                                             "inputs_cited": sorted(citations)}},
         result_amount_minor=comparison.annual_gap_minor, result_currency=comparison.currency,
+        proposed_entries=(
+            EntryInput(comparison.first_account_id, Direction.debit, comparison.annual_gap_minor),
+            EntryInput(comparison.revenue_account_id, Direction.credit, comparison.annual_gap_minor),
+        ) if comparison.annual_gap_minor > 0 else None,
     )
 
 

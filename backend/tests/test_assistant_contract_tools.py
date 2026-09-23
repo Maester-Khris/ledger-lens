@@ -49,3 +49,16 @@ def test_fields_tool_serves_only_validated_fields(db_session, tenant_id):
     assert body["fields"]["currency"] == "CAD"
     assert body["fields"]["fee_tiers[1]"]["rate_text"] == "0.85%"
     assert body["not_validated"] == []
+
+
+def test_positive_gap_is_proposed_for_approval_and_posts_once(db_session, tenant_id):
+    from app.governance.dao import decide
+    from app.governance.types import ToolDecision
+    scenario = build_fee_scenario(db_session, tenant_id)
+    document_id = _contract(db_session, tenant_id, scenario.household_id)
+    execute(TOOLS["compare_contract_to_billing"], _ctx(db_session, tenant_id), {"document_id": str(document_id)})
+    invocation = db_session.scalars(select(ToolInvocation).where(ToolInvocation.tenant_id == tenant_id)).one()
+    assert invocation.approval_required is True
+    decision = decide(db_session, tenant_id=tenant_id, invocation_id=invocation.id, decision=ToolDecision.approved,
+                      decided_by="test", reason="contract says 0.85%")
+    assert decision.posting_id is not None
