@@ -1,3 +1,22 @@
+import dataclasses
+from datetime import datetime, time, timezone
+from decimal import Decimal
+
+from sqlalchemy import select
+
+from app.billing.errors import (
+    AlreadyBilled,
+    FeeCalculationNotFound,
+    HouseholdNotFound,
+    MissingValuation,
+    NoScheduleAssigned,
+    NothingToBill,
+)
+from app.billing.fee_math import AccountValue, FeeInputs, FeeResult, calculate_household_fee, inputs_to_json
+from app.billing.models import FeeCalculation
+from app.ledger.dao import EntryInput, PostingRequest, create_posting, ledger_transaction
+from app.ledger.errors import IdempotencyKeyReused
+from app.ledger.types import Direction, PostingSource
 import uuid
 from collections.abc import Sequence
 from datetime import date
@@ -85,3 +104,139 @@ def assign_schedule(
             household_id=household_id, schedule_id=schedule_id, valid_during=date_range(valid_from, valid_until)
         ),
     )
+@dataclasses.dataclass(frozen=True)
+class FeeRunResult:
+    calculation: FeeCalculation
+    replayed: bool
+
+
+def _effective_version(
+    session: Session, household_id: uuid.UUID, on: date
+) -> tuple[FeeSchedule, FeeScheduleVersion, tuple[Tier, ...]]:
+    assignment = session.scalars(
+        select(HouseholdFeeAssignment).where(
+            HouseholdFeeAssignment.household_id == household_id,
+            HouseholdFeeAssignment.valid_during.contains(on),
+        )
+    ).one_or_none()
+    if assignment is None:
+        raise NoScheduleAssigned(f"No fee schedule is assigned to household {household_id} on {on}.")
+    version = session.scalars(
+        select(FeeScheduleVersion).where(
+            FeeScheduleVersion.schedule_id == assignment.schedule_id,
+            FeeScheduleVersion.valid_during.contains(on),
+        )
+    ).one_or_none()
+    if version is None:
+        raise NoScheduleAssigned(f"Fee schedule {assignment.schedule_id} has no version in effect on {on}.")
+    tiers = tuple(
+        Tier(row.up_to_minor, Decimal(row.rate_bps))
+        for row in session.scalars(
+            select(FeeScheduleTier)
+            .where(FeeScheduleTier.schedule_id == version.schedule_id, FeeScheduleTier.version == version.version)
+            .order_by(FeeScheduleTier.tier_no)
+        )
+    )
+    schedule = session.get(FeeSchedule, assignment.schedule_id)
+    return schedule, version, tiers
+
+
+def _member_values(session: Session, household_id: uuid.UUID, period_end: date) -> tuple[AccountValue, ...]:
+    links = list(
+        session.scalars(
+            select(ClientAccount)
+            .join(Client, Client.id == ClientAccount.client_id)
+            .where(Client.household_id == household_id, ClientAccount.linked_on <= period_end)
+        )
+    )
+    if not links:
+        raise NothingToBill(f"Household {household_id} has no accounts linked by {period_end}.")
+    valuations = {
+        row.account_id: row.market_value_minor
+        for row in session.scalars(
+            select(AccountValuation).where(
+                AccountValuation.account_id.in_([link.account_id for link in links]),
+                AccountValuation.as_of == period_end,
+            )
+        )
+    }
+    missing = sorted(str(link.account_id) for link in links if link.account_id not in valuations)
+    if missing:
+        raise MissingValuation(
+            f"No valuation as of {period_end} for {len(missing)} account(s); a missing value is never treated as zero.",
+            account_ids=missing,
+        )
+    return tuple(
+        AccountValue(link.account_id, valuations[link.account_id], link.linked_on)
+        for link in sorted(links, key=lambda link: str(link.account_id))
+    )
+
+
+def _fee_posting(
+    tenant_id: uuid.UUID, household_id: uuid.UUID, inputs: FeeInputs, result: FeeResult, revenue_account_id: uuid.UUID
+) -> PostingRequest:
+    debits = [
+        EntryInput(account_id, Direction.debit, amount)
+        for account_id, amount in sorted(result.allocations.items(), key=lambda item: str(item[0]))
+        if amount > 0
+    ]
+    credit = EntryInput(revenue_account_id, Direction.credit, result.period_fee_minor)
+    return PostingRequest(
+        tenant_id=tenant_id,
+        idempotency_key=f"fee:{household_id}:{inputs.period_end.isoformat()}",
+        entries=(*debits, credit),
+        description=f"Advisory fee {inputs.period_start.isoformat()} to {inputs.period_end.isoformat()}",
+        source=PostingSource.fee_run,
+        effective_at=datetime.combine(inputs.period_end, time.min, tzinfo=timezone.utc),
+    )
+
+
+def run_household_fee(
+    session: Session, *, tenant_id: uuid.UUID, household_id: uuid.UUID, period_start: date, period_end: date
+) -> FeeRunResult:
+    household = session.get(Household, household_id)
+    if household is None or household.tenant_id != tenant_id:
+        raise HouseholdNotFound(f"Household {household_id} does not exist.")
+    schedule, version, tiers = _effective_version(session, household_id, period_end)
+    inputs = FeeInputs(period_start, period_end, version.method, tiers, _member_values(session, household_id, period_end))
+    result = calculate_household_fee(inputs)
+    if result.period_fee_minor == 0:
+        raise NothingToBill(f"Household {household_id} has no billable value between {period_start} and {period_end}.")
+
+    try:
+        with ledger_transaction(session):
+            posted = create_posting(session, _fee_posting(tenant_id, household_id, inputs, result, schedule.revenue_account_id))
+            if posted.replayed:
+                existing = session.scalars(
+                    select(FeeCalculation).where(FeeCalculation.posting_id == posted.posting.id)
+                ).one()
+                return FeeRunResult(calculation=existing, replayed=True)
+            calculation = FeeCalculation(
+                tenant_id=tenant_id,
+                household_id=household_id,
+                period=date_range(period_start, period_end),
+                schedule_id=version.schedule_id,
+                schedule_version=version.version,
+                method=version.method,
+                inputs=inputs_to_json(inputs, schedule_id=version.schedule_id, schedule_version=version.version),
+                household_value_minor=result.household_value_minor,
+                period_fee_minor=result.period_fee_minor,
+                allocations={str(account_id): amount for account_id, amount in result.allocations.items()},
+                rounding_remainder_minor=result.rounding_remainder_minor,
+                posting_id=posted.posting.id,
+            )
+            session.add(calculation)
+            session.flush()
+    except IdempotencyKeyReused as exc:
+        raise AlreadyBilled(
+            f"Household {household_id} is already billed for the period ending {period_end} with different inputs; "
+            "reverse the existing fee posting before re-billing."
+        ) from exc
+    return FeeRunResult(calculation=calculation, replayed=False)
+
+
+def get_fee_calculation(session: Session, *, tenant_id: uuid.UUID, calculation_id: uuid.UUID) -> FeeCalculation:
+    calculation = session.get(FeeCalculation, calculation_id)
+    if calculation is None or calculation.tenant_id != tenant_id:
+        raise FeeCalculationNotFound(f"Fee calculation {calculation_id} does not exist.")
+    return calculation
