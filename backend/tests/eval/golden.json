@@ -1,0 +1,14 @@
+[
+  {"id": "fee-schedule", "question": "What is the fee schedule in the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 2, "expect_numbers": ["1.00", "0.85", "0.65"], "expect_refusal": false},
+  {"id": "termination", "question": "How many days of notice are needed to terminate the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 1, "expect_numbers": ["30"], "expect_refusal": false},
+  {"id": "governing-law", "question": "Which law governs the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 1, "expect_numbers": [], "expect_refusal": false},
+  {"id": "calamos-top-tier", "question": "What is the Calamos Emerging Market Equity Fund's rate in excess of $26 billion?",
+   "expect_document": "calamos-emerging-market-equity", "expect_page": 1, "expect_numbers": ["0.90", "26"], "expect_refusal": false},
+  {"id": "aim-first-tier", "question": "What annual rate applies to the first $500 million for AIM Global Trends Fund?",
+   "expect_document": "aim-global-trends-advisory", "expect_page": null, "expect_numbers": ["0.975", "500"], "expect_refusal": false},
+  {"id": "not-in-corpus", "question": "What was the client's charitable donation amount in 2024?",
+   "expect_document": null, "expect_page": null, "expect_numbers": [], "expect_refusal": true}
+]

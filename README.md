@@ -23,11 +23,15 @@ No REST API, concurrency stress test, or deployment yet.
 
 ## Running the backend
 
+The backend runs in a Python 3.12 env of your choice (`$PYDEV`, its root directory), not a repo-local `.venv`.
+Set it once per shell (or as `PYDEV=` in `backend/.env`); every command below uses it:
+
 ```bash
+export PYDEV=/path/to/your/python-env
 cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn app.main:app --reload
+$PYDEV/bin/pip install -r requirements.txt
+$PYDEV/bin/pip check   # shared env: confirm the pins didn't break another project's packages
+$PYDEV/bin/uvicorn app.main:app --reload
 ```
 
 Health check: `GET http://127.0.0.1:8000/health`
@@ -43,9 +47,9 @@ model files that pip does not install, so fetch them once after
 ```bash
 cd backend
 # Docling layout and table-structure models (~1 GB): turn a PDF into headings, paragraphs and tables with page numbers.
-.venv/bin/docling-tools models download
+$PYDEV/bin/docling-tools models download
 # spaCy English model used by Presidio's analyzer to detect names, organisations and locations (~800 MB in RAM).
-.venv/bin/python -m spacy download en_core_web_lg
+$PYDEV/bin/python -m spacy download en_core_web_lg
 ```
 
 Without them, the first upload either downloads the models mid-request
@@ -55,16 +59,27 @@ front keeps ingestion predictable and able to run offline.
 ### Document ingestion (local run)
 
 1. Set `PII_HMAC_KEY` and `PII_VAULT_KEY` in `backend/.env` (generation commands are in `.env.example`).
-2. Start the API: `.venv/bin/uvicorn app.main:app --reload`
-3. Start the worker in a second terminal: `.venv/bin/python scripts/ingestion_worker.py`
+2. Start the API: `$PYDEV/bin/uvicorn app.main:app --reload`
+3. Start the worker in a second terminal: `$PYDEV/bin/python scripts/ingestion_worker.py`
    (the only process that loads Docling and spaCy; the API stays light)
-4. Load the samples: `SEC_USER_AGENT="Name email" .venv/bin/python scripts/prepare_samples.py --upload http://127.0.0.1:8000`
+4. Load the samples: `SEC_USER_AGENT="Name email" $PYDEV/bin/python scripts/prepare_samples.py --upload http://127.0.0.1:8000`
    — three single-fund EDGAR advisory agreements (rendered to PDF so every citation has a page)
    plus the synthetic Tremblay agreement (PII + a deliberate fee mismatch with the seeded billing schedule).
 5. Watch status: `curl -s http://127.0.0.1:8000/documents | python -m json.tool`
 
 Scanned PDFs (no text layer) and non-PDF files are rejected at upload with a 422.
 Multi-fund EDGAR exhibits are out of scope for now: the extraction schema models one fee schedule per contract.
+
+### Chat (local run)
+
+1. Once: `$PYDEV/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
+2. With API + worker running and samples ingested, `cd frontend && npm run dev`, open `/chat`.
+3. Golden set (real OpenAI + Pinecone, costs cents): `$PYDEV/bin/pytest -m eval tests/eval -s` → `backend/reports/eval-<config>.json`.
+   Use it to calibrate `MIN_DENSE_SIMILARITY` in `app/retrieval/search.py`: the lowest score among correct dense-only hits,
+   minus a margin, and above the best score for `not-in-corpus`.
+
+The agent runs in the API process and streams over SSE (progress events, then one verified answer). The upgrade path —
+worker + Postgres checkpointer + `LISTEN/NOTIFY` + reconnect from a cursor — is recorded in `artifacts/product-backlog.md`.
 
 ## Local development — ledger DB core
 
@@ -78,7 +93,7 @@ Prerequisites: Docker running locally.
 2. Copy `backend/.env.example` to `backend/.env` if you need to override the
    default connection settings (defaults work out of the box against the
    container from step 1).
-3. Run the test suite: `cd backend && pytest`
+3. Run the test suite: `cd backend && $PYDEV/bin/pytest`
 
 **Isolation level:** the balance-invariant trigger relies only on
 `READ COMMITTED` (Postgres's default) — there is no read-then-conditional-write
