@@ -19,7 +19,12 @@ target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-    return os.environ.get("ALEMBIC_DATABASE_URL", app_config.DATABASE_URL)
+    # Precedence: programmatic (tests) > env var (db_up.sh) > app config (owner role).
+    return (
+        alembic_config.attributes.get("database_url")
+        or os.environ.get("ALEMBIC_DATABASE_URL")
+        or app_config.MIGRATION_DATABASE_URL
+    )
 
 
 def run_migrations_offline() -> None:

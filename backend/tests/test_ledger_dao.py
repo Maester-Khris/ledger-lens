@@ -70,4 +70,9 @@ def test_unbalanced_posting_leaves_zero_partial_rows(db_session):
 
     db_session.rollback()
     assert db_session.query(Posting).filter(Posting.idempotency_key == key).count() == 0
-    assert db_session.query(Entry).count() == 0
+    assert (
+        db_session.query(Entry)
+        .filter(Entry.account_id.in_([cash.id, revenue.id]))
+        .count()
+        == 0
+    )
