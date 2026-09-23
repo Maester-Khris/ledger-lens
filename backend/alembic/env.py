@@ -9,6 +9,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import config as app_config  # noqa: E402
 from app.ledger.models import Base  # noqa: E402
+import app.billing.models  # noqa: E402, F401
+import app.governance.models  # noqa: E402,F401
+import app.reporting.models  # noqa: E402,F401
 
 alembic_config = context.config
 
@@ -19,7 +22,12 @@ target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-    return os.environ.get("ALEMBIC_DATABASE_URL", app_config.DATABASE_URL)
+    # Precedence: programmatic (tests) > env var (db_up.sh) > app config (owner role).
+    return (
+        alembic_config.attributes.get("database_url")
+        or os.environ.get("ALEMBIC_DATABASE_URL")
+        or app_config.MIGRATION_DATABASE_URL
+    )
 
 
 def run_migrations_offline() -> None:

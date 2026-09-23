@@ -10,6 +10,27 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
+## [Sprint — feat/ledger] · Ledger hardening + revenue book of record
+
+### Completed
+
+- `design` — industry research (`artifacts/research/2026-09-22-ledger-engineering.md`) and sprint spec → **Not epic-tracked** (PureFacts alignment)
+- `db` — Postgres 18, owner/app roles, tests run as the least-privilege role → **Epic 1.1**
+- `db` — append-only history, per-currency balance, ≥1 debit/credit, tenant and mirror checks in Postgres → **Epic 1.2**
+- `api` — idempotent `POST /postings` with fingerprints, replay/422/409/400 contract, read endpoints → **Epic 1.3**
+- `test` — concurrency proof against a live multi-worker server → **Epic 1.4**
+- `api` — compensating reversal endpoint → **Epic 1.7**
+- `billing` — households, versioned fee schedules (temporal keys), reproducible fee runs → **Not epic-tracked** (PureFacts alignment)
+- `governance` — AI tool-invocation audit and human approval before posting → **Epic 2.5** (governance tables; chat wiring deferred)
+- `reporting` — reproducible GL-ready export → **Not epic-tracked** (PureFacts alignment)
+
+### Deferred
+
+- `infra` — Aurora deployment (verify Postgres 18 support) → **Epic 1.5**
+- `ops` — correlation-ID logging + CI gate → **Epic 1.8**
+- `billing` — fee corrections (reverse and re-bill), advisor compensation → **Not epic-tracked**
+- `recon` — statement-vs-ledger reconciliation matcher → **Epic 2.2**
+
 ## [Sprint 2 — Closed] · Ledger DB Core
 
 **Closed — 2026-09-06.** Epics 1.1 and 1.2 fully shipped, database side only.
@@ -49,6 +70,27 @@ directly to `preview` (2026-09-06).
 
 ---
 
+## [Sprint — feat/ledger] · Ledger hardening + revenue book of record
+
+### Completed
+
+- `design` — industry research (`artifacts/research/2026-09-22-ledger-engineering.md`) and sprint spec → **Not epic-tracked** (PureFacts alignment)
+- `db` — Postgres 18, owner/app roles, tests run as the least-privilege role → **Epic 1.1**
+- `db` — append-only history, per-currency balance, ≥1 debit/credit, tenant and mirror checks in Postgres → **Epic 1.2**
+- `api` — idempotent `POST /postings` with fingerprints, replay/422/409/400 contract, read endpoints → **Epic 1.3**
+- `test` — concurrency proof against a live multi-worker server → **Epic 1.4**
+- `api` — compensating reversal endpoint → **Epic 1.7**
+- `billing` — households, versioned fee schedules (temporal keys), reproducible fee runs → **Not epic-tracked** (PureFacts alignment)
+- `governance` — AI tool-invocation audit and human approval before posting → **Epic 2.5** (governance tables; chat wiring deferred)
+- `reporting` — reproducible GL-ready export → **Not epic-tracked** (PureFacts alignment)
+
+### Deferred
+
+- `infra` — Aurora deployment (verify Postgres 18 support) → **Epic 1.5**
+- `ops` — correlation-ID logging + CI gate → **Epic 1.8**
+- `billing` — fee corrections (reverse and re-bill), advisor compensation → **Not epic-tracked**
+- `recon` — statement-vs-ledger reconciliation matcher → **Epic 2.2**
+
 ## [Sprint 1 — Closed] · UI Design Pipeline & Static Frontend
 
 **Closed — 2026-09-05.** Design-to-mockup-to-static-UI pipeline completed and
@@ -75,6 +117,27 @@ directly to `preview` (2026-09-03 to 2026-09-05).
 - `artifacts/ui-research/stitch/` — shipped mockups (chat, dashboard, landing, ledger-postings)
 
 ---
+
+## [Sprint — feat/ledger] · Ledger hardening + revenue book of record
+
+### Completed
+
+- `design` — industry research (`artifacts/research/2026-09-22-ledger-engineering.md`) and sprint spec → **Not epic-tracked** (PureFacts alignment)
+- `db` — Postgres 18, owner/app roles, tests run as the least-privilege role → **Epic 1.1**
+- `db` — append-only history, per-currency balance, ≥1 debit/credit, tenant and mirror checks in Postgres → **Epic 1.2**
+- `api` — idempotent `POST /postings` with fingerprints, replay/422/409/400 contract, read endpoints → **Epic 1.3**
+- `test` — concurrency proof against a live multi-worker server → **Epic 1.4**
+- `api` — compensating reversal endpoint → **Epic 1.7**
+- `billing` — households, versioned fee schedules (temporal keys), reproducible fee runs → **Not epic-tracked** (PureFacts alignment)
+- `governance` — AI tool-invocation audit and human approval before posting → **Epic 2.5** (governance tables; chat wiring deferred)
+- `reporting` — reproducible GL-ready export → **Not epic-tracked** (PureFacts alignment)
+
+### Deferred
+
+- `infra` — Aurora deployment (verify Postgres 18 support) → **Epic 1.5**
+- `ops` — correlation-ID logging + CI gate → **Epic 1.8**
+- `billing` — fee corrections (reverse and re-bill), advisor compensation → **Not epic-tracked**
+- `recon` — statement-vs-ledger reconciliation matcher → **Epic 2.2**
 
 ## [Restart] — 2026-08-31
 

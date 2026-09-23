@@ -28,7 +28,7 @@ fintech-prod/
 |---|---|
 | Backend | Python 3.11 + FastAPI |
 | Frontend | React (Vite), no framework beyond React itself |
-| DB | PostgreSQL + pgvector — localhost for dev, Aurora PostgreSQL for the demo/deploy run |
+| DB | PostgreSQL 18 + pgvector — localhost for dev (roles: ledger_owner migrates, ledger_app runs the API with SELECT/INSERT only), Aurora PostgreSQL for the demo/deploy run (verify 18 support before Epic 1.5) |
 | OCR | AWS Textract, synchronous API (AnalyzeDocument) |
 | LLM gateway | LiteLLM |
 | Migrations | Alembic |
@@ -37,13 +37,9 @@ fintech-prod/
 | Transport security | HTTPS/TLS everywhere this is deployed, no exception for the demo |
 
 ## Current Scope
-**Done:** ledger DB core — schema/migrations (Epic 1.1), balance-invariant
-deferred constraint trigger (Epic 1.2), DB session factory, DAO + tests,
-`db_up.sh` local Postgres setup. Database side only.
+**Done:** ledger DB core — schema/migrations (Epic 1.1), balance-invariant deferred constraint trigger (Epic 1.2), DB session factory, DAO + tests, `db_up.sh` local Postgres setup, `POST /postings` (Epic 1.3), concurrency stress test (Epic 1.4), append-only ledger enforced by triggers + revoked privileges, reversals (Epic 1.7), household fee billing on versioned schedules, AI tool-invocation governance tables, GL-ready export.
 
-**Not yet built:** `POST /postings` REST endpoint (Epic 1.3), concurrency
-stress test (Epic 1.4), Aurora deployment (Epic 1.5), README numbers (Epic
-1.6), Week 2 iteration, Document Intelligence Chat (Iteration 3).
+**Not yet built:** Aurora deployment (Epic 1.5), README numbers (Epic 1.6), Week 2 iteration, Document Intelligence Chat (Iteration 3).
 
 Full phased scope, ordering rationale, and Icebox: `artifacts/product-backlog.md`.
 Design specs and implementation plans: `docs/superpowers/specs/`, `docs/superpowers/plans/`.
@@ -61,10 +57,14 @@ an approved plan — don't re-litigate scope that's already decided there.
 - **TypeScript:** no explicit `strict` flag is set in `tsconfig.app.json` yet
   (`noUnusedLocals`/`noUnusedParameters` are) — don't rely on that gap, still
   avoid `any` and define prop interfaces for every component regardless.
-- **Layering:** routes stay thin (parse request → call a `ledger` module
-  function → return) — no business logic in `app/routes/`, no direct DB
-  access outside `app/ledger/dao.py`. This is a two-file pattern today
-  (`models.py`/`dao.py`); keep new domain logic in that module, not in routes.
+- **Layering:** routes stay thin (parse request → call a package function →
+  return) — no business logic in `app/routes/`. No direct DB access outside
+  each package's own `dao.py` (`app/ledger`, `app/billing`, `app/governance`,
+  `app/reporting`). Dependencies point only toward `ledger`; the ledger imports
+  no other package. Pure logic lives in framework-free files
+  (`ledger/fingerprint.py`, `billing/fee_math.py`, `reporting/gl_csv.py`).
+  Postings are written only through `ledger.dao.create_posting` inside
+  `ledger.dao.ledger_transaction`.
 - No new Python dependency without adding it to `backend/requirements.txt`.
   No new npm package without noting it in the task/PR summary.
 
@@ -75,6 +75,9 @@ an approved plan — don't re-litigate scope that's already decided there.
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/uvicorn app.main:app --reload
+.venv/bin/pytest
+.venv/bin/pytest -m stress
+.venv/bin/python scripts/seed_demo.py
 ```
 Prerequisite: `./backend/scripts/db_up.sh` (idempotent — Docker Postgres 16,
 creates `ledger_dev`/`ledger_test`, runs migrations against both).
