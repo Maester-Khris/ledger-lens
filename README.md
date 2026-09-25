@@ -1,50 +1,145 @@
 # Fintech Ledger + Document Intelligence
 
-A double-entry ledger core (idempotent postings, balance-invariant
-enforcement, compensating reversals) paired with a document-intelligence
-chat feature (OCR ingestion, retrieval-augmented Q&A with citations, and
-agentic tool-calls back into the ledger).
+A double-entry ledger core (idempotent postings, balance-invariant enforcement, compensating
+reversals, fee billing on versioned schedules) paired with a document-intelligence chat over
+investment advisory contracts: local PDF parsing and PII redaction, cited hybrid retrieval, and
+deterministic tool calls back into billing and the ledger. The model never calculates: tools take
+IDs, code does the maths, and a human approves anything that would post.
 
-Full scope and phased execution plan: [artifacts/product-backlog.md](artifacts/product-backlog.md).
-See [`CHANGELOG.md`](./CHANGELOG.md) for what's shipped so far, sprint by sprint.
+Full scope and phased plan: [artifacts/product-backlog.md](artifacts/product-backlog.md).
+What shipped, sprint by sprint: [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Status:** ledger DB core (Epic 1.1 schema/migrations + Epic 1.2 balance
-invariant enforcement) implemented, database side only — see
-[docs/superpowers/specs/2026-09-06-ledger-db-schema-design.md](docs/superpowers/specs/2026-09-06-ledger-db-schema-design.md).
-No REST API, concurrency stress test, or deployment yet.
+**Status (2026-09-24):**
+- **Ledger: done, merged to `preview`.** Schema and migrations, the balance invariant in Postgres,
+  idempotent `POST /postings`, a live concurrency proof, reversals, append-only history, household
+  fee billing on versioned schedules, AI tool-invocation governance and a GL-ready export
+  (Epics 1.1–1.4, 1.7).
+- **Document Intelligence MVP: done on `feat/doc-intelligence`, verified live** against the real
+  OpenAI and Pinecone. It covers the ingestion pipeline (Docling, Presidio tokens, versioning),
+  cited extraction with per-field routing, hybrid retrieval, a LangGraph agent whose every number
+  is checked against its citations, the contract-vs-billing leakage tool with human approval, and
+  the React screens. See [Live run results](#live-run-results-2026-09-24-real-openai--pinecone).
+- **268 automated tests.** Not built yet: Aurora deployment (Epic 1.5), tracing and
+  observability, the CI eval gate, and a review UI for `needs_review` fields. The full list is in
+  the backlog.
 
 ## Stack
 
 | Layer | Choice |
 |---|---|
-| Backend | Python 3.11+ / FastAPI |
-| Frontend | React (Vite) |
-| DB | PostgreSQL + pgvector (not wired up yet) |
+| Backend | Python 3.12 / FastAPI, SQLAlchemy 2.0, Alembic |
+| Frontend | React 19 + TypeScript (Vite) |
+| DB | PostgreSQL 18 (local Docker): `ledger_owner` migrates, `ledger_app` runs the API with `SELECT`/`INSERT` only |
+| Parsing / PII | Docling + Presidio (spaCy `en_core_web_md`), both local; only redacted text leaves the machine |
+| Search | Postgres full-text + Pinecone serverless (dense), merged with reciprocal rank fusion |
+| LLM | OpenAI `gpt-4.1-2025-04-14` via LangChain + LangGraph; embeddings `text-embedding-3-small` |
+| Config | every setting in `backend/.env`; [`backend/.env.example`](backend/.env.example) lists them all |
 
 ## Running the backend
 
+The backend runs in a Python 3.12 env of your choice (`$PYDEV`, its root directory), not a repo-local `.venv`.
+Set it once per shell (or as `PYDEV=` in `backend/.env`); every command below uses it:
+
 ```bash
+export PYDEV=/path/to/your/python-env
 cd backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn app.main:app --reload
+$PYDEV/bin/pip install -r requirements.txt
+$PYDEV/bin/pip check   # shared env: confirm the pins didn't break another project's packages
+$PYDEV/bin/uvicorn app.main:app --reload
 ```
 
 Health check: `GET http://127.0.0.1:8000/health`
+
+### Document-intelligence models (one-time download)
+
+Document parsing and PII detection run **locally**. Document content never
+leaves the machine; only redacted text reaches the LLM. Both libraries need
+model files that pip does not install, so fetch them once after
+`pip install`. They arrive with the ingestion phase (`docling`,
+`presidio-analyzer` and `presidio-anonymizer` in `requirements.txt`):
+
+```bash
+cd backend
+# Docling layout and table-structure models (~1 GB): turn a PDF into headings, paragraphs and tables with page numbers.
+$PYDEV/bin/docling-tools models download
+# spaCy English model used by Presidio's analyzer to detect names (~40 MB, ~150 MB in RAM). The medium model:
+# name detection is on par with the large one, which only adds word vectors Presidio doesn't use.
+$PYDEV/bin/python -m spacy download en_core_web_md
+```
+
+Without them, the first upload either downloads the models mid-request
+(Docling) or fails to start the PII analyzer (Presidio). Downloading them up
+front keeps ingestion predictable and able to run offline.
+
+### Document ingestion (local run)
+
+1. Set `PII_HMAC_KEY` and `PII_VAULT_KEY` in `backend/.env` (generation commands are in `.env.example`).
+2. Start the API: `$PYDEV/bin/uvicorn app.main:app --reload`
+3. Start the worker in a second terminal: `$PYDEV/bin/python scripts/ingestion_worker.py`
+   (the only process that loads Docling and spaCy; the API stays light)
+4. Load the samples: `SEC_USER_AGENT="Name email" $PYDEV/bin/python scripts/prepare_samples.py --upload http://127.0.0.1:8000`
+   — three single-fund EDGAR advisory agreements (rendered to PDF so every citation has a page)
+   plus the synthetic Tremblay agreement (PII + a deliberate fee mismatch with the seeded billing schedule).
+5. Watch status: `curl -s http://127.0.0.1:8000/documents | python -m json.tool`
+
+Scanned PDFs (no text layer) and non-PDF files are rejected at upload with a 422.
+Multi-fund EDGAR exhibits are out of scope for now: the extraction schema models one fee schedule per contract.
+
+### Extraction
+
+The worker's `extract` stage asks the model to copy fee terms verbatim with a quote and element ids per value.
+Code converts band wording to billing tiers (`app/contracts/fee_text.py`) and routes every field:
+`accepted` only if the quote is found in the cited elements, all validators pass (including billing's own
+`validate_tiers`), and the cited pages were parsed at grade GOOD or better — otherwise `needs_review`.
+Only accepted (or human-reviewed) fields are served to the agent. The comparison tool computes the contract-vs-billing
+fee gap with `fee_math.annual_fee`; a positive gap can be proposed as a correction that a human approves before it posts.
+
+### Chat (local run)
+
+1. Once: `$PYDEV/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
+2. With API + worker running and samples ingested, `cd frontend && npm run dev`, open `/chat`.
+3. Golden set (real OpenAI + Pinecone, costs cents): `$PYDEV/bin/pytest -m eval tests/eval -s` → `backend/reports/eval-<config>.json`.
+   Use it to calibrate `MIN_DENSE_SIMILARITY` in `backend/.env`: the lowest score among correct dense-only hits,
+   minus a margin, and above the best score for `not-in-corpus`.
+
+The agent runs in the API process and streams over SSE (progress events, then one verified answer). The upgrade path —
+worker + Postgres checkpointer + `LISTEN/NOTIFY` + reconnect from a cursor — is recorded in `artifacts/product-backlog.md`.
+
+### Live run results (2026-09-24, real OpenAI + Pinecone)
+
+Everything above was first built against fakes (268 automated tests). With the real keys in `backend/.env`:
+
+- **Ingestion + extraction** (`gpt-4.1-2025-04-14`, `text-embedding-3-small`, Pinecone serverless `aws/us-east-1`):
+  all four sample contracts parsed, indexed and extracted. The synthetic Tremblay agreement had 18/18 fields accepted,
+  including its three tiers (100 / 85 / 65 bps). The three EDGAR contracts had 43 of 58 fields accepted; the other 15
+  were routed to `needs_review` (missing clauses, non-verbatim quotes, one unparsed date), never served as facts.
+- **Golden set** (8 questions, [`backend/reports/eval-fdfec82a79e3.json`](backend/reports/eval-fdfec82a79e3.json)):
+  numbers correct **1.0**, refusals correct **0.875**, citation on the expected page **0.875**. The Tremblay leakage
+  question returns the **$400.00** annual gap from `compare_contract_to_billing`: the model looks up the document id,
+  deterministic code does the arithmetic, and the model only narrates the result. The first live run
+  ([`eval-7112ef3432ef.json`](backend/reports/eval-7112ef3432ef.json): 0.875 / 0.625 / 0.75) exposed three agent
+  bugs the scripted fake model could not, all fixed with regression tests. The one remaining miss: a fund with no
+  billing household gets the generic refusal instead of the tool's reason.
+- **Relevance gate:** `MIN_DENSE_SIMILARITY` calibrated to **0.43**: correct dense-only hits score 0.505–0.704, the
+  best match for an out-of-corpus question 0.357.
+- **End-to-end UI test** (Playwright driving Chrome against the local API, worker and Vite): a scanned PDF is rejected
+  with its reason; a new PDF goes Processing → Indexed on screen without a reload and is answerable right away; three
+  chat questions (fee schedule, leakage, the new upload) return cited answers; a citation chip opens the PDF on the
+  cited page. UI issues found there are listed in `artifacts/product-backlog.md`.
 
 ## Local development — ledger DB core
 
 Prerequisites: Docker running locally.
 
 1. `./backend/scripts/db_up.sh` — idempotent: creates (or starts) a single
-   Postgres 16 container named `fintech-ledger-db`, creates the `ledger_dev`
+   Postgres 18 container named `fintech-ledger-db`, creates the `ledger_dev`
    and `ledger_test` databases if they don't already exist, and runs Alembic
    migrations against both. Safe to re-run any time — it only creates what's
    missing.
-2. Copy `backend/.env.example` to `backend/.env` if you need to override the
-   default connection settings (defaults work out of the box against the
-   container from step 1).
-3. Run the test suite: `cd backend && pytest`
+2. Copy `backend/.env.example` to `backend/.env`. It lists every deployment,
+   model and tuning setting; the in-code defaults match it, so connection
+   settings work out of the box against the container from step 1.
+3. Run the test suite: `cd backend && $PYDEV/bin/pytest`
 
 **Isolation level:** the balance-invariant trigger relies only on
 `READ COMMITTED` (Postgres's default) — there is no read-then-conditional-write
@@ -74,7 +169,8 @@ The API connects as `ledger_app`, which can only `SELECT` and `INSERT`.
 
 **Concurrency proof** (`pytest -m stress`, local, 4 workers, 50 concurrent clients):
 500 requests → 400 postings for 400 keys, **0 duplicates, 0 per-currency
-imbalances, 0 lost updates** on a hot account; p50 185.0 ms, p99 685.6 ms.
+imbalances, 0 lost updates** on a hot account; p50 148.9 ms, p99 670.7 ms
+([`backend/reports/concurrency.json`](backend/reports/concurrency.json)).
 
 **Out of scope for this demo:** Aurora deployment, row-level security / multiple real tenants,
 authentication, reconciliation, fee corrections, advisor compensation, event streaming.

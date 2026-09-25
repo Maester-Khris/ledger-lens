@@ -1,0 +1,170 @@
+{
+  "config_hash": "fdfec82a79e3",
+  "chat_model": "gpt-4.1-2025-04-14",
+  "metrics": {
+    "refusal_ok": 0.875,
+    "citation_hit": 0.875,
+    "numbers_ok": 1.0
+  },
+  "results": [
+    {
+      "id": "fee-schedule",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule in the Tremblay agreement is as follows:\n\n- 1.00% on the first $1,000,000\n- 0.85% on the next $1,500,000\n- 0.65% on assets in excess of $2,500,000\n\nFees are billed quarterly in arrears, based on the combined household market value of the client's accounts, and denominated in CAD.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "Schedule A - Fee Schedule",
+          "quote": "| Household market value            | Annual rate   |\n|-----------------------------------|---------------|\n| On the first $1,000,000           | 1.00%         |\n| On the next $1,500,000            | 0.85%         |\n| On assets in excess of $2,500,000 | 0.65%         |",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=2",
+          "id": "2964389a-6ca8-467e-901f-74f80a72f1e4"
+        },
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "595811a6-fd1d-47fa-8892-dd38602f66b9"
+        }
+      ]
+    },
+    {
+      "id": "termination",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement requires 30 days of notice to terminate.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "Either party may terminate this Agreement upon thirty (30) days' written notice to the other party.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "3d6d3f4c-f4cf-4e1e-94eb-6c517c36f710"
+        }
+      ]
+    },
+    {
+      "id": "governing-law",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement is governed by the laws of the Province of Ontario.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "This Agreement shall be governed by the laws of the Province of Ontario.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "d9967375-c4d4-48db-9e1a-1945ce3325e3"
+        }
+      ]
+    },
+    {
+      "id": "calamos-top-tier",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Calamos Emerging Market Equity Fund's rate in excess of $26 billion is 0.90% of the average daily net assets.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "8f64950b-3af8-419a-a332-7ad6e15b8a22",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/8f64950b-3af8-419a-a332-7ad6e15b8a22/versions/1/file#page=1",
+          "id": "94e3740a-ce60-493f-ab34-802ab6388bed"
+        }
+      ]
+    },
+    {
+      "id": "aim-first-tier",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The annual rate that applies to the first $500 million for AIM Global Trends Fund is 0.975%.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "74a06519-e422-473a-95c3-b0c981f6cf50",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/74a06519-e422-473a-95c3-b0c981f6cf50/versions/1/file#page=7",
+          "id": "4bfd8a00-af88-4b0b-b3b5-6789dbb1302b"
+        }
+      ]
+    },
+    {
+      "id": "not-in-corpus",
+      "event": "refused",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": []
+    },
+    {
+      "id": "leakage",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "Under its contract, the Tremblay household would pay an annual fee of CAD 16,800, compared with billing charges of CAD 16,400. This results in an annual gap of CAD 400, with the contract rate at 0.85% and the billing rate at 0.8% for assets up to CAD 2,500,000.",
+      "citations": [
+        {
+          "kind": "tool",
+          "tool": "compare_contract_to_billing",
+          "inputs_cited": [
+            "2964389a-6ca8-467e-901f-74f80a72f1e4"
+          ],
+          "invocation_id": "8a388b24-8087-43c1-ab2a-48c6302674c7",
+          "id": "8a388b24-8087-43c1-ab2a-48c6302674c7"
+        }
+      ]
+    },
+    {
+      "id": "fund-not-comparable",
+      "event": "refused",
+      "refusal_ok": false,
+      "citation_hit": false,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": []
+    }
+  ]
+}

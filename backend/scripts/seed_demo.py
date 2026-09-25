@@ -1,5 +1,5 @@
 """Seed ledger_dev with the demo tenant's book: run `./scripts/db_up.sh` first, then
-`.venv/bin/python scripts/seed_demo.py` from backend/. Safe to run twice."""
+`$PYDEV/bin/python scripts/seed_demo.py` from backend/. Safe to run twice."""
 import sys
 import uuid
 from datetime import date
