@@ -84,9 +84,9 @@ PINECONE_CLOUD = os.environ.get("PINECONE_CLOUD", "aws")
 PINECONE_REGION = os.environ.get("PINECONE_REGION", "us-east-1")
 PINECONE_TIMEOUT_SECONDS = _float("PINECONE_TIMEOUT_SECONDS", 10)
 
-# Retrieval tuning. MIN_DENSE_SIMILARITY is calibrated on the golden set (tests/eval).
+# Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
-MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.30)
+MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.43)
 
 # Ingestion
 MAX_UPLOAD_BYTES = _int("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)
