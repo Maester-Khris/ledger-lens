@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from app.ledger.dao import EntryInput
 
 from langchain_core.embeddings import Embeddings
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from app.documents import dao as documents_dao
@@ -102,7 +102,11 @@ def default_tools() -> list[ToolSpec]:
 
 def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
     """Validate, tokenise every string argument (a model may echo a client's name), run, and log the call."""
-    raw = spec.args_model.model_validate(args).model_dump()
+    try:
+        raw = spec.args_model.model_validate(args).model_dump()
+    except ValidationError as exc:  # model output is untrusted: hand the error back so it can correct the call
+        problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors())
+        return ToolOutcome(json.dumps({"error": f"invalid arguments ({problems})"}))
     tokenised = {
         key: documents_dao.tokenize_known_values(ctx.session, ctx.tenant_id, value, ctx.hmac_key) if isinstance(value, str) else value
         for key, value in raw.items()

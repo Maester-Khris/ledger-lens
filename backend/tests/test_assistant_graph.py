@@ -81,3 +81,29 @@ def test_calculation_question_forces_the_tool_when_registered(db_session, tenant
     assert route_tool_choice("How much would the Tremblay household pay under this contract?", {FORCED_TOOL}) == FORCED_TOOL
     assert route_tool_choice("How much would they pay?", set()) is None  # tool not registered yet (Plan 2 adds it)
     assert route_tool_choice("Who are the parties?", {FORCED_TOOL}) is None
+
+
+def test_calculation_question_looks_up_the_id_before_the_forced_tool(db_session, tenant_id, indexed):
+    from app.assistant.contract_tools import contract_tools
+    from app.assistant.graph import FORCED_TOOL, LOOKUP_TOOL
+    compare = AIMessage(content="", tool_calls=[{"name": FORCED_TOOL, "args": {"document_id": "tremblay-household"}, "id": "c2"}])
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": LOOKUP_TOOL, "args": {}, "id": "c1"}]), compare, AIMessage(content="done"),
+    ])
+    graph = build_graph(model, default_tools() + contract_tools(), _ctx(db_session, tenant_id, *indexed))
+    state = graph.invoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
+                         config={"recursion_limit": RECURSION_LIMIT})
+    assert model.tool_choices == [LOOKUP_TOOL, FORCED_TOOL, "auto"]
+    assert "document_id" in state["messages"][-2].content  # the invalid id went back to the model, not a crash
+    assert state["answer"].refused is True
+
+
+def test_answer_retry_fits_after_two_tool_rounds(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    model = ScriptedChatModel(replies=[
+        _search_call("rate"), _search_call("annual rate"), AIMessage(content="done"),
+        Answer(text="The second tier is 0.85%.", citations=["not-retrieved"], refused=False),
+        Answer(text="The second tier is 0.85%.", citations=[element_id], refused=False),
+    ])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
+    assert state["answer"].refused is False

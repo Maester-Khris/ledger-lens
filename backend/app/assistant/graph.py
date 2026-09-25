@@ -17,10 +17,12 @@ from app.assistant.tools import ToolContext, ToolSpec, execute
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v1"
-RECURSION_LIMIT = 10
+GRAPH_VERSION = "v2"
+# route + 2 tool rounds + 2 answer attempts, with headroom
+RECURSION_LIMIT = 12
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
+LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
 CALCULATION_PATTERN = re.compile(r"\b(how much would|fee for|compare|leakage|difference|under this contract)\b", re.I)
 NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't guess."
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
@@ -41,7 +43,7 @@ class TurnState(TypedDict, total=False):
     sources: Annotated[dict[str, str], _merge]
     citations: Annotated[dict[str, dict], _merge]
     retrieved: Annotated[list[dict], operator.add]
-    forced_tool: str | None
+    forced_tools: list[str]
     answer: Answer | None
     violations: list[str]
     answer_attempts: int
@@ -62,12 +64,13 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
     def route(state: TurnState) -> dict:
         question = next(m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
-        return {"forced_tool": route_tool_choice(question, set(by_name)), "answer_attempts": 0, "violations": []}
+        forced = route_tool_choice(question, set(by_name))
+        return {"forced_tools": [LOOKUP_TOOL, forced] if forced else [], "answer_attempts": 0, "violations": []}
 
     def agent(state: TurnState) -> dict:
-        choice = state.get("forced_tool") or "auto"
+        [choice, *rest] = state.get("forced_tools") or ["auto"]
         reply = chat_model.bind_tools(schemas, tool_choice=choice).invoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
-        return {"messages": [reply], "forced_tool": None}
+        return {"messages": [reply], "forced_tools": rest}
 
     def run_tools(state: TurnState) -> dict:
         last = state["messages"][-1]

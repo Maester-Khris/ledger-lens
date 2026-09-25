@@ -41,6 +41,13 @@ def test_compare_tool_refusal_is_content_not_a_crash(db_session, tenant_id):
     assert outcome.sources == {}
 
 
+def test_invalid_tool_arguments_go_back_to_the_model(db_session, tenant_id):
+    outcome = execute(TOOLS["compare_contract_to_billing"], _ctx(db_session, tenant_id), {"document_id": "tremblay-household"})
+    assert "document_id" in json.loads(outcome.content)["error"]
+    assert outcome.sources == {}
+    assert db_session.scalars(select(ToolInvocation).where(ToolInvocation.tenant_id == tenant_id)).all() == []
+
+
 def test_fields_tool_serves_only_validated_fields(db_session, tenant_id):
     scenario = build_fee_scenario(db_session, tenant_id)
     document_id = _contract(db_session, tenant_id, scenario.household_id)
