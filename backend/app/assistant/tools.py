@@ -1,4 +1,3 @@
-RESULT_KEY = "@result"
 import json
 import uuid
 from collections.abc import Callable
@@ -13,6 +12,9 @@ from app.documents import dao as documents_dao
 from app.governance.dao import InvocationRecord, ModelConfig, record_invocation
 from app.retrieval.search import Evidence, search
 from app.retrieval.vector_index import VectorIndex
+
+
+RESULT_KEY = "@result"  # placeholder a tool uses for its own result; execute() swaps in the invocation id
 
 
 @dataclass
@@ -31,10 +33,10 @@ class ToolContext:
 class ToolOutcome:
     content: str  # JSON the model reads
     sources: dict[str, str] = field(default_factory=dict)  # citable id -> text the verifier checks numbers against
-    citations: dict[str, dict] = field(default_factory=dict)
+    citations: dict[str, dict] = field(default_factory=dict)  # citable id -> payload the client renders
     result_amount_minor: int | None = None
     result_currency: str | None = None
-    proposed_entries: tuple[EntryInput, ...] | None = None  # citable id -> payload the client renders
+    proposed_entries: tuple[EntryInput, ...] | None = None  # present = critical: a human must approve (governance)
 
 
 @dataclass(frozen=True)
