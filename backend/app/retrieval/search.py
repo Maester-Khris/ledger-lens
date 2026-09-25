@@ -5,13 +5,11 @@ from dataclasses import dataclass
 from langchain_core.embeddings import Embeddings
 from sqlalchemy.orm import Session
 
+from app import config
 from app.retrieval import dao
 from app.retrieval.fusion import reciprocal_rank_fusion
 from app.retrieval.vector_index import VectorIndex
 
-CANDIDATES = 20
-# Initial value; calibrated on the golden set (tests/eval). Below it, a dense-only match is noise.
-MIN_DENSE_SIMILARITY = 0.30
 # ponytail: caps section context by characters, not tokens; switch to a tokenizer if prompts get tight
 MAX_CONTEXT_CHARS = 4000
 
@@ -41,12 +39,13 @@ def search(
     k: int = 8,
 ) -> list[Evidence]:
     """Hybrid search over current versions. `query` must already be tokenised (documents_dao.tokenize_known_values)."""
-    text_ids = dao.full_text_hits(session, tenant_id=tenant_id, query=query, document_ids=document_ids, limit=CANDIDATES)
-    matches = vector_index.query(str(tenant_id), embeddings.embed_query(query), CANDIDATES,
+    text_ids = dao.full_text_hits(session, tenant_id=tenant_id, query=query, document_ids=document_ids,
+                                  limit=config.SEARCH_CANDIDATES)
+    matches = vector_index.query(str(tenant_id), embeddings.embed_query(query), config.SEARCH_CANDIDATES,
                                  None if document_ids is None else [str(d) for d in document_ids])
     current = dao.current_element_ids(session, tenant_id=tenant_id, vector_ids=[m.id for m in matches])
     dense = [(current[m.id], m.score) for m in matches if m.id in current]  # stale vectors drop out here
-    if not text_ids and (not dense or max(score for _, score in dense) < MIN_DENSE_SIMILARITY):
+    if not text_ids and (not dense or max(score for _, score in dense) < config.MIN_DENSE_SIMILARITY):
         return []  # relevance gate: say "I don't know" instead of answering from noise
 
     fused = reciprocal_rank_fusion([[str(i) for i in text_ids], [str(i) for i, _ in dense]])[:k]

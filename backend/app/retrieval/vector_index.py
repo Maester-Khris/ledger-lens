@@ -4,10 +4,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
+from app import config
 from app.retry import call_with_retries
 
 UPSERT_BATCH = 100
-PINECONE_TIMEOUT_SECONDS = 10
 
 
 def vector_id(version_id: uuid.UUID, ordinal: int) -> str:
@@ -73,15 +73,15 @@ class PineconeVectorIndex:
     def upsert(self, namespace: str, records: Sequence[VectorRecord]) -> None:
         for start in range(0, len(records), UPSERT_BATCH):
             batch = [{"id": r.id, "values": r.values, "metadata": r.metadata} for r in records[start:start + UPSERT_BATCH]]
-            self._call(lambda: self._index.upsert(vectors=batch, namespace=namespace, timeout=PINECONE_TIMEOUT_SECONDS))
+            self._call(lambda: self._index.upsert(vectors=batch, namespace=namespace, timeout=config.PINECONE_TIMEOUT_SECONDS))
 
     def query(self, namespace: str, vector: Sequence[float], top_k: int, document_ids: Sequence[str] | None) -> list[VectorMatch]:
         where = None if document_ids is None else {"document_id": {"$in": list(document_ids)}}
         result = self._call(lambda: self._index.query(
-            vector=list(vector), top_k=top_k, namespace=namespace, filter=where, timeout=PINECONE_TIMEOUT_SECONDS,
+            vector=list(vector), top_k=top_k, namespace=namespace, filter=where, timeout=config.PINECONE_TIMEOUT_SECONDS,
         ))
         return [VectorMatch(match.id, float(match.score)) for match in result.matches]
 
     def delete(self, namespace: str, ids: Sequence[str]) -> None:
         if ids:
-            self._call(lambda: self._index.delete(ids=list(ids), namespace=namespace, timeout=PINECONE_TIMEOUT_SECONDS))
+            self._call(lambda: self._index.delete(ids=list(ids), namespace=namespace, timeout=config.PINECONE_TIMEOUT_SECONDS))

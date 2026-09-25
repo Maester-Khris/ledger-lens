@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from app import config
 from app.documents.errors import UploadRejected
 
 PDF_MAGIC = b"%PDF-"
-MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_UPLOAD_BYTES = config.MAX_UPLOAD_BYTES
 MIN_TEXT_CHARS_PER_PAGE = 20  # fewer extractable characters than this = an image-only page
 MAX_IMAGE_ONLY_PAGE_SHARE = 0.5
 

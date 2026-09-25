@@ -23,7 +23,6 @@ from app.governance.dao import ModelConfig
 from app.retrieval.vector_index import VectorIndex
 
 logger = logging.getLogger(__name__)
-TURN_TIMEOUT_SECONDS = 60
 HISTORY_TURNS = 4
 PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "verify": "checking citations"}
 
@@ -69,7 +68,7 @@ async def run_turn(
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         try:
-            async with asyncio.timeout(TURN_TIMEOUT_SECONDS):
+            async with asyncio.timeout(config.CHAT_TURN_TIMEOUT_SECONDS):
                 # Nodes are sync (DB + model calls); LangGraph runs them in a thread pool under astream.
                 # ponytail: a timed-out node keeps running in its thread until its own call timeout (30 s) ends it
                 async for mode, data in graph.astream({"messages": [*history, HumanMessage(question)]},

@@ -8,8 +8,6 @@ from pinecone import Pinecone, ServerlessSpec  # noqa: E402
 
 from app import config  # noqa: E402
 
-CLOUD, REGION = "aws", "us-east-1"
-
 
 def main() -> None:
     client = Pinecone(api_key=config.require("PINECONE_API_KEY"))
@@ -17,7 +15,7 @@ def main() -> None:
         print(f"index {config.PINECONE_INDEX} already exists")
         return
     client.create_index(name=config.PINECONE_INDEX, dimension=config.EMBEDDING_DIMENSIONS, metric="cosine",
-                        spec=ServerlessSpec(cloud=CLOUD, region=REGION))
+                        spec=ServerlessSpec(cloud=config.PINECONE_CLOUD, region=config.PINECONE_REGION))
     print(f"created {config.PINECONE_INDEX} ({config.EMBEDDING_DIMENSIONS} dims, cosine)")
 
 
