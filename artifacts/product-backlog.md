@@ -217,6 +217,21 @@ approval posts the correction through the existing approve-to-post path
       mode, Vercel resumable streams). Trigger: turns longer than about 60 s,
       more than one API instance, or a need to reconnect after a refresh.
 
+**Found in the 2026-09-24 live run and end-to-end UI test, deferred to the next iteration:**
+- [ ] **Chat: messages have no vertical spacing.** Consecutive question and answer
+      blocks sit flush against each other in the chat container.
+- [ ] **Review path broken.** The dashboard shows 3 items to review with a link; the
+      link opens a page where everything is green, so the items can't be reached.
+- [ ] **Markdown shows as raw text.** Answer lists render as inline dashes and
+      citation quotes show tables as `|` pipes. Render markdown in both.
+- [ ] **Parser heading nesting.** A section path reads `1. Client Information › 3. Fees`
+      (section 3 nested under section 1): Docling heading levels need normalising.
+- [ ] **Landing page copy.** The hero demo still describes tax slips, Form 941 and
+      payroll journals instead of fee contracts; it's the first thing a reviewer reads.
+- [ ] **Sample title mismatch.** The document with key `nomura-tax-free-colorado-ima`
+      is titled "Voyageur Mutual Funds II / Delaware Management — IMA (2025)";
+      align the key or the title in `scripts/prepare_samples.py`.
+
 **Deferred (reasoning and revisit trigger in the research file):** scanned
 documents / OCR (the EDGAR set is digitally created; the text-layer check
 rejects scans instead of producing garbage; revisit at the first real scanned
