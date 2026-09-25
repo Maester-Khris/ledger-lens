@@ -1,6 +1,6 @@
 """Download single-fund EDGAR advisory agreements, render them to PDF (the canonical file, so every
 citation has a page), and optionally upload them plus the synthetic client agreement.
-Run from backend/:  SEC_USER_AGENT="Name email" .venv/bin/python scripts/prepare_samples.py [--upload http://127.0.0.1:8000]"""
+Run from backend/:  SEC_USER_AGENT="Name email" $PYDEV/bin/python scripts/prepare_samples.py [--upload http://127.0.0.1:8000]"""
 import argparse
 import json
 import os

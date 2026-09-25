@@ -72,14 +72,19 @@ an approved plan — don't re-litigate scope that's already decided there.
 ## Running Locally
 
 ### Backend
+**Python env:** `$PYDEV` = the machine's Python 3.12 env root. Its path lives only in local,
+never-committed config (`CLAUDE.local.md`, `backend/.env`); never create a repo-local `.venv`.
+Call its binaries by path (each shell is fresh, activation doesn't persist):
 ```bash
 cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn app.main:app --reload
-.venv/bin/pytest
-.venv/bin/pytest -m stress
-.venv/bin/python scripts/seed_demo.py
+$PYDEV/bin/pip install -r requirements.txt   # shared env: run $PYDEV/bin/pip check afterwards
+$PYDEV/bin/uvicorn app.main:app --reload
+$PYDEV/bin/pytest
+$PYDEV/bin/pytest -m stress
+$PYDEV/bin/python scripts/seed_demo.py
+$PYDEV/bin/python scripts/ingestion_worker.py
 ```
+`backend/scripts/db_up.sh` uses the same env (reads `PYDEV` from the shell or `backend/.env`).
 Prerequisite: `./backend/scripts/db_up.sh` (idempotent — Docker Postgres 16,
 creates `ledger_dev`/`ledger_test`, runs migrations against both).
 
