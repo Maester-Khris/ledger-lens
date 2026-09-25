@@ -20,7 +20,7 @@ type Doc = {
   size: string;
   sha256: string;
   pipeline: Array<{ step: string; duration: string }>;
-  chunkPreview: Array<{ location: string; text: string }>;
+  chunkPreview: Array<{ ordinal: number; location: string; text: string }>;
   usedBy: Array<{ tool: string; toolInvocation: string; posting: string }>;
 };
 
@@ -56,6 +56,7 @@ function toDoc(summary: DocumentSummary, detail?: DocumentDetail): Doc {
       duration: i === 0 ? '—' : `${((Date.parse(e.at) - Date.parse(events[i - 1].at)) / 1000).toFixed(1)}s`,
     })),
     chunkPreview: (detail?.preview ?? []).map((p) => ({
+      ordinal: p.ordinal,
       location: `p.${p.page_start} · ${p.section_path.join(' › ') || p.kind}`,
       text: p.text,
     })),
@@ -278,7 +279,7 @@ export function Documents() {
                 <>
                   <ul className="documents__chunks">
                     {selected.chunkPreview.map((c) => (
-                      <li key={c.location} className="documents__chunk">
+                      <li key={c.ordinal} className="documents__chunk">
                         <div className="mono documents__chunk-loc">{c.location}</div>
                         <div className="documents__chunk-text">{c.text}</div>
                       </li>
