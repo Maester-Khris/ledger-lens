@@ -48,8 +48,9 @@ model files that pip does not install, so fetch them once after
 cd backend
 # Docling layout and table-structure models (~1 GB): turn a PDF into headings, paragraphs and tables with page numbers.
 $PYDEV/bin/docling-tools models download
-# spaCy English model used by Presidio's analyzer to detect names, organisations and locations (~800 MB in RAM).
-$PYDEV/bin/python -m spacy download en_core_web_lg
+# spaCy English model used by Presidio's analyzer to detect names (~40 MB, ~150 MB in RAM). The medium model:
+# name detection is on par with the large one, which only adds word vectors Presidio doesn't use.
+$PYDEV/bin/python -m spacy download en_core_web_md
 ```
 
 Without them, the first upload either downloads the models mid-request
@@ -75,11 +76,33 @@ Multi-fund EDGAR exhibits are out of scope for now: the extraction schema models
 1. Once: `$PYDEV/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
 2. With API + worker running and samples ingested, `cd frontend && npm run dev`, open `/chat`.
 3. Golden set (real OpenAI + Pinecone, costs cents): `$PYDEV/bin/pytest -m eval tests/eval -s` → `backend/reports/eval-<config>.json`.
-   Use it to calibrate `MIN_DENSE_SIMILARITY` in `app/retrieval/search.py`: the lowest score among correct dense-only hits,
+   Use it to calibrate `MIN_DENSE_SIMILARITY` in `backend/.env`: the lowest score among correct dense-only hits,
    minus a margin, and above the best score for `not-in-corpus`.
 
 The agent runs in the API process and streams over SSE (progress events, then one verified answer). The upgrade path —
 worker + Postgres checkpointer + `LISTEN/NOTIFY` + reconnect from a cursor — is recorded in `artifacts/product-backlog.md`.
+
+### Live run results (2026-09-24, real OpenAI + Pinecone)
+
+Everything above was first built against fakes (268 automated tests). With the real keys in `backend/.env`:
+
+- **Ingestion + extraction** (`gpt-4.1-2025-04-14`, `text-embedding-3-small`, Pinecone serverless `aws/us-east-1`):
+  all four sample contracts parsed, indexed and extracted. The synthetic Tremblay agreement had 18/18 fields accepted,
+  including its three tiers (100 / 85 / 65 bps). The three EDGAR contracts had 43 of 58 fields accepted; the other 15
+  were routed to `needs_review` (missing clauses, non-verbatim quotes, one unparsed date), never served as facts.
+- **Golden set** (8 questions, [`backend/reports/eval-fdfec82a79e3.json`](backend/reports/eval-fdfec82a79e3.json)):
+  numbers correct **1.0**, refusals correct **0.875**, citation on the expected page **0.875**. The Tremblay leakage
+  question returns the **$400.00** annual gap from `compare_contract_to_billing`: the model looks up the document id,
+  deterministic code does the arithmetic, and the model only narrates the result. The first live run
+  ([`eval-7112ef3432ef.json`](backend/reports/eval-7112ef3432ef.json): 0.875 / 0.625 / 0.75) exposed three agent
+  bugs the scripted fake model could not, all fixed with regression tests. The one remaining miss: a fund with no
+  billing household gets the generic refusal instead of the tool's reason.
+- **Relevance gate:** `MIN_DENSE_SIMILARITY` calibrated to **0.43**: correct dense-only hits score 0.505–0.704, the
+  best match for an out-of-corpus question 0.357.
+- **End-to-end UI test** (Playwright driving Chrome against the local API, worker and Vite): a scanned PDF is rejected
+  with its reason; a new PDF goes Processing → Indexed on screen without a reload and is answerable right away; three
+  chat questions (fee schedule, leakage, the new upload) return cited answers; a citation chip opens the PDF on the
+  cited page. UI issues found there are listed in `artifacts/product-backlog.md`.
 
 ## Local development — ledger DB core
 
@@ -90,9 +113,9 @@ Prerequisites: Docker running locally.
    and `ledger_test` databases if they don't already exist, and runs Alembic
    migrations against both. Safe to re-run any time — it only creates what's
    missing.
-2. Copy `backend/.env.example` to `backend/.env` if you need to override the
-   default connection settings (defaults work out of the box against the
-   container from step 1).
+2. Copy `backend/.env.example` to `backend/.env`. It lists every deployment,
+   model and tuning setting; the in-code defaults match it, so connection
+   settings work out of the box against the container from step 1.
 3. Run the test suite: `cd backend && $PYDEV/bin/pytest`
 
 **Isolation level:** the balance-invariant trigger relies only on
