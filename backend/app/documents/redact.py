@@ -11,6 +11,9 @@ PII_ENTITIES = (
     "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "CA_SIN", "US_SSN", "CREDIT_CARD", "IBAN_CODE", "US_BANK_NUMBER",
 )
 MIN_PII_SCORE = 0.5
+# md, not presidio's default lg: name detection (NER) is on par; lg's extra word vectors don't help it,
+# and md needs ~150 MB of RAM instead of ~800 MB next to Docling in the worker.
+SPACY_MODEL = "en_core_web_md"
 TOKEN_DIGEST_CHARS = 12
 TOKEN_PATTERN = re.compile(r"<([A-Z_]+)_([0-9a-f]{12})>")
 
@@ -68,8 +71,12 @@ class PiiDetector:
 
     def __init__(self) -> None:
         from presidio_analyzer import AnalyzerEngine
+        from presidio_analyzer.nlp_engine import NlpEngineProvider
 
-        self._engine = AnalyzerEngine()
+        nlp_engine = NlpEngineProvider(nlp_configuration={
+            "nlp_engine_name": "spacy", "models": [{"lang_code": "en", "model_name": SPACY_MODEL}],
+        }).create_engine()
+        self._engine = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
         self._add_ca_sin()
 
     def _add_ca_sin(self) -> None:

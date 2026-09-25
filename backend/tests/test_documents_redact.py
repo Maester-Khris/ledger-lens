@@ -69,3 +69,10 @@ def test_presidio_finds_name_sin_email_and_phone():
 def test_presidio_leaves_governing_law_and_dates_alone():
     text = "This Agreement shall be governed by the laws of the Province of Ontario, effective January 1, 2026."
     assert PiiDetector().detect(text) == []
+
+
+@pytest.mark.slow
+def test_detector_loads_the_medium_spacy_model():
+    # md, not presidio's default lg: same NER accuracy for names, ~5x less RAM next to Docling in the worker
+    nlp = PiiDetector()._engine.nlp_engine.nlp["en"]
+    assert nlp.meta["name"] == "core_web_md"
