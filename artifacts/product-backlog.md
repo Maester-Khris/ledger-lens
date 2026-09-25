@@ -70,7 +70,13 @@ reproducible GL-ready export. 135 tests plus a live concurrency proof (0 duplica
 Frontend: static screens redesigned to the MVP scope and routed with react-router
 (PR #3); Vercel is fixed (single `ledger-lens` project, root `frontend/`, SPA rewrite).
 
-▶ **Next: Document Intelligence MVP** (below), **re-scoped 2026-09-23** to contracts
+✅ **Document Intelligence MVP built and verified live (2026-09-24)** on `feat/doc-intelligence`:
+every "Build before Thursday" item below plus the stretch, 268 tests, a live run against the real
+OpenAI and Pinecone (golden set: numbers 1.0, refusals 0.875, citations 0.875; the Tremblay
+leakage answer returns $400.00 from deterministic code), and an end-to-end UI test in Chrome.
+Details: README "Live run results". Issues found in that run are deferred below.
+
+**Document Intelligence MVP** (below), **re-scoped 2026-09-23** to contracts
 (investment advisory / fee agreements from SEC EDGAR) on a local-first pipeline:
 Docling → Presidio → structured extraction → hybrid retrieval → LangGraph cited chat.
 Research and every decision behind it (D1–D19, plus deferrals with revisit triggers):
@@ -122,47 +128,48 @@ The full pipeline gets a spec. Thursday builds one thin end-to-end slice. The
 "after Thursday" items below are **specified but not built**.
 
 **Build before Thursday (thin vertical slice):**
-- [ ] **Sample set**: 3–5 investment advisory agreements with tiered fee schedules
+- [x] **Sample set**: 3–5 investment advisory agreements with tiered fee schedules
       from **SEC EDGAR** (exhibit (d) to Form N-1A / 485BPOS; public, real, no
       personal PII), plus **one synthetic individual-client agreement** to
       exercise PII detection. Digitally created documents only. Open design
       item: EDGAR exhibits are often HTML, which has no page numbers, so decide
       between rendering them to PDF (the PDF becomes canonical) and citing by
       section.
-- [ ] **Ingestion (a pipeline, not an agent — D7)**: detect format from the file's
+- [x] **Ingestion (a pipeline, not an agent — D7)**: detect format from the file's
       first bytes (not the extension); page count and text-layer check with
       `pypdf` (a scan is rejected at upload with 422, nothing stored); document type declared at
       upload (`contract`); SHA-256 content-addressed local storage; a `documents`
       metadata row (D8).
-- [ ] **Docling parse** → document structure/markdown, plus page-level confidence.
-- [ ] **Presidio** analyze + anonymize with reversible tokens (vault table,
+- [x] **Docling parse** → document structure/markdown, plus page-level confidence.
+- [x] **Presidio** analyze + anonymize with reversible tokens (vault table,
       `CA_SIN` enabled) **before** any text reaches OpenAI or Pinecone (D3).
-- [ ] **Extraction**: a Pydantic contract schema (parties, effective date, fee
+- [x] **Extraction**: a Pydantic contract schema (parties, effective date, fee
       schedule tiers/breakpoints, termination, signatories) via
       `with_structured_output`. Per-field confidence = Docling page score +
       grounding (the value appears in the cited text) + deterministic
       validators; a threshold routes each field to `accepted` or
       `needs_review`. Each extraction run is logged append-only for lineage
       (D9, D11).
-- [ ] **Chunking** on Docling's structure: sections → clauses, `page_start`/`page_end`,
+- [x] **Chunking** on Docling's structure: sections → clauses, `page_start`/`page_end`,
       heading breadcrumb in front of each chunk, parent-child (index the clause,
       send the section as context) (D12). Embed with `text-embedding-3-small` →
       Pinecone; Postgres full-text search on the same chunks.
-- [ ] **Hybrid retrieval**: Postgres full-text + Pinecone dense, merged with
+- [x] **Hybrid retrieval**: Postgres full-text + Pinecone dense, merged with
       reciprocal rank fusion and filtered to current versions from Postgres,
       which is the source of truth (D13).
-- [ ] **LangGraph chat agent** with tools `search_contracts`, `get_contract_fields`
+- [x] **LangGraph chat agent** with tools `search_contracts`, `get_contract_fields`
       (accepted fields only), and `compare_contract_to_billing` (**IDs only, never
       amounts**; the maths runs in `billing/fee_math.py`) (D14, D15). Every answer
       cites doc · page · section. Explicit "I don't know" below the relevance
       threshold. Every number in an answer must appear in cited text.
       `recursion_limit` caps the loop. Force `tool_choice` for calculable
       questions.
-- [x] **`tool_invocations` table** — built in the ledger sprint. Remaining: call
-      `governance.dao.record_invocation()` from the chat tools.
-- [ ] **Wire the existing React chat/documents screens**: a citation chip opens
-      the original at `#page=N` and highlights the quoted text (D18).
-- [ ] **5–8 manually verified golden Q&A pairs** spanning fact, calculation,
+- [x] **`tool_invocations` table** — built in the ledger sprint; every chat tool call is
+      now recorded through `governance.dao.record_invocation()` with its `turn_id`.
+- [x] **Wire the existing React chat/documents screens**: a citation chip opens
+      the original at `#page=N` and highlights the quoted text (D18). Page link built and
+      tested in the UI; highlighting the exact spot on the PDF is deferred (see Deferred below).
+- [x] **5–8 manually verified golden Q&A pairs** spanning fact, calculation,
       interpretive and mixed questions.
 
 **Stretch (only once everything above works):** `compare_contract_to_billing`
@@ -170,6 +177,7 @@ finds a gap between the contract's fee schedule and the configured `billing`
 schedule ("revenue leakage"), records a `critical` invocation, and after human
 approval posts the correction through the existing approve-to-post path
 (`ai:<invocation_id>` idempotency key). Build it last, cut it first.
+✅ **Built** (2026-09-23), verified live 2026-09-24: the $400.00 annual gap is proposed for approval.
 
 **After Thursday (specified in the spec, not built):**
 - [ ] **Observability and tracing: first item after Thursday** (added 2026-09-23). MediCoord shipped without it
@@ -191,9 +199,12 @@ approval posts the correction through the existing approve-to-post path
         local, matching the local-first decision (D2). Decide before building.
       - **Trigger:** before any traffic beyond the demo, and before the CI eval gate (per-node latency and
         retry rates are what that gate should watch besides accuracy).
-- [ ] **Document versioning** (D17): a new version is a new row (`document_key`,
+- [x] **Document versioning** (D17): a new version is a new row (`document_key`,
       `version`, `supersedes_id`); keep the records, delete derived vectors of
-      old versions; partial `GIN(tsv) WHERE is_current` index.
+      old versions; partial `GIN(tsv) WHERE is_current` index. **Built** with a
+      simpler shape: `document_versions` rows unique per `(document_id, version)` and
+      file hash, old versions' vectors deleted on re-index, and `element_search`
+      holding current versions only (so no `supersedes_id` / `is_current` needed).
 - [ ] **LLM-judge / escalation cascade** (D10): validators → grounding →
       re-extract with a stronger model, accept if both agree → human. Background
       extraction only, never on the chat path.
@@ -218,6 +229,12 @@ approval posts the correction through the existing approve-to-post path
       more than one API instance, or a need to reconnect after a refresh.
 
 **Found in the 2026-09-24 live run and end-to-end UI test, deferred to the next iteration:**
+- [ ] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
+      billing household (golden case `fund-not-comparable`), `compare_contract_to_billing`
+      returns the reason, but with no citable evidence the answer step gives the generic
+      "I can't find that in the indexed contracts". Either show the tool's reason as a fixed,
+      non-generated message, or keep the generic refusal and change the golden case to
+      `expect_refusal: true`. It's the only golden miss (refusals 0.875, citations 0.875).
 - [ ] **Chat: messages have no vertical spacing.** Consecutive question and answer
       blocks sit flush against each other in the chat container.
 - [ ] **Review path broken.** The dashboard shows 3 items to review with a link; the
