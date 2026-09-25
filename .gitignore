@@ -144,3 +144,6 @@ graphify-out/
 artifacts/*
 !artifacts/product-backlog.md
 backend/var/
+
+# playwright-cli page snapshots from UI test runs
+.playwright-cli/
