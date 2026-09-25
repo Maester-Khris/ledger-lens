@@ -40,7 +40,12 @@ fintech-prod/
 ## Current Scope
 **Done:** ledger DB core — schema/migrations (Epic 1.1), balance-invariant deferred constraint trigger (Epic 1.2), DB session factory, DAO + tests, `db_up.sh` local Postgres setup, `POST /postings` (Epic 1.3), concurrency stress test (Epic 1.4), append-only ledger enforced by triggers + revoked privileges, reversals (Epic 1.7), household fee billing on versioned schedules, AI tool-invocation governance tables, GL-ready export.
 
-**Not yet built:** Aurora deployment (Epic 1.5), README numbers (Epic 1.6), Week 2 iteration, Document Intelligence Chat (Iteration 3).
+Document Intelligence MVP on contracts (verified live 2026-09-24): ingestion pipeline (Docling, Presidio
+tokens, versioning), cited extraction with per-field routing, hybrid retrieval (Postgres full-text + Pinecone),
+LangGraph chat agent with verified citations, contract-vs-billing leakage tool with human approval, React screens wired.
+
+**Not yet built:** Aurora deployment (Epic 1.5), tracing/observability, CI eval gate, `needs_review` review UI,
+the UI/parsing issues deferred from the live run (backlog), Week 2 iteration.
 
 Full phased scope, ordering rationale, and Icebox: `artifacts/product-backlog.md`.
 Design specs and implementation plans: `docs/superpowers/specs/`, `docs/superpowers/plans/`.
@@ -85,7 +90,7 @@ $PYDEV/bin/python scripts/seed_demo.py
 $PYDEV/bin/python scripts/ingestion_worker.py
 ```
 `backend/scripts/db_up.sh` uses the same env (reads `PYDEV` from the shell or `backend/.env`).
-Prerequisite: `./backend/scripts/db_up.sh` (idempotent — Docker Postgres 16,
+Prerequisite: `./backend/scripts/db_up.sh` (idempotent — Docker Postgres 18,
 creates `ledger_dev`/`ledger_test`, runs migrations against both).
 
 ### Frontend

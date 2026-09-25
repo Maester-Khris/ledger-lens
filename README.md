@@ -1,25 +1,39 @@
 # Fintech Ledger + Document Intelligence
 
-A double-entry ledger core (idempotent postings, balance-invariant
-enforcement, compensating reversals) paired with a document-intelligence
-chat feature (OCR ingestion, retrieval-augmented Q&A with citations, and
-agentic tool-calls back into the ledger).
+A double-entry ledger core (idempotent postings, balance-invariant enforcement, compensating
+reversals, fee billing on versioned schedules) paired with a document-intelligence chat over
+investment advisory contracts: local PDF parsing and PII redaction, cited hybrid retrieval, and
+deterministic tool calls back into billing and the ledger. The model never calculates: tools take
+IDs, code does the maths, and a human approves anything that would post.
 
-Full scope and phased execution plan: [artifacts/product-backlog.md](artifacts/product-backlog.md).
-See [`CHANGELOG.md`](./CHANGELOG.md) for what's shipped so far, sprint by sprint.
+Full scope and phased plan: [artifacts/product-backlog.md](artifacts/product-backlog.md).
+What shipped, sprint by sprint: [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Status:** ledger DB core (Epic 1.1 schema/migrations + Epic 1.2 balance
-invariant enforcement) implemented, database side only — see
-[docs/superpowers/specs/2026-09-06-ledger-db-schema-design.md](docs/superpowers/specs/2026-09-06-ledger-db-schema-design.md).
-No REST API, concurrency stress test, or deployment yet.
+**Status (2026-09-24):**
+- **Ledger: done, merged to `preview`.** Schema and migrations, the balance invariant in Postgres,
+  idempotent `POST /postings`, a live concurrency proof, reversals, append-only history, household
+  fee billing on versioned schedules, AI tool-invocation governance and a GL-ready export
+  (Epics 1.1–1.4, 1.7).
+- **Document Intelligence MVP: done on `feat/doc-intelligence`, verified live** against the real
+  OpenAI and Pinecone. It covers the ingestion pipeline (Docling, Presidio tokens, versioning),
+  cited extraction with per-field routing, hybrid retrieval, a LangGraph agent whose every number
+  is checked against its citations, the contract-vs-billing leakage tool with human approval, and
+  the React screens. See [Live run results](#live-run-results-2026-09-24-real-openai--pinecone).
+- **268 automated tests.** Not built yet: Aurora deployment (Epic 1.5), tracing and
+  observability, the CI eval gate, and a review UI for `needs_review` fields. The full list is in
+  the backlog.
 
 ## Stack
 
 | Layer | Choice |
 |---|---|
-| Backend | Python 3.11+ / FastAPI |
-| Frontend | React (Vite) |
-| DB | PostgreSQL + pgvector (not wired up yet) |
+| Backend | Python 3.12 / FastAPI, SQLAlchemy 2.0, Alembic |
+| Frontend | React 19 + TypeScript (Vite) |
+| DB | PostgreSQL 18 (local Docker): `ledger_owner` migrates, `ledger_app` runs the API with `SELECT`/`INSERT` only |
+| Parsing / PII | Docling + Presidio (spaCy `en_core_web_md`), both local; only redacted text leaves the machine |
+| Search | Postgres full-text + Pinecone serverless (dense), merged with reciprocal rank fusion |
+| LLM | OpenAI `gpt-4.1-2025-04-14` via LangChain + LangGraph; embeddings `text-embedding-3-small` |
+| Config | every setting in `backend/.env`; [`backend/.env.example`](backend/.env.example) lists them all |
 
 ## Running the backend
 
@@ -71,6 +85,15 @@ front keeps ingestion predictable and able to run offline.
 Scanned PDFs (no text layer) and non-PDF files are rejected at upload with a 422.
 Multi-fund EDGAR exhibits are out of scope for now: the extraction schema models one fee schedule per contract.
 
+### Extraction
+
+The worker's `extract` stage asks the model to copy fee terms verbatim with a quote and element ids per value.
+Code converts band wording to billing tiers (`app/contracts/fee_text.py`) and routes every field:
+`accepted` only if the quote is found in the cited elements, all validators pass (including billing's own
+`validate_tiers`), and the cited pages were parsed at grade GOOD or better — otherwise `needs_review`.
+Only accepted (or human-reviewed) fields are served to the agent. The comparison tool computes the contract-vs-billing
+fee gap with `fee_math.annual_fee`; a positive gap can be proposed as a correction that a human approves before it posts.
+
 ### Chat (local run)
 
 1. Once: `$PYDEV/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
@@ -109,7 +132,7 @@ Everything above was first built against fakes (268 automated tests). With the r
 Prerequisites: Docker running locally.
 
 1. `./backend/scripts/db_up.sh` — idempotent: creates (or starts) a single
-   Postgres 16 container named `fintech-ledger-db`, creates the `ledger_dev`
+   Postgres 18 container named `fintech-ledger-db`, creates the `ledger_dev`
    and `ledger_test` databases if they don't already exist, and runs Alembic
    migrations against both. Safe to re-run any time — it only creates what's
    missing.
@@ -146,7 +169,8 @@ The API connects as `ledger_app`, which can only `SELECT` and `INSERT`.
 
 **Concurrency proof** (`pytest -m stress`, local, 4 workers, 50 concurrent clients):
 500 requests → 400 postings for 400 keys, **0 duplicates, 0 per-currency
-imbalances, 0 lost updates** on a hot account; p50 185.0 ms, p99 685.6 ms.
+imbalances, 0 lost updates** on a hot account; p50 148.9 ms, p99 670.7 ms
+([`backend/reports/concurrency.json`](backend/reports/concurrency.json)).
 
 **Out of scope for this demo:** Aurora deployment, row-level security / multiple real tenants,
 authentication, reconciliation, fee corrections, advisor compensation, event streaming.
@@ -160,12 +184,3 @@ npm run dev
 ```
 
 Opens at `http://127.0.0.1:5173`.
-
-### Extraction
-
-The worker's `extract` stage asks the model to copy fee terms verbatim with a quote and element ids per value.
-Code converts band wording to billing tiers (`app/contracts/fee_text.py`) and routes every field:
-`accepted` only if the quote is found in the cited elements, all validators pass (including billing's own
-`validate_tiers`), and the cited pages were parsed at grade GOOD or better — otherwise `needs_review`.
-Only accepted (or human-reviewed) fields are served to the agent. The comparison tool computes the contract-vs-billing
-fee gap with `fee_math.annual_fee`; a positive gap can be proposed as a correction that a human approves before it posts.
