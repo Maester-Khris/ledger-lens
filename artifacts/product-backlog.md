@@ -172,6 +172,25 @@ approval posts the correction through the existing approve-to-post path
 (`ai:<invocation_id>` idempotency key). Build it last, cut it first.
 
 **After Thursday (specified in the spec, not built):**
+- [ ] **Observability and tracing: first item after Thursday** (added 2026-09-23). MediCoord shipped without it
+      too, so it's a known gap on both projects, not a nice-to-have.
+      - **Today:** the audit tables record *what* happened. `chat_turns` holds retrieved IDs, citations,
+        outcome, tokens and latency per turn; `tool_invocations` holds every tool call; `version_events`
+        holds every ingestion stage and failure. But there's no *timeline across calls*: nothing links an
+        HTTP request to its model calls, tool calls and DB writes, and nothing alerts.
+      - **Tracing:** one trace per chat turn and per ingestion stage, with spans for route → agent → tools →
+        answer → verify, each model call (model, tokens, latency), each Pinecone/embedding call and each
+        stage run. The trace id goes into `chat_turns` and the logs, so an audit row links to its timeline.
+        This also closes backlog Epic 1.8's request-to-row correlation ID.
+      - **Metrics:** p50/p99 latency per graph node and per stage; tokens and cost per turn; refusal rate;
+        verification-retry rate; `needs_review` rate per extraction run; stage failure counts.
+      - **Structured JSON logs** with the trace id on every line.
+      - **Open choice:** LangSmith (tracing for LangGraph through environment variables alone) vs
+        OpenTelemetry + a local collector (Jaeger/Tempo). LangSmith sends prompts to a third party (ours
+        hold tokens only, not raw PII, but it's still data leaving the machine); OpenTelemetry keeps traces
+        local, matching the local-first decision (D2). Decide before building.
+      - **Trigger:** before any traffic beyond the demo, and before the CI eval gate (per-node latency and
+        retry rates are what that gate should watch besides accuracy).
 - [ ] **Document versioning** (D17): a new version is a new row (`document_key`,
       `version`, `supersedes_id`); keep the records, delete derived vectors of
       old versions; partial `GIN(tsv) WHERE is_current` index.
