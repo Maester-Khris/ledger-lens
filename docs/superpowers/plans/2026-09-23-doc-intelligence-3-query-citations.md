@@ -22,6 +22,7 @@
 - Default `pytest` makes **no network calls**: fakes are injected; real clients only in `app/assistant/runtime.py` and `scripts/ingestion_worker.py`.
 - Pin exact versions; routes thin; no DB access outside each package's `dao.py`; type hints everywhere; no new npm packages.
 - Migration numbering deviation from the spec: this plan ships `0009_retrieval_assistant` (revises `0008_documents`); Plan 2 ships `0010_contracts`. Note it in the PR summary.
+- Python: `$PYDEV` is the machine's Python env root, set in local config only (`CLAUDE.local.md`, `backend/.env`); every `$PYDEV/bin/...` command below uses it (never a repo `.venv`).
 - Commits: conventional, explicit staging, **no AI co-author lines**.
 
 ## Review Focus
@@ -80,7 +81,7 @@ langchain-openai==1.6.5
 langgraph==1.2.12
 pinecone==10.0.0
 ```
-Run `.venv/bin/pip install -r requirements.txt`.
+Run `$PYDEV/bin/pip install -r requirements.txt`.
 
 Append to `backend/app/config.py`:
 ```python
@@ -92,7 +93,7 @@ CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-4.1-2025-04-14")
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSIONS = 1536
 ```
-Before relying on the `CHAT_MODEL` default, confirm the snapshot exists for your key: `.venv/bin/python -c "from openai import OpenAI; print([m.id for m in OpenAI().models.list() if m.id.startswith('gpt-4.1-20')])"`; if not listed, set `CHAT_MODEL` in `.env` to a listed dated snapshot.
+Before relying on the `CHAT_MODEL` default, confirm the snapshot exists for your key: `$PYDEV/bin/python -c "from openai import OpenAI; print([m.id for m in OpenAI().models.list() if m.id.startswith('gpt-4.1-20')])"`; if not listed, set `CHAT_MODEL` in `.env` to a listed dated snapshot.
 
 Append to `backend/.env.example`:
 ```
@@ -135,7 +136,7 @@ def test_chat_turns_are_append_only(db_session, owner_session, tenant_id):
 
 - [ ] **Step 3: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_retrieval_schema.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_schema.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.assistant'`.
 
 - [ ] **Step 4: Migration**
@@ -277,7 +278,7 @@ class ChatTurn(Base):
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_retrieval_schema.py tests/test_migrations.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_schema.py tests/test_migrations.py -v`
 Expected: all passed.
 
 - [ ] **Step 7: Commit**
@@ -359,7 +360,7 @@ def test_retries_then_succeeds_and_then_gives_up():
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_retrieval_fusion_index.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_fusion_index.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Implement**
@@ -499,7 +500,7 @@ Pinecone 10 note: if `_request_timeout` is rejected by this SDK version, check `
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_retrieval_fusion_index.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_fusion_index.py -v`
 Expected: 5 passed.
 
 - [ ] **Step 5: Commit**
@@ -556,7 +557,7 @@ def test_recording_embeddings_are_deterministic():
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `.venv/bin/pytest tests/test_fakes.py -v`
+Run: `$PYDEV/bin/pytest tests/test_fakes.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'tests.fakes'`.
 
 - [ ] **Step 3: Implement**
@@ -628,7 +629,7 @@ class RecordingEmbeddings(DeterministicFakeEmbedding):
 
 - [ ] **Step 4: Run to verify it passes**
 
-Run: `.venv/bin/pytest tests/test_fakes.py -v`
+Run: `$PYDEV/bin/pytest tests/test_fakes.py -v`
 Expected: 2 passed. (If `embed_documents` of the base class calls `embed_query` internally, `seen` would double-count; then assert with the observed order and keep the fake — the privacy test only checks membership.)
 
 - [ ] **Step 5: Commit**
@@ -730,7 +731,7 @@ def test_superseded_version_is_marked_indexed_without_indexing(db_session, tenan
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_retrieval_index.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_index.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.retrieval.index'`.
 
 - [ ] **Step 3: DAO functions**
@@ -866,7 +867,7 @@ and inside `build_runners()` add:
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_retrieval_index.py tests/test_ingestion_pipeline.py tests/test_api_documents.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_index.py tests/test_ingestion_pipeline.py tests/test_api_documents.py -v`
 Expected: all passed. (`test_list_shows_processing_status_until_parsed` still reads `waiting for parse_redact`.)
 
 - [ ] **Step 7: Commit**
@@ -947,7 +948,7 @@ def test_query_tokenises_known_values(db_session, tenant_id):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_retrieval_search.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_search.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.retrieval.search'`.
 
 - [ ] **Step 3: Query tokenisation**
@@ -1100,7 +1101,7 @@ def search(
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_retrieval_search.py -v`
+Run: `$PYDEV/bin/pytest tests/test_retrieval_search.py -v`
 Expected: 4 passed.
 
 - [ ] **Step 7: Commit**
@@ -1156,7 +1157,7 @@ def test_refusal_needs_no_citation():
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_assistant_citations.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_citations.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Implement**
@@ -1197,7 +1198,7 @@ def verify_answer(text: str, cited_ids: Sequence[str], sources: Mapping[str, str
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_assistant_citations.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_citations.py -v`
 Expected: 5 passed.
 
 - [ ] **Step 5: Commit**
@@ -1339,7 +1340,7 @@ def test_calculation_question_forces_the_tool_when_registered(db_session, tenant
 
 - [ ] **Step 3: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_assistant_graph.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_graph.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.assistant.tools'`.
 
 - [ ] **Step 4: Implement the tools**
@@ -1594,7 +1595,7 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_assistant_graph.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_graph.py -v`
 Expected: 4 passed.
 
 - [ ] **Step 7: Commit**
@@ -1727,7 +1728,7 @@ def test_disconnect_records_cancelled(session_factory, db_session, tenant_id):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_api_chat.py -v`
+Run: `$PYDEV/bin/pytest tests/test_api_chat.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.assistant.service'`.
 
 - [ ] **Step 3: DAO**
@@ -1949,7 +1950,7 @@ In `backend/app/main.py` import `chat` from `app.routes` and add `app.include_ro
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_api_chat.py -v`
+Run: `$PYDEV/bin/pytest tests/test_api_chat.py -v`
 Expected: 4 passed. Also clear overrides between tests: if the existing `client` fixture doesn't `app.dependency_overrides.clear()` on teardown, add that to its `finally` block in `tests/conftest.py`.
 
 - [ ] **Step 7: Commit**
@@ -2029,7 +2030,7 @@ def test_no_raw_pii_reaches_embeddings_or_the_model(session_factory, db_session,
 
 - [ ] **Step 2: Run it**
 
-Run: `.venv/bin/pytest tests/test_privacy_end_to_end.py -v`
+Run: `$PYDEV/bin/pytest tests/test_privacy_end_to_end.py -v`
 Expected: PASS. Also check the audit table holds no raw name:
 `psql -c "select input from tool_invocations where session_id = 'privacy'"` on `ledger_test` shows a `<PERSON_…>` token in `query`.
 
@@ -2529,7 +2530,7 @@ git commit -m "feat(frontend): wire documents and chat screens to the ingestion 
 
 `backend/scripts/create_pinecone_index.py`:
 ```python
-"""Create the Pinecone serverless index once. Run from backend/: .venv/bin/python scripts/create_pinecone_index.py"""
+"""Create the Pinecone serverless index once. Run from backend/: $PYDEV/bin/python scripts/create_pinecone_index.py"""
 import sys
 from pathlib import Path
 
@@ -2581,7 +2582,7 @@ if __name__ == "__main__":
 `backend/tests/eval/test_golden.py`:
 ```python
 """Manual golden-set run against real OpenAI + Pinecone on ledger_dev (samples ingested).
-Run: .venv/bin/pytest -m eval tests/eval -s"""
+Run: $PYDEV/bin/pytest -m eval tests/eval -s"""
 import asyncio
 import hashlib
 import json
@@ -2646,9 +2647,9 @@ Append to the "Document ingestion (local run)" section of `README.md`:
 ````markdown
 ### Chat (local run)
 
-1. Once: `.venv/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
+1. Once: `$PYDEV/bin/python scripts/create_pinecone_index.py` (1536-dim cosine serverless index).
 2. With API + worker running and samples ingested, `cd frontend && npm run dev`, open `/chat`.
-3. Golden set (real OpenAI + Pinecone, costs cents): `.venv/bin/pytest -m eval tests/eval -s` → `backend/reports/eval-<config>.json`.
+3. Golden set (real OpenAI + Pinecone, costs cents): `$PYDEV/bin/pytest -m eval tests/eval -s` → `backend/reports/eval-<config>.json`.
    Use it to calibrate `MIN_DENSE_SIMILARITY` in `app/retrieval/search.py`: the lowest score among correct dense-only hits,
    minus a margin, and above the best score for `not-in-corpus`.
 
@@ -2659,15 +2660,15 @@ worker + Postgres checkpointer + `LISTEN/NOTIFY` + reconnect from a cursor — i
 - [ ] **Step 5: Live run**
 
 ```bash
-.venv/bin/python scripts/create_pinecone_index.py
+$PYDEV/bin/python scripts/create_pinecone_index.py
 # restart the worker so it picks up the index stage; existing versions get indexed on the next poll
-.venv/bin/pytest -m eval tests/eval -s
+$PYDEV/bin/pytest -m eval tests/eval -s
 ```
 Expected: a report file; `refusal_ok` for `not-in-corpus` true. Record the metrics in the PR summary as-is.
 
 - [ ] **Step 6: Full suite and commit**
 
-Run: `.venv/bin/pytest` → all pass (no network).
+Run: `$PYDEV/bin/pytest` → all pass (no network).
 ```bash
 git add scripts/create_pinecone_index.py tests/eval ../README.md
 git commit -m "feat(eval): add Pinecone index setup and the golden-set evaluation harness"

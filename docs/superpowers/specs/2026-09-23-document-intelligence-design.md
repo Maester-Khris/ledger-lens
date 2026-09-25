@@ -130,7 +130,7 @@ worker; more workers are safe because of the advisory lock, add when volume need
 | `extract` | contracts | §6 → `extraction_runs` + `extracted_fields` + `extracted` |
 
 Search indexing runs before extraction, and the two are independent.
-Models (Docling ≈ 1 GB, spaCy `en_core_web_lg` ≈ 800 MB) load once per worker process.
+Models (Docling ≈ 1 GB, spaCy `en_core_web_md` ≈ 150 MB; chosen over `lg` on 2026-09-23 — same NER accuracy, far less RAM) load once per worker process.
 
 ### 5.3 Failures
 | Failure | Behaviour |
@@ -212,12 +212,13 @@ route ──► agent ⇄ tools ──► answer ──► verify ──ok──
                                          └─fail─► answer (1 retry) ──fail──► refuse
 ```
 - `route`: a deterministic keyword check for calculation questions → forced `tool_choice` =
-  `compare_contract_to_billing`.
+  `list_documents`, then `compare_contract_to_billing` (the tool takes a `document_id` the model must look up first;
+  forcing the calculation on step one made the model invent ids in the 2026-09-24 live eval).
 - `tools`: `list_documents` · `search_contracts` · `get_contract_fields` · `compare_contract_to_billing`. Every call is
   logged through `governance.record_invocation()` with `turn_id`. The evidence each call returns is added to the turn
   state.
 - `answer`: structured output `Answer{text, citations: [element_id | invocation_id], refused}`.
-- Limits: `recursion_limit=8`; the whole turn runs under `asyncio.timeout(60)` → refusal + `timed_out`. 30 s per model
+- Limits: `recursion_limit=12` (route + two tool rounds + both answer attempts; 10 left no room for the retry); the whole turn runs under `asyncio.timeout(60)` → refusal + `timed_out`. 30 s per model
   call.
 - Memory: the last `HISTORY_TURNS` turns of the session, from `chat_turns`.
 
@@ -262,7 +263,7 @@ package), and citation chips → the PDF at a page plus the quote highlighted in
   `langchain-core`, `langgraph`, `pinecone`, `cryptography`, all pinned to exact versions.
   `sse-starlette` only if FastAPI's `StreamingResponse` proves insufficient.
 - One-time model downloads are documented in the README (`docling-tools models download`,
-  `python -m spacy download en_core_web_lg`).
+  `python -m spacy download en_core_web_md`).
 - `.env.example`: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `DOCUMENT_STORE_DIR`, `PII_HMAC_KEY`,
   `PII_VAULT_KEY`, `CHAT_MODEL`, `EXTRACTION_MODEL`.
 - `CLAUDE.md` stack table updated in the same sprint: Textract → Docling + Presidio; pgvector → Pinecone + Postgres

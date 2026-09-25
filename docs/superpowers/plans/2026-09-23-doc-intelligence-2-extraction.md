@@ -22,6 +22,7 @@
 - Deviation from the spec (§6.5): the tool takes `(document_id, as_of?)`, not `(document_id, household_id, as_of)`. The household comes from `documents.household_id` (set at upload, Plan 1), because the model can't find a household id without seeing household names (PII). Note it in the PR summary.
 - Extraction timeout 60 s, `max_retries=3`, `temperature=0`; one schema-repair retry, then a `failed` event.
 - Migration numbering deviation: this plan ships `0010_contracts` (revises `0009_retrieval_assistant`), because Plan 3 is built first. Note it in the PR summary.
+- Python: `$PYDEV` is the machine's Python env root, set in local config only (`CLAUDE.local.md`, `backend/.env`); every `$PYDEV/bin/...` command below uses it (never a repo `.venv`).
 - Default `pytest` makes no network calls. Conventional commits, explicit staging, **no AI co-author lines**. Run commands from `backend/`.
 
 ## Review Focus
@@ -135,7 +136,7 @@ def test_malformed_schedules(bands, message):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_contracts_fee_text.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_fee_text.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Implement**
@@ -227,7 +228,7 @@ def tiers_from_bands(bands: Sequence[FeeBand]) -> tuple[Tier, ...]:
 
 - [ ] **Step 4: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_contracts_fee_text.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_fee_text.py -v`
 Expected: all passed.
 
 - [ ] **Step 5: Commit**
@@ -358,7 +359,7 @@ def test_missing_required_field_is_reviewed():
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_contracts_fields.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_fields.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Types and schema**
@@ -593,7 +594,7 @@ def evaluate_terms(terms: ContractTerms, elements: Mapping[str, ElementRef], pag
 
 - [ ] **Step 5: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_contracts_fields.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_fields.py -v`
 Expected: 7 passed.
 
 - [ ] **Step 6: Commit**
@@ -682,7 +683,7 @@ def test_never_extracted_is_none(db_session, tenant_id):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_contracts_dao.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_dao.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Migration**
@@ -927,7 +928,7 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
 
 - [ ] **Step 5: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_contracts_dao.py tests/test_migrations.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_dao.py tests/test_migrations.py -v`
 Expected: all passed.
 
 - [ ] **Step 6: Commit**
@@ -1025,7 +1026,7 @@ def test_two_schema_failures_raise(db_session, tenant_id):
 
 - [ ] **Step 3: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_contracts_extract.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_extract.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 4: Implement**
@@ -1147,7 +1148,7 @@ Add `EXTRACTION_MODEL=gpt-4.1-2025-04-14` to `backend/.env.example`.
 
 - [ ] **Step 5: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_contracts_extract.py tests/test_ingestion_pipeline.py tests/test_api_documents.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_extract.py tests/test_ingestion_pipeline.py tests/test_api_documents.py -v`
 Expected: all passed.
 
 - [ ] **Step 6: Commit**
@@ -1257,7 +1258,7 @@ def test_unlinked_contract_is_not_comparable(db_session, tenant_id):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_contracts_compare.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_compare.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'app.contracts.compare'`.
 
 - [ ] **Step 3: Public billing reads**
@@ -1410,7 +1411,7 @@ def comparison_to_json(c: Comparison) -> dict:
 
 - [ ] **Step 5: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_contracts_compare.py tests/test_fee_runs.py -v`
+Run: `$PYDEV/bin/pytest tests/test_contracts_compare.py tests/test_fee_runs.py -v`
 Expected: all passed.
 
 - [ ] **Step 6: Commit**
@@ -1496,7 +1497,7 @@ def test_fields_tool_serves_only_validated_fields(db_session, tenant_id):
 
 - [ ] **Step 2: Run to verify they fail**
 
-Run: `.venv/bin/pytest tests/test_assistant_contract_tools.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_contract_tools.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
 - [ ] **Step 3: Extend `ToolOutcome` and `execute`**
@@ -1624,7 +1625,7 @@ Append to `backend/app/assistant/prompts/agent_v1.md`:
 
 - [ ] **Step 6: Run to verify they pass**
 
-Run: `.venv/bin/pytest tests/test_assistant_contract_tools.py tests/test_assistant_graph.py tests/test_api_chat.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_contract_tools.py tests/test_assistant_graph.py tests/test_api_chat.py -v`
 Expected: all passed. `test_calculation_question_forces_the_tool_when_registered` now has a real tool to force in production.
 
 - [ ] **Step 7: Commit**
@@ -1665,7 +1666,7 @@ def test_positive_gap_is_proposed_for_approval_and_posts_once(db_session, tenant
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `.venv/bin/pytest tests/test_assistant_contract_tools.py::test_positive_gap_is_proposed_for_approval_and_posts_once -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_contract_tools.py::test_positive_gap_is_proposed_for_approval_and_posts_once -v`
 Expected: FAIL (`approval_required` is False).
 
 - [ ] **Step 3: Implement**
@@ -1679,7 +1680,7 @@ In `_compare` in `backend/app/assistant/contract_tools.py` (add `from app.ledger
 ```
 - [ ] **Step 4: Run to verify it passes**
 
-Run: `.venv/bin/pytest tests/test_assistant_contract_tools.py -v`
+Run: `$PYDEV/bin/pytest tests/test_assistant_contract_tools.py -v`
 Expected: all passed. The existing `POST /tool-invocations/{id}/decision` endpoint and the Ledger screen now show the proposal.
 
 - [ ] **Step 5: Commit**
@@ -1729,7 +1730,7 @@ Append to the `golden.json` array:
 `backend/tests/eval/test_extraction.py`:
 ```python
 """Field accuracy of the served terms on ledger_dev (samples ingested and extracted by the worker).
-Run: .venv/bin/pytest -m eval tests/eval/test_extraction.py -s"""
+Run: $PYDEV/bin/pytest -m eval tests/eval/test_extraction.py -s"""
 import json
 from decimal import Decimal
 from pathlib import Path
@@ -1769,7 +1770,7 @@ def test_extraction_field_accuracy():
 
 Restart the worker (it now runs `extract`), wait for every sample's events to include `extracted`, then:
 ```bash
-.venv/bin/pytest -m eval tests/eval -s
+$PYDEV/bin/pytest -m eval tests/eval -s
 ```
 Expected: two reports printed. Record served-field accuracy, `needs_review` counts and the golden metrics as-is in the PR summary. The `leakage` case should answer with `400.00` CAD, citing the tool invocation and the Schedule A clause.
 
