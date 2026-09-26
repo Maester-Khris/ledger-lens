@@ -111,3 +111,170 @@ export async function streamChat(sessionId: string, message: string, onEvent: (e
 export function fileUrl(citation: Citation): string | undefined {
   return citation.file_url ? `${API_BASE}${citation.file_url}` : undefined;
 }
+
+export type PostingSourceDto = 'api' | 'fee_run' | 'ai_tool' | 'stress_test';
+
+export interface EntryDto {
+  id: string;
+  account_id: string;
+  account_name: string;
+  currency: string;
+  direction: 'debit' | 'credit';
+  amount: number;
+}
+
+export interface PostingDto {
+  id: string;
+  idempotency_key: string;
+  description: string | null;
+  effective_at: string;
+  created_at: string;
+  source: PostingSourceDto;
+  reverses_posting_id: string | null;
+  reversed_by_posting_id: string | null;
+  entries: EntryDto[];
+}
+
+export interface PostingPage {
+  items: PostingDto[];
+  next_cursor: string | null;
+}
+
+export interface ProposedEntryDto {
+  account_id: string;
+  account_name: string;
+  currency: string;
+  direction: 'debit' | 'credit';
+  amount: number;
+}
+
+export interface ToolDecisionDto {
+  invocation_id: string;
+  decision: 'approved' | 'rejected';
+  decided_by: string;
+  reason: string | null;
+  decided_at: string;
+  posting_id: string | null;
+}
+
+export interface ToolInvocationDto {
+  id: string;
+  session_id: string;
+  created_at: string;
+  tool_name: string;
+  tool_version: string;
+  model_provider: string;
+  model_id: string;
+  prompt_version: string;
+  temperature: string;
+  input: Record<string, unknown>;
+  result_amount_minor: number | null;
+  result_currency: string | null;
+  citation: Record<string, unknown> | null;
+  proposed_entries: ProposedEntryDto[] | null;
+  approval_required: boolean;
+  decision: ToolDecisionDto | null;
+}
+
+export type ReviewDecision = 'confirmed' | 'corrected' | 'rejected';
+
+export interface ReviewItemDto {
+  run_id: string;
+  field_path: string;
+  value: unknown;
+  quote: string;
+  grounded: boolean;
+  validator_errors: string[];
+  page_grade: string;
+  document_id: string;
+  document_title: string;
+  version: number;
+  page: number | null;
+}
+
+export interface ReviewSubmission {
+  run_id: string;
+  field_path: string;
+  decision: ReviewDecision;
+  corrected_value: unknown;
+  reason: string | null;
+}
+
+export interface ListPostingsOptions {
+  source?: PostingSourceDto;
+  includeStress?: boolean;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ListInvocationsOptions {
+  pending?: boolean;
+  postingId?: string;
+  limit?: number;
+}
+
+function withQuery(path: string, params: Record<string, string | number | boolean | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (value !== undefined) search.set(key, String(value));
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+function postJson(url: string, body: unknown, headers: Record<string, string> = {}): Promise<Response> {
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) });
+}
+
+export function listPostings(options: ListPostingsOptions = {}): Promise<PostingPage> {
+  const url = withQuery(`${API_BASE}/postings`, {
+    source: options.source,
+    include_stress: options.includeStress,
+    limit: options.limit,
+    cursor: options.cursor,
+  });
+  return fetch(url).then((r) => json<PostingPage>(r));
+}
+
+// The key is derived from the posting, so a double click or a retry replays the same reversal.
+export function reversePosting(postingId: string): Promise<PostingDto> {
+  return postJson(`${API_BASE}/postings/${postingId}/reversal`, {}, { 'Idempotency-Key': `reverse:${postingId}` }).then((r) =>
+    json<PostingDto>(r),
+  );
+}
+
+export function listToolInvocations(options: ListInvocationsOptions = {}): Promise<ToolInvocationDto[]> {
+  const url = withQuery(`${API_BASE}/tool-invocations`, {
+    pending: options.pending,
+    posting_id: options.postingId,
+    limit: options.limit,
+  });
+  return fetch(url).then((r) => json<ToolInvocationDto[]>(r));
+}
+
+export function decideToolInvocation(
+  invocationId: string,
+  decision: 'approved' | 'rejected',
+  reason?: string,
+): Promise<ToolDecisionDto> {
+  return postJson(`${API_BASE}/tool-invocations/${invocationId}/decision`, { decision, reason: reason ?? null }).then((r) =>
+    json<ToolDecisionDto>(r),
+  );
+}
+
+export function listReviews(): Promise<ReviewItemDto[]> {
+  return fetch(`${API_BASE}/reviews`).then((r) => json<ReviewItemDto[]>(r));
+}
+
+export function submitReview(input: ReviewSubmission): Promise<void> {
+  return postJson(`${API_BASE}/reviews`, input).then((r) => json<unknown>(r)).then(() => undefined);
+}
+
+export function checkHealth(): Promise<boolean> {
+  return fetch(`${API_BASE}/health`)
+    .then((r) => r.ok)
+    .catch(() => false);
+}
+
+export function documentPageUrl(documentId: string, version: number, page: number | null): string {
+  const url = `${API_BASE}/documents/${documentId}/versions/${version}/file`;
+  return page === null ? url : `${url}#page=${page}`;
+}
