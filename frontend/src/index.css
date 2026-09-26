@@ -3,6 +3,9 @@
   --color-on-accent: #ffffff;
   --color-bg-hover: #fafafa;
   --color-bg-muted: #f4f4f5;
+  --color-shadow: rgba(15, 20, 35, 0.08);
+  --z-sticky: 10;
+  --z-sheet: 20;
   /* Colors — near-monochrome base + one blue accent + semantic state colors */
   --color-bg: #ffffff;
   --color-bg-subtle: #f6f8fb;

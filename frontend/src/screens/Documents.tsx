@@ -1,6 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-
-const DocumentViewer = lazy(() => import('../components/DocumentViewer'));
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   type DocumentDetail,
@@ -14,6 +12,7 @@ import {
 } from '../api';
 import { CheckIcon, UploadIcon } from '../components/Icons';
 import { CopyButton } from '../components/CopyButton';
+import { DocumentViewer } from '../components/DocumentViewer';
 import { StatusPill } from '../components/StatusPill';
 import { type PipelineStep, pipelineSteps } from '../lib/documents';
 import { selectableRow } from '../lib/rowSelect';
@@ -110,8 +109,17 @@ export function Documents() {
   const [detail, setDetail] = useState<DocumentDetail | undefined>();
   const [invocations, setInvocations] = useState<ToolInvocationDto[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [viewingPage, setViewingPage] = useState<number | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!viewerOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setViewerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewerOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -284,17 +292,13 @@ export function Documents() {
               <div className="documents__detail-id mono">
                 {current.id} <CopyButton value={current.id} />
               </div>
+              <button type="button" className="btn btn-primary documents__view-btn" onClick={() => setViewerOpen(true)}>
+                View document
+              </button>
 
               <dl className="documents__meta">
                 <dt>Pages</dt>
-                <dd className="mono">
-                  {current.page_count}
-                  {current.status === 'ready' && (
-                    <button type="button" className="btn documents__view-btn" onClick={() => setViewingPage(1)}>
-                      View
-                    </button>
-                  )}
-                </dd>
+                <dd className="mono">{current.page_count}</dd>
                 <dt>Chunks</dt>
                 <dd className="mono">{current.element_count || '—'}</dd>
                 <dt>Uploaded</dt>
@@ -353,15 +357,17 @@ export function Documents() {
           )}
         </div>
       </div>
-      {viewingPage !== null && current && (
-        <Suspense fallback={<div className="viewer-overlay"><div className="viewer documents__empty">Loading viewer...</div></div>}>
-          <DocumentViewer
-            documentId={current.id}
-            version={current.version}
-            pageCount={current.page_count}
-            onClose={() => setViewingPage(null)}
-          />
-        </Suspense>
+      {viewerOpen && current && (
+        <div className="viewer-sheet" role="dialog" aria-modal="false" aria-label={`${current.title} viewer`}>
+          <Suspense fallback={<p className="viewer-sheet__loading">Loading viewer…</p>}>
+            <DocumentViewer
+              documentId={current.id}
+              version={current.version}
+              title={current.title}
+              onClose={() => setViewerOpen(false)}
+            />
+          </Suspense>
+        </div>
       )}
     </div>
   );

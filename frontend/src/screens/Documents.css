@@ -405,13 +405,47 @@
 }
 
 .documents__view-btn {
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  cursor: pointer;
-  margin-left: 0.5rem;
-  vertical-align: middle;
+  margin: var(--space-2) 0;
+  width: 100%;
+}
+
+.viewer-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(760px, 100vw);
+  z-index: var(--z-sheet);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -4px 0 8px var(--color-shadow);
+  background: var(--color-bg-subtle);
+}
+
+.viewer-sheet__loading {
+  padding: var(--space-3);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viewer-sheet {
+    animation: viewer-sheet-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes viewer-sheet-in {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .viewer-sheet {
+    bottom: 64px;
+  }
 }
