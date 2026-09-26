@@ -224,3 +224,8 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
 def find_document(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> Document | None:
     document = session.get(Document, document_id)
     return document if document is not None and document.tenant_id == tenant_id else None
+
+def first_page(session: Session, element_ids: Sequence[uuid.UUID]) -> int | None:
+    if not element_ids:
+        return None
+    return session.scalar(select(func.min(DocumentElement.page_start)).where(DocumentElement.id.in_(element_ids)))
