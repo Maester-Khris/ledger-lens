@@ -71,7 +71,7 @@
   align-items: center;
   gap: 6px;
   border: 1px solid var(--color-border);
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: var(--radius-pill);
   padding: 6px 12px;
   font-size: 13px;
@@ -316,7 +316,7 @@
   height: 16px;
   border-radius: 50%;
   background: var(--color-success);
-  color: #ffffff;
+  color: var(--color-on-accent);
   flex-shrink: 0;
 }
 

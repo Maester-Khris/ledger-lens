@@ -1,5 +1,8 @@
 :root {
-  --color-surface: #ffffff;
+    --color-surface: #ffffff;
+  --color-on-accent: #ffffff;
+  --color-bg-hover: #fafafa;
+  --color-bg-muted: #f4f4f5;
   /* Colors — near-monochrome base + one blue accent + semantic state colors */
   --color-bg: #ffffff;
   --color-bg-subtle: #f6f8fb;
@@ -131,7 +134,7 @@ a:hover {
 
 .btn-primary {
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 .btn-primary:hover {
@@ -139,7 +142,7 @@ a:hover {
 }
 
 .btn-secondary {
-  background: #ffffff;
+  background: var(--color-surface);
   color: var(--color-text-primary);
   border-color: var(--color-border);
 }
@@ -184,21 +187,13 @@ a:hover {
 }
 
 .data-table tbody tr:hover {
-  background: #fafafa;
+  background: var(--color-bg-hover);
 }
 
 .data-table .num {
   font-family: var(--font-mono);
   text-align: right;
   white-space: nowrap;
-}
-
-.data-table .flagged {
-  border-left: 3px solid var(--color-warning);
-}
-
-.data-table .flagged td:first-child {
-  padding-left: calc(var(--space-2) - 3px);
 }
 
 .scroll-x {
@@ -250,4 +245,13 @@ a:hover {
   margin-top: var(--space-2);
   font-size: 13px;
   font-weight: 500;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+tr[tabindex]:focus-visible {
+  outline-offset: -2px;
 }

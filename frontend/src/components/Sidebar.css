@@ -84,7 +84,7 @@
 .sidebar__nav-item--active,
 .sidebar__nav-item--active:hover {
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 .sidebar__nav-label {
@@ -153,4 +153,12 @@
     padding: 6px 8px;
     text-align: center;
   }
+}
+
+.sidebar__status-dot--checking {
+  background: var(--color-text-secondary-dark);
+}
+
+.sidebar__status-dot--unreachable {
+  background: var(--color-error);
 }

@@ -1,6 +1,6 @@
 /* Tool-call card — visually distinct from a retrieval answer */
 .tool-card {
-  background: #ffffff;
+  background: var(--color-surface);
   border: 1px solid rgba(59, 130, 246, 0.35);
   border-radius: var(--radius-card);
   overflow: hidden;

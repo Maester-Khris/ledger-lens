@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { type ApiHealth, useApiHealth } from '../lib/useApiHealth';
 import { ChatIcon, CheckIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
 import './Sidebar.css';
 
@@ -16,7 +17,14 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/ledger', label: 'Ledger', icon: LedgerIcon },
 ];
 
+const HEALTH_LABEL: Record<ApiHealth, string> = {
+  checking: 'Checking API…',
+  connected: 'API connected',
+  unreachable: 'API unreachable',
+};
+
 export function Sidebar() {
+  const health = useApiHealth();
   return (
     <nav className="sidebar">
       <div className="sidebar__brand">
@@ -48,8 +56,8 @@ export function Sidebar() {
 
       <div className="sidebar__footer">
         <div className="sidebar__footer-name">Demo workspace</div>
-        <div className="sidebar__footer-role mono">
-          <span className="sidebar__status-dot" aria-hidden="true" /> API connected
+        <div className="sidebar__footer-role mono" role="status">
+          <span className={`sidebar__status-dot sidebar__status-dot--${health}`} aria-hidden="true" /> {HEALTH_LABEL[health]}
         </div>
       </div>
     </nav>

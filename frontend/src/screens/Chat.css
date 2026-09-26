@@ -81,7 +81,7 @@
 
 .chat__prompt-chip {
   border: 1px solid var(--color-border);
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: var(--radius-pill);
   padding: 6px 12px;
   font-size: 12px;
@@ -106,7 +106,7 @@
 
 .chat__bubble--user {
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-on-accent);
   padding: 10px 14px;
   border-radius: var(--radius-card);
   border-bottom-right-radius: 2px;
@@ -129,7 +129,7 @@
 .chat__tag {
   font-size: 10px;
   color: var(--color-text-secondary);
-  background: #f4f4f5;
+  background: var(--color-bg-muted);
   padding: 2px 8px;
   border-radius: var(--radius-pill);
 }
@@ -172,7 +172,7 @@
 }
 
 .citation-card {
-  background: #ffffff;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   padding: 12px var(--space-2);
@@ -223,7 +223,7 @@
 .chat__composer {
   border-top: 1px solid var(--color-border);
   padding: 12px var(--space-3);
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .chat__composer-inner {
@@ -262,7 +262,7 @@
   border-radius: 6px;
   border: none;
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-on-accent);
   flex-shrink: 0;
 }
 
