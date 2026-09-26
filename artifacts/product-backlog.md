@@ -233,14 +233,14 @@ approval posts the correction through the existing approve-to-post path
 The Thursday screen has passed. `preview` is not promoted to `main` until the release can publish
 the final demo version with the SEC documents. Priorities for the next sprint:
 
-- [ ] **Human review loop is broken.** The dashboard's "3 to review" link lands on an all-green page
+- [x] **Human review loop is broken.** The dashboard's "3 to review" link lands on an all-green page
       (see "Review path broken" below); `needs_review` fields can't reach a human. Fix the path end to
       end: dashboard → the fields awaiting review → decision logged append-only.
 - [ ] **Instrumentation and tracing is key.** Stack settled: **Langfuse** (self-hosted; Langfuse Cloud as
       the demo fallback, since traces hold tokens only). Reasoning in
       `artifacts/research/2026-09-24-tracing-stack.md`; scope in the "Observability and tracing" item above.
-- [ ] **UI issues:** chat spacing, markdown rendering, and a general UI pass (items below).
-- [ ] **Landing page copy:** replace the tax-slip / Form 941 demo with the fee-contract product (item below).
+- [x] **UI issues:** chat spacing, markdown rendering, and a general UI pass (items below).
+- [x] **Landing page copy:** replace the tax-slip / Form 941 demo with the fee-contract product (item below).
 - [ ] **End-to-end test: citation click → PDF section.** Today a chip opens the right page (checked by
       hand with Playwright on 2026-09-24). Target: the cited section is visible and the quote highlighted
       (D18), covered by an automated Playwright test kept in the repo.
@@ -269,15 +269,15 @@ the final demo version with the SEC documents. Priorities for the next sprint:
       "I can't find that in the indexed contracts". Either show the tool's reason as a fixed,
       non-generated message, or keep the generic refusal and change the golden case to
       `expect_refusal: true`. It's the only golden miss (refusals 0.875, citations 0.875).
-- [ ] **Chat: messages have no vertical spacing.** Consecutive question and answer
+- [x] **Chat: messages have no vertical spacing.** Consecutive question and answer
       blocks sit flush against each other in the chat container.
-- [ ] **Review path broken.** The dashboard shows 3 items to review with a link; the
+- [x] **Review path broken.** The dashboard shows 3 items to review with a link; the
       link opens a page where everything is green, so the items can't be reached.
-- [ ] **Markdown shows as raw text.** Answer lists render as inline dashes and
+- [x] **Markdown shows as raw text.** Answer lists render as inline dashes and
       citation quotes show tables as `|` pipes. Render markdown in both.
 - [ ] **Parser heading nesting.** A section path reads `1. Client Information › 3. Fees`
       (section 3 nested under section 1): Docling heading levels need normalising.
-- [ ] **Landing page copy.** The hero demo still describes tax slips, Form 941 and
+- [x] **Landing page copy.** The hero demo still describes tax slips, Form 941 and
       payroll journals instead of fee contracts; it's the first thing a reviewer reads.
 - [ ] **Sample title mismatch.** The document with key `nomura-tax-free-colorado-ima`
       is titled "Voyageur Mutual Funds II / Delaware Management — IMA (2025)";
