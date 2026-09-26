@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
+import { Markdown } from '../components/Markdown';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, fileUrl, streamChat } from '../api';
+import { type ChatEvent, type Citation, fileUrl, listDocuments, streamChat } from '../api';
 import './Chat.css';
 
 const SUGGESTED_QUESTIONS = [
@@ -12,11 +13,11 @@ const SUGGESTED_QUESTIONS = [
   'What is the Calamos fund’s rate in excess of $26 billion?',
 ];
 
-type AssistantHeadProps = {
+interface AssistantHeadProps {
   label: string;
   variant: 'neutral' | 'accent' | 'warning';
   detail?: string;
-};
+}
 
 function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
   return (
@@ -70,11 +71,34 @@ function newSessionId(): string {
   return `ses_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function indexedLabel(count: number | null): string {
+  if (count === null) return 'Indexed contracts';
+  return `${count} indexed contract${count === 1 ? '' : 's'}`;
+}
+
 export function Chat() {
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [indexedCount, setIndexedCount] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const busy = turns.some((t) => t.outcome === 'pending');
+
+  useEffect(() => {
+    listDocuments()
+      .then((docs) => setIndexedCount(docs.filter((d) => d.status === 'ready').length))
+      .catch(() => setIndexedCount(null));
+  }, []);
+
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    scroller?.scrollTo({ top: scroller.scrollHeight, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }, [turns]);
 
   const updateLast = (patch: Partial<Turn>) =>
     setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, ...patch } : t)));
@@ -92,6 +116,8 @@ export function Chat() {
       await streamChat(sessionId, question, onEvent);
     } catch (error) {
       updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
+    } finally {
+      inputRef.current?.focus();
     }
   };
 
@@ -104,7 +130,7 @@ export function Chat() {
             <h1 className="chat__title">Ask your contracts</h1>
             <Link to="/documents" className="chat__indexed-pill">
               <StatusPill variant="accent" dot>
-                Indexed contracts
+                {indexedLabel(indexedCount)}
               </StatusPill>
             </Link>
             <span className="chat__session mono">session {sessionId}</span>
@@ -122,14 +148,14 @@ export function Chat() {
         </button>
       </div>
 
-      <div className="chat__scroll">
+      <div className="chat__scroll" ref={scrollRef}>
         <div className="chat__thread">
           {turns.length === 0 && (
             <div className="chat__prompts">
-              <span className="chat__prompts-label mono">Suggested questions</span>
+              <span className="chat__prompts-label">Suggested questions</span>
               <div className="chat__prompt-chips">
                 {SUGGESTED_QUESTIONS.map((question) => (
-                  <button type="button" className="chat__prompt-chip" key={question} onClick={() => ask(question)}>
+                  <button type="button" className="chat__prompt-chip" key={question} onClick={() => void ask(question)}>
                     {question}
                   </button>
                 ))}
@@ -138,7 +164,7 @@ export function Chat() {
           )}
 
           {turns.map((turn, index) => (
-            <div key={index}>
+            <div className="chat__exchange" key={index}>
               <div className="chat__turn chat__turn--user">
                 <div className="chat__bubble--user">{turn.question}</div>
               </div>
@@ -147,16 +173,20 @@ export function Chat() {
                 {turn.outcome === 'answer' && (
                   <>
                     <AssistantHead label="Answer" variant="neutral" detail={`${turn.citations.length} citation(s)`} />
-                    <p className="chat__prose">{turn.text}</p>
-                    {turn.citations.map((c) => (
-                      <CitationCard key={c.id} citation={c} />
-                    ))}
+                    <Markdown className="chat__prose" text={turn.text} />
+                    {turn.citations.length > 0 && (
+                      <div className="chat__citations">
+                        {turn.citations.map((c) => (
+                          <CitationCard key={c.id} citation={c} />
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
                 {(turn.outcome === 'refused' || turn.outcome === 'error') && (
                   <>
                     <AssistantHead label={turn.outcome === 'refused' ? 'No answer' : 'Error'} variant="warning" />
-                    <p className="chat__prose">{turn.text}</p>
+                    <Markdown className="chat__prose" text={turn.text} />
                   </>
                 )}
               </div>
@@ -175,15 +205,20 @@ export function Chat() {
         >
           <div className="chat__composer-bar">
             <input
+              ref={inputRef}
               type="text"
               className="chat__composer-input"
               placeholder="Ask about your indexed contracts…"
               aria-label="Ask about your indexed contracts"
               value={inputValue}
-              disabled={busy}
               onChange={(event) => setInputValue(event.target.value)}
             />
-            <button type="submit" className="chat__composer-send" aria-label="Send message" disabled={busy}>
+            <button
+              type="submit"
+              className="chat__composer-send"
+              aria-label="Send message"
+              disabled={busy || !inputValue.trim()}
+            >
               <ArrowUpIcon size={16} />
             </button>
           </div>

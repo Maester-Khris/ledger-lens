@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   /* fixed viewport height (no flex-grow) so the thread scrolls and the composer stays pinned */
-  height: 100vh;
+  height: 100dvh;
 }
 
 .chat__header {
@@ -66,11 +66,9 @@
 }
 
 .chat__prompts-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-text-secondary);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   display: block;
   margin-bottom: 8px;
 }
@@ -136,14 +134,41 @@
   border-radius: var(--radius-pill);
 }
 
+.chat__exchange {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .chat__prose {
   font-size: 14px;
   line-height: 1.65;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-1);
+  max-width: 72ch;
 }
 
-.chat__figure {
+.chat__prose > * + * {
+  margin-top: 8px;
+}
+
+.chat__prose ul,
+.chat__prose ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.chat__prose li + li {
+  margin-top: 4px;
+}
+
+.chat__prose .markdown__heading {
   font-weight: 600;
+}
+
+.chat__citations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .citation-card {
@@ -169,15 +194,6 @@
 .citation-card__loc {
   font-size: 12px;
   color: var(--color-text-secondary);
-}
-
-.citation-card__score {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  background: #f4f4f5;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
 }
 
 .citation-card__excerpt {
@@ -364,21 +380,6 @@
   margin-left: 8px;
 }
 
-.chat__no-answer-meta {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  margin-bottom: 6px;
-}
-
-.chat__no-answer-nudge {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.chat__no-answer-nudge a {
-  font-weight: 500;
-}
-
 .chat__composer {
   border-top: 1px solid var(--color-border);
   padding: 12px var(--space-3);
@@ -429,6 +430,11 @@
   background: var(--color-accent-hover);
 }
 
+.chat__composer-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .chat__composer-foot {
   font-size: 11px;
   color: var(--color-text-secondary);
@@ -438,7 +444,7 @@
 
 @media (max-width: 860px) {
   .chat {
-    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
   }
 
   .tool-card__facts {
