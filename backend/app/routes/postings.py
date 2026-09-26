@@ -10,9 +10,11 @@ from sqlalchemy.orm import Session
 from app.deps import get_session, get_tenant_id
 from app.ledger.dao import (
     MAX_IDEMPOTENCY_KEY_LENGTH,
+    AccountLabel,
     EntryInput,
     PostingRequest,
     PostingResult,
+    account_labels,
     create_posting,
     get_posting,
     ledger_transaction,
@@ -53,6 +55,8 @@ class ReversalIn(BaseModel):
 class EntryOut(BaseModel):
     id: uuid.UUID
     account_id: uuid.UUID
+    account_name: str
+    currency: str
     direction: Direction
     amount: int
 
@@ -74,7 +78,7 @@ class PostingPage(BaseModel):
     next_cursor: str | None
 
 
-def posting_out(posting: Posting, reversed_by: uuid.UUID | None) -> PostingOut:
+def posting_out(posting: Posting, reversed_by: uuid.UUID | None, labels: dict[uuid.UUID, AccountLabel]) -> PostingOut:
     return PostingOut(
         id=posting.id,
         idempotency_key=posting.idempotency_key,
@@ -84,8 +88,16 @@ def posting_out(posting: Posting, reversed_by: uuid.UUID | None) -> PostingOut:
         source=posting.source,
         reverses_posting_id=posting.reverses_posting_id,
         reversed_by_posting_id=reversed_by,
-        entries=[EntryOut(id=e.id, account_id=e.account_id, direction=e.direction, amount=e.amount) for e in posting.entries],
+        entries=[
+            EntryOut(id=e.id, account_id=e.account_id, account_name=labels[e.account_id].name,
+                     currency=labels[e.account_id].currency, direction=e.direction, amount=e.amount)
+            for e in posting.entries
+        ],
     )
+
+
+def _labels_for(session: Session, postings: list[Posting]) -> dict[uuid.UUID, AccountLabel]:
+    return account_labels(session, (e.account_id for p in postings for e in p.entries))
 
 
 def mark_replay(response: Response, replayed: bool) -> None:
@@ -119,7 +131,7 @@ def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
 def _respond(session: Session, response: Response, result: PostingResult) -> PostingOut:
     mark_replay(response, result.replayed)
     reversed_by = reversal_ids_for(session, [result.posting.id]).get(result.posting.id)
-    return posting_out(result.posting, reversed_by)
+    return posting_out(result.posting, reversed_by, _labels_for(session, [result.posting]))
 
 
 @router.post("", status_code=201, response_model=PostingOut)
@@ -174,10 +186,12 @@ def list_postings_endpoint(
     )
     reversals = reversal_ids_for(session, [p.id for p in postings])
     next_cursor = _encode_cursor(postings[-1]) if len(postings) == limit else None
-    return PostingPage(items=[posting_out(p, reversals.get(p.id)) for p in postings], next_cursor=next_cursor)
+    labels = _labels_for(session, postings)
+    return PostingPage(items=[posting_out(p, reversals.get(p.id), labels) for p in postings], next_cursor=next_cursor)
 
 
 @router.get("/{posting_id}", response_model=PostingOut)
 def get_posting_endpoint(posting_id: uuid.UUID, session: SessionDep, tenant_id: TenantDep) -> PostingOut:
     posting = get_posting(session, tenant_id=tenant_id, posting_id=posting_id)
-    return posting_out(posting, reversal_ids_for(session, [posting.id]).get(posting.id))
+    return posting_out(posting, reversal_ids_for(session, [posting.id]).get(posting.id), _labels_for(session, [posting]))
+

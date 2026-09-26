@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import DECIDED_BY, get_session, get_tenant_id
 from app.governance.dao import decide, list_invocations
+from app.ledger.dao import account_labels
 from app.governance.models import ToolInvocation, ToolInvocationDecision
 from app.governance.types import ToolDecision
 
@@ -52,6 +53,17 @@ class InvocationOut(BaseModel):
     decision: DecisionOut | None
 
 
+
+def _labelled(session: Session, entries: list | None) -> list | None:
+    if entries is None:
+        return None
+    labels = account_labels(session, (uuid.UUID(e["account_id"]) for e in entries))
+    return [
+        e | {"account_name": labels[uuid.UUID(e["account_id"])].name, "currency": labels[uuid.UUID(e["account_id"])].currency}
+        for e in entries
+    ]
+
+
 def _decision_out(decision: ToolInvocationDecision) -> DecisionOut:
     return DecisionOut(
         invocation_id=decision.invocation_id, decision=decision.decision, decided_by=decision.decided_by,
@@ -59,7 +71,7 @@ def _decision_out(decision: ToolInvocationDecision) -> DecisionOut:
     )
 
 
-def _invocation_out(invocation: ToolInvocation, decision: ToolInvocationDecision | None) -> InvocationOut:
+def _invocation_out(session: Session, invocation: ToolInvocation, decision: ToolInvocationDecision | None) -> InvocationOut:
     return InvocationOut(
         id=invocation.id, session_id=invocation.session_id, created_at=invocation.created_at,
         tool_name=invocation.tool_name, tool_version=invocation.tool_version,
@@ -67,7 +79,7 @@ def _invocation_out(invocation: ToolInvocation, decision: ToolInvocationDecision
         prompt_version=invocation.prompt_version, temperature=invocation.temperature,
         input=invocation.input, result_amount_minor=invocation.result_amount_minor,
         result_currency=invocation.result_currency, citation=invocation.citation,
-        proposed_entries=invocation.proposed_entries, approval_required=invocation.approval_required,
+        proposed_entries=_labelled(session, invocation.proposed_entries), approval_required=invocation.approval_required,
         decision=None if decision is None else _decision_out(decision),
     )
 
@@ -81,7 +93,7 @@ def list_tool_invocations(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[InvocationOut]:
     rows = list_invocations(session, tenant_id=tenant_id, posting_id=posting_id, pending=pending, limit=limit)
-    return [_invocation_out(invocation, decision) for invocation, decision in rows]
+    return [_invocation_out(session, invocation, decision) for invocation, decision in rows]
 
 
 @router.post("/{invocation_id}/decision", status_code=201, response_model=DecisionOut)
