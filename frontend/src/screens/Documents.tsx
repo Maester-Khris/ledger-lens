@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+
+const DocumentViewer = lazy(() => import('../components/DocumentViewer'));
 import { Link } from 'react-router';
 import {
   type DocumentDetail,
@@ -108,6 +110,7 @@ export function Documents() {
   const [detail, setDetail] = useState<DocumentDetail | undefined>();
   const [invocations, setInvocations] = useState<ToolInvocationDto[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [viewingPage, setViewingPage] = useState<number | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -284,7 +287,14 @@ export function Documents() {
 
               <dl className="documents__meta">
                 <dt>Pages</dt>
-                <dd className="mono">{current.page_count}</dd>
+                <dd className="mono">
+                  {current.page_count}
+                  {current.status === 'ready' && (
+                    <button type="button" className="btn documents__view-btn" onClick={() => setViewingPage(1)}>
+                      View
+                    </button>
+                  )}
+                </dd>
                 <dt>Chunks</dt>
                 <dd className="mono">{current.element_count || '—'}</dd>
                 <dt>Uploaded</dt>
@@ -343,6 +353,16 @@ export function Documents() {
           )}
         </div>
       </div>
+      {viewingPage !== null && current && (
+        <Suspense fallback={<div className="viewer-overlay"><div className="viewer documents__empty">Loading viewer...</div></div>}>
+          <DocumentViewer
+            documentId={current.id}
+            version={current.version}
+            pageCount={current.page_count}
+            onClose={() => setViewingPage(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

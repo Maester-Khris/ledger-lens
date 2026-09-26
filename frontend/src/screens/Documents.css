@@ -403,3 +403,15 @@
     align-items: flex-start;
   }
 }
+
+.documents__view-btn {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}

@@ -1,0 +1,58 @@
+.viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.viewer {
+  background: var(--surface);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1000px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.viewer__header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+}
+
+.viewer__controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.viewer__content {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  background: var(--background);
+}
+
+.viewer__canvas {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: white;
+}
+
+.viewer__error {
+  color: var(--warning);
+  padding: 2rem;
+  text-align: center;
+}
