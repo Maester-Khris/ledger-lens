@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { type PostingSourceDto, type ToolInvocationDto, listPostings, listToolInvocations, reversePosting } from '../api';
+import { type PostingPage, type PostingSourceDto, type ToolInvocationDto, listPostings, listToolInvocations, reversePosting } from '../api';
 import { CheckIcon, LockIcon, SearchIcon } from '../components/Icons';
 import { CopyButton } from '../components/CopyButton';
 import { StatusPill, type StatusVariant } from '../components/StatusPill';
@@ -128,32 +128,38 @@ export function Ledger() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(
-    async (cursor?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const page = await listPostings({
-          source: sourceFilter === 'all' ? undefined : sourceFilter,
-          includeStress,
-          limit: PAGE_SIZE,
-          cursor,
-        });
-        const views = page.items.map(toPostingView);
-        setPostings((current) => (cursor ? [...current, ...views] : views));
-        setNextCursor(page.next_cursor);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not load postings');
-      } finally {
-        setLoading(false);
-      }
-    },
+  const fetchPage = useCallback(
+    (cursor?: string) =>
+      listPostings({ source: sourceFilter === 'all' ? undefined : sourceFilter, includeStress, limit: PAGE_SIZE, cursor }),
     [sourceFilter, includeStress],
   );
 
+  const showPage = (page: PostingPage, append: boolean) => {
+    const views = page.items.map(toPostingView);
+    setPostings((current) => (append ? [...current, ...views] : views));
+    setNextCursor(page.next_cursor);
+    setError(null);
+  };
+
+  const showError = (e: unknown) => setError(e instanceof Error ? e.message : 'Could not load postings');
+
+  // callers flag `loading` from the event that caused the fetch; the effect only sets state once data arrives
+  const load = (cursor?: string) =>
+    fetchPage(cursor)
+      .then((page) => showPage(page, cursor !== undefined))
+      .catch(showError)
+      .finally(() => setLoading(false));
+
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false; // a filter change mid-flight must not let the older response win
+    fetchPage()
+      .then((page) => !cancelled && showPage(page, false))
+      .catch((e: unknown) => !cancelled && showError(e))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchPage]);
 
   const q = query.trim().toLowerCase();
   const rows = postings.filter(
@@ -201,14 +207,20 @@ export function Ledger() {
                 key={f.id}
                 aria-pressed={sourceFilter === f.id}
                 className={`segmented__item${sourceFilter === f.id ? ' segmented__item--active' : ''}`}
-                onClick={() => setSourceFilter(f.id)}
+                onClick={() => {
+                  setLoading(true);
+                  setSourceFilter(f.id);
+                }}
               >
                 {f.label}
               </button>
             ))}
           </div>
           <label className="ledger__checkbox">
-            <input type="checkbox" checked={includeStress} onChange={(event) => setIncludeStress(event.target.checked)} />
+            <input type="checkbox" checked={includeStress} onChange={(event) => {
+                setLoading(true);
+                setIncludeStress(event.target.checked);
+              }} />
             Include stress-test postings
           </label>
           <span className="ledger__count mono">{rows.length} postings</span>
@@ -286,7 +298,10 @@ export function Ledger() {
                 {nextCursor && !loading && (
                   <>
                     {' · '}
-                    <button type="button" className="ledger__link-btn" onClick={() => void load(nextCursor)}>
+                    <button type="button" className="ledger__link-btn" onClick={() => {
+                        setLoading(true);
+                        void load(nextCursor);
+                      }}>
                       Load more
                     </button>
                   </>
