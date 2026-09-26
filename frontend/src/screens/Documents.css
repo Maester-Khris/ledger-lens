@@ -362,13 +362,6 @@
   color: var(--color-text-secondary);
 }
 
-.documents__more {
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
 .documents__used-by {
   display: flex;
   align-items: center;
