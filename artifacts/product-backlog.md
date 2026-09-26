@@ -228,6 +228,40 @@ approval posts the correction through the existing approve-to-post path
       mode, Vercel resumable streams). Trigger: turns longer than about 60 s,
       more than one API instance, or a need to reconnect after a refresh.
 
+### Next sprint — release readiness before `/promote-release` (logged 2026-09-24)
+
+The Thursday screen has passed. `preview` is not promoted to `main` until the release can publish
+the final demo version with the SEC documents. Priorities for the next sprint:
+
+- [ ] **Human review loop is broken.** The dashboard's "3 to review" link lands on an all-green page
+      (see "Review path broken" below); `needs_review` fields can't reach a human. Fix the path end to
+      end: dashboard → the fields awaiting review → decision logged append-only.
+- [ ] **Instrumentation and tracing is key.** Stack settled: **Langfuse** (self-hosted; Langfuse Cloud as
+      the demo fallback, since traces hold tokens only). Reasoning in
+      `artifacts/research/2026-09-24-tracing-stack.md`; scope in the "Observability and tracing" item above.
+- [ ] **UI issues:** chat spacing, markdown rendering, and a general UI pass (items below).
+- [ ] **Landing page copy:** replace the tax-slip / Form 941 demo with the fee-contract product (item below).
+- [ ] **End-to-end test: citation click → PDF section.** Today a chip opens the right page (checked by
+      hand with Playwright on 2026-09-24). Target: the cited section is visible and the quote highlighted
+      (D18), covered by an automated Playwright test kept in the repo.
+- [ ] **Security review: client addresses reported leaking.** Street addresses are not tokenised (known
+      gap noted in `backend/app/documents/redact.py`), so an address in a document would reach OpenAI,
+      Pinecone and future traces. Review the whole redaction boundary (entity list, score threshold,
+      chat questions, tool arguments, traces) and close the address gap. A quick regex check on
+      2026-09-24 found no street address in the current fixture or `ledger_dev` text; that is not proof,
+      so the review decides.
+
+**Public demo shape (direction agreed 2026-09-24; real deployment infra decided later):**
+- Keep ingesting and grinding **locally**. The public build exposes only the results and the
+  conversational agent; at minimum retrieval over a hosted Postgres with the SEC documents pre-ingested.
+  No public upload, so the Docling/spaCy worker is never hosted.
+- Still open: whether approvals are visible in public (the ledger is append-only, so a public approval
+  is permanent), a chat rate limit and OpenAI spend cap, and how the Vercel frontend reaches the API
+  (`VITE_API_BASE` + CORS vs a Vercel rewrite, which may buffer SSE).
+- Infra constraint from the start: **AWS, Railway (Hobby plan), Infisical** for secret management.
+  This conflicts with CLAUDE.md's locked "Aurora for the demo/deploy run"; settle it when the deployment
+  is designed. Hosted secrets (new `PII_HMAC_KEY` / `PII_VAULT_KEY`, API keys) live in Infisical, never in the repo.
+
 **Found in the 2026-09-24 live run and end-to-end UI test, deferred to the next iteration:**
 - [ ] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
       billing household (golden case `fund-not-comparable`), `compare_contract_to_billing`
