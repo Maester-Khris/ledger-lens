@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router';
-import { ChatIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
+import { ChatIcon, CheckIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
 import './Sidebar.css';
 
 type NavItem = {
@@ -10,6 +10,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
+  { to: '/review', label: 'Review', icon: CheckIcon },
   { to: '/chat', label: 'Chat', icon: ChatIcon },
   { to: '/documents', label: 'Documents', icon: DocumentsIcon },
   { to: '/ledger', label: 'Ledger', icon: LedgerIcon },

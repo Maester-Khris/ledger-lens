@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
+import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, fileUrl, listDocuments, streamChat } from '../api';
+import { type ChatEvent, type Citation, type ToolInvocationDto, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
 import './Chat.css';
 
 const SUGGESTED_QUESTIONS = [
@@ -85,6 +86,14 @@ export function Chat() {
   const [sessionId, setSessionId] = useState(newSessionId);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
+
+  const [approvals, setApprovals] = useState<ToolInvocationDto[]>([]);
+
+  const refreshApprovals = useCallback((session: string) => {
+    listToolInvocations({ limit: 50 })
+      .then((rows) => setApprovals(rows.filter((row) => row.session_id === session && row.approval_required)))
+      .catch(() => setApprovals([]));
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const busy = turns.some((t) => t.outcome === 'pending');
@@ -118,6 +127,7 @@ export function Chat() {
       updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
     } finally {
       inputRef.current?.focus();
+      refreshApprovals(sessionId);
     }
   };
 
@@ -142,6 +152,7 @@ export function Chat() {
           onClick={() => {
             setSessionId(newSessionId());
             setTurns([]);
+            setApprovals([]);
           }}
         >
           + New session
@@ -192,6 +203,14 @@ export function Chat() {
               </div>
             </div>
           ))}
+          {approvals.length > 0 && (
+            <div className="chat__approvals">
+              <span className="chat__approvals-label">Correction proposed in this session</span>
+              {approvals.map((invocation) => (
+                <ApprovalCard key={invocation.id} invocation={invocation} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

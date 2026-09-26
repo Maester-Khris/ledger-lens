@@ -1,4 +1,5 @@
 :root {
+  --color-surface: #ffffff;
   /* Colors — near-monochrome base + one blue accent + semantic state colors */
   --color-bg: #ffffff;
   --color-bg-subtle: #f6f8fb;
