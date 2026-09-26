@@ -27,6 +27,12 @@ whether the sprint is extended.
 - [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
 - [ ] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding)
 
+### Completed
+
+- [x] Dashboard: R2 tiles and corpus telemetry added → **Epic 2.1**
+- [x] Viewers: async `pdfjs-dist` viewer added, chunks extracted from the main bundle → **Epic 2.3**
+- [x] Cache: immutable headers set for original PDFs → **Epic 2.4**
+
 ### Reference
 
 - `artifacts/product-backlog.md` — "Next sprint — release readiness before `/promote-release`"
