@@ -1,148 +1,109 @@
 .dashboard {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.dashboard__topbar {
-  padding: 12px var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.dashboard__body {
-  padding: var(--space-3);
-  flex: 1;
-}
-
-.dashboard__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-  flex-wrap: wrap;
+  padding: 3rem;
+  max-width: 1200px;
 }
 
 .dashboard__title {
-  font-size: 24px;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
   font-weight: 600;
-}
-
-.dashboard__subtitle {
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  margin-top: 4px;
 }
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
-.dashboard__wide {
-  grid-column: 1 / -1;
-}
-
-.dashboard__error {
-  color: var(--color-text-primary);
-  background: var(--color-error-tint);
-  border-color: var(--color-error);
-  font-size: 14px;
-}
-
-.dashboard__loading,
-.dashboard__empty {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.queue {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.queue__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 12px 0;
-  border-top: 1px solid var(--color-border);
-}
-
-.queue__row:first-child {
-  border-top: none;
-  padding-top: 0;
-}
-
-.queue__count {
-  font-size: 22px;
-  font-weight: 600;
-  min-width: 2ch;
-  text-align: right;
-  color: var(--color-warning);
-}
-
-.queue__count--zero {
-  color: var(--color-text-secondary);
-}
-
-.queue__text {
+.tile {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
+  gap: 1rem;
+}
+.tile--warn {
+  border: 1px solid var(--warning);
 }
 
-.queue__label {
-  font-weight: 500;
+.tile__title {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
 }
 
-.queue__detail {
-  font-size: 13px;
-  color: var(--color-text-secondary);
+.tile__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
-.queue__action {
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
+.tile__stat-value {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--primary);
 }
 
-.contract-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.tile__stat-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.tile__meta {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 0.25rem;
 }
 
-.contract-list__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  font-size: 14px;
+.tile__empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  padding: 1rem 0;
 }
 
-.contract-list__title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.tile__warn-text {
+  color: var(--warning);
+  font-weight: 500;
+  margin-top: 0.25rem;
 }
 
-@media (max-width: 1080px) {
-  .dashboard__grid {
-    grid-template-columns: 1fr;
-  }
+.telemetry {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-@media (max-width: 640px) {
-  .queue__row {
-    flex-wrap: wrap;
-  }
+.telemetry__title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.telemetry__list {
+  display: grid;
+  grid-template-columns: minmax(150px, max-content) 1fr;
+  gap: 1rem 2rem;
+  font-size: 0.875rem;
+}
+
+.telemetry__list dt {
+  color: var(--text-muted);
+}
+
+.telemetry__list dd {
+  margin: 0;
+  font-family: monospace;
 }

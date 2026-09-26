@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting } from './api';
+import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig } from './api';
 
 type Call = { url: string; init?: RequestInit };
 
@@ -42,4 +42,13 @@ it('passes list filters as query parameters', async () => {
 it('surfaces the problem detail as the error message', async () => {
   respondWith({ detail: 'Tool invocation i1 has already been decided.' }, 409);
   await expect(decideToolInvocation('i1', 'approved')).rejects.toThrow('already been decided');
+});
+
+it('fetches the deployment config once and retries after a failure', async () => {
+  vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+  await expect(getConfig()).rejects.toThrow();
+  const calls = respondWith({ chat_model: 'm' });
+  await getConfig();
+  await getConfig();
+  expect(calls).toHaveLength(1);
 });

@@ -278,3 +278,48 @@ export function documentPageUrl(documentId: string, version: number, page: numbe
   const url = `${API_BASE}/documents/${documentId}/versions/${version}/file`;
   return page === null ? url : `${url}#page=${page}`;
 }
+
+export type EvalDto = {
+  config_hash: string;
+  chat_model: string;
+  cases: number;
+  numbers_ok: number;
+  refusal_ok: number;
+  citation_hit: number;
+};
+export type ConfigDto = {
+  chat_model: string;
+  extraction_model: string;
+  embedding_model: string;
+  embedding_dimensions: number;
+  parser: string;
+  pii: string;
+  vector_store: string;
+  retrieval: { search_candidates: number; min_dense_similarity: number };
+  eval_config_hash: string;
+};
+export type StatsDto = {
+  documents: { total: number; indexed: number; processing: number; failed: number; indexed_chunks: number };
+  reviews_pending: number;
+  approvals_pending: number;
+  last_ingestion_at: string | null;
+  chat: { turns_7d: number; latency_p50_ms: number | null; latency_p95_ms: number | null };
+  eval: EvalDto | null;
+  confidence_drop_rate: number | null;
+  generated_at: string;
+};
+
+export async function getStats(): Promise<StatsDto> {
+  return fetch(`${API_BASE}/stats`).then((r) => json<StatsDto>(r));
+}
+
+let cachedConfig: Promise<ConfigDto> | null = null;
+export function getConfig(): Promise<ConfigDto> {
+  if (cachedConfig === null) {
+    cachedConfig = fetch(`${API_BASE}/config`).then((r) => json<ConfigDto>(r)).catch((err) => {
+      cachedConfig = null;
+      throw err;
+    });
+  }
+  return cachedConfig;
+}

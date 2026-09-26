@@ -1,202 +1,122 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import {
-  type DocumentSummary,
-  type ReviewItemDto,
-  type ToolInvocationDto,
-  listDocuments,
-  listPostings,
-  listReviews,
-  listToolInvocations,
-} from '../api';
-import { StatusPill } from '../components/StatusPill';
-import { type PostingView, toPostingView } from '../lib/postings';
-import { formatUtc } from '../lib/time';
+import { getConfig, getStats, type ConfigDto, type StatsDto } from '../api';
+import { evalScore, formatAgo, formatMs, formatPercent } from '../lib/stats';
 import './Dashboard.css';
 
-const RECENT_POSTINGS = 5;
-const CONTRACTS_SHOWN = 6;
-
-interface DashboardData {
-  documents: DocumentSummary[];
-  reviews: ReviewItemDto[];
-  approvals: ToolInvocationDto[];
-  postings: PostingView[];
-}
-
-interface QueueRowProps {
-  count: number;
-  label: string;
-  detail: string;
-  to: string;
-  action: string;
-}
-
-function QueueRow({ count, label, detail, to, action }: QueueRowProps) {
-  return (
-    <li className="queue__row">
-      <span className={`queue__count mono${count === 0 ? ' queue__count--zero' : ''}`}>{count}</span>
-      <div className="queue__text">
-        <span className="queue__label">{label}</span>
-        <span className="queue__detail">{detail}</span>
-      </div>
-      <Link to={to} className="queue__action">
-        {action} →
-      </Link>
-    </li>
-  );
-}
-
-const DOC_STATUS: Record<DocumentSummary['status'], { variant: 'success' | 'accent' | 'warning'; label: string }> = {
-  ready: { variant: 'success', label: 'Indexed' },
-  processing: { variant: 'accent', label: 'Processing' },
-  failed: { variant: 'warning', label: 'Failed' },
-};
-
 export function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<StatsDto | null>(null);
+  const [config, setConfig] = useState<ConfigDto | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([listDocuments(), listReviews(), listToolInvocations({ pending: true }), listPostings({ limit: RECENT_POSTINGS })])
-      .then(([documents, reviews, approvals, page]) => {
-        if (!cancelled) setData({ documents, reviews, approvals, postings: page.items.map(toPostingView) });
-      })
-      .catch((e: Error) => {
-        if (!cancelled) setError(e.message);
-      });
-    return () => {
-      cancelled = true;
-    };
+    getStats().then(setStats).catch(console.error);
+    getConfig().then(setConfig).catch(console.error);
   }, []);
 
-  const failed = data?.documents.filter((d) => d.status === 'failed').length ?? 0;
-  const byStatus = (status: DocumentSummary['status']) => data?.documents.filter((d) => d.status === status).length ?? 0;
+  if (!stats || !config) {
+    return <div className="dashboard dashboard--loading">Loading...</div>;
+  }
+
+  const liveConfigMismatch = stats.eval && config.eval_config_hash !== stats.eval.config_hash;
 
   return (
     <div className="dashboard">
-      <div className="dashboard__topbar">
-        <span className="dashboard__breadcrumb">Dashboard</span>
-      </div>
+      <h1 className="dashboard__title">Operations</h1>
 
-      <div className="dashboard__body">
-        <div className="dashboard__header">
-          <div>
-            <h1 className="dashboard__title">Dashboard</h1>
-            <p className="dashboard__subtitle">What needs a person, and what the system did recently.</p>
+      <div className="dashboard__grid">
+        <div className="tile">
+          <h2 className="tile__title">Human Review</h2>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{stats.reviews_pending}</span>
+            <span className="tile__stat-label">contracts</span>
           </div>
-          <Link to="/chat" className="btn btn-primary">
-            Ask the assistant
-          </Link>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{stats.approvals_pending}</span>
+            <span className="tile__stat-label">tool calls</span>
+          </div>
         </div>
 
-        {error && (
-          <div className="panel dashboard__error" role="alert">
-            <strong>Couldn't reach the API.</strong> {error}. Start the backend with{' '}
-            <code className="mono">uvicorn app.main:app</code> and reload.
+        <div className="tile">
+          <h2 className="tile__title">Corpus</h2>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{stats.documents.indexed}</span>
+            <span className="tile__stat-label">documents</span>
           </div>
-        )}
-
-        {!error && data === null && <p className="dashboard__loading">Loading…</p>}
-
-        {data && (
-          <div className="dashboard__grid">
-            <section className="panel">
-              <div className="panel__head">
-                <h2 className="panel__title">Needs a person</h2>
-              </div>
-              <ul className="queue">
-                <QueueRow
-                  count={data.reviews.length}
-                  label="extracted fields to review"
-                  detail="Held back because the quote couldn't be grounded, a validator failed, or the page was hard to read."
-                  to="/review"
-                  action="Review fields"
-                />
-                <QueueRow
-                  count={data.approvals.length}
-                  label="fee corrections to approve"
-                  detail="Proposed by the assistant. Nothing posts to the ledger until someone approves it."
-                  to="/review#approvals"
-                  action="Review corrections"
-                />
-                <QueueRow
-                  count={failed}
-                  label="documents failed ingestion"
-                  detail="Usually a scanned PDF without a text layer."
-                  to="/documents"
-                  action="Open documents"
-                />
-              </ul>
-            </section>
-
-            <section className="panel">
-              <div className="panel__head">
-                <h2 className="panel__title">Contracts</h2>
-                <span className="panel__hint mono">
-                  {byStatus('ready')} indexed · {byStatus('processing')} processing · {failed} failed
-                </span>
-              </div>
-              {data.documents.length === 0 ? (
-                <p className="dashboard__empty">
-                  No contracts yet. <Link to="/documents">Upload one</Link> to start.
-                </p>
-              ) : (
-                <ul className="contract-list">
-                  {data.documents.slice(0, CONTRACTS_SHOWN).map((doc) => (
-                    <li key={doc.id} className="contract-list__row">
-                      <span className="contract-list__title" title={doc.title}>
-                        {doc.title}
-                      </span>
-                      <StatusPill variant={DOC_STATUS[doc.status].variant}>{DOC_STATUS[doc.status].label}</StatusPill>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <Link className="panel__footer-link" to="/documents">
-                All documents →
-              </Link>
-            </section>
-
-            <section className="panel dashboard__wide">
-              <div className="panel__head">
-                <h2 className="panel__title">Recent postings</h2>
-              </div>
-              {data.postings.length === 0 ? (
-                <p className="dashboard__empty">No postings yet. Approved corrections and fee runs will appear here.</p>
-              ) : (
-                <div className="scroll-x">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Created</th>
-                        <th>Description</th>
-                        <th>Source</th>
-                        <th style={{ textAlign: 'right' }}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.postings.map((p) => (
-                        <tr key={p.id}>
-                          <td className="mono">{formatUtc(p.createdAt)}</td>
-                          <td>
-                            <Link to={`/ledger?posting=${p.id}`}>{p.description}</Link>
-                          </td>
-                          <td className="mono">{p.source}</td>
-                          <td className="num">{p.amount}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <Link className="panel__footer-link" to="/ledger">
-                Open the ledger →
-              </Link>
-            </section>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{stats.documents.indexed_chunks.toLocaleString()}</span>
+            <span className="tile__stat-label">vectors</span>
           </div>
-        )}
+          <div className="tile__meta">
+            {(stats.documents.processing > 0 || stats.documents.failed > 0) && (
+              <p>{stats.documents.processing} processing, {stats.documents.failed} failed</p>
+            )}
+            <p>Last ingested {stats.last_ingestion_at ? formatAgo(stats.last_ingestion_at) : 'never'}</p>
+          </div>
+        </div>
+
+        <div className="tile">
+          <h2 className="tile__title">Chat (7d)</h2>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{stats.chat.turns_7d}</span>
+            <span className="tile__stat-label">turns</span>
+          </div>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{formatMs(stats.chat.latency_p50_ms)}</span>
+            <span className="tile__stat-label">p50</span>
+          </div>
+          <div className="tile__stat">
+            <span className="tile__stat-value">{formatMs(stats.chat.latency_p95_ms)}</span>
+            <span className="tile__stat-label">p95</span>
+          </div>
+        </div>
+
+        <div className={`tile ${liveConfigMismatch ? 'tile--warn' : ''}`}>
+          <h2 className="tile__title">Eval Golden Set</h2>
+          {stats.eval ? (
+            <>
+              <div className="tile__stat">
+                <span className="tile__stat-value">{formatPercent(evalScore(stats.eval))}</span>
+                <span className="tile__stat-label">pass</span>
+              </div>
+              <div className="tile__meta">
+                <p>N={stats.eval.cases}</p>
+                <p>{formatPercent(stats.eval.numbers_ok)} amounts</p>
+                <p>{formatPercent(stats.eval.refusal_ok)} boundaries</p>
+                <p>{formatPercent(stats.eval.citation_hit)} citations</p>
+                {liveConfigMismatch && (
+                  <p className="tile__warn-text">⚠️ Live model differs from report</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="tile__empty">No report for current config</p>
+          )}
+        </div>
+      </div>
+
+      <div className="telemetry">
+        <h2 className="telemetry__title">Deployment Configuration</h2>
+        <dl className="telemetry__list">
+          <dt>Chat Agent</dt>
+          <dd>{config.chat_model}</dd>
+
+          <dt>Data Extraction</dt>
+          <dd>{config.extraction_model}</dd>
+
+          <dt>Embeddings</dt>
+          <dd>{config.embedding_model} ({config.embedding_dimensions}d)</dd>
+
+          <dt>Ingestion Parser</dt>
+          <dd>{config.parser}</dd>
+
+          <dt>PII Vault</dt>
+          <dd>{config.pii}</dd>
+
+          <dt>Retrieval</dt>
+          <dd>
+            {config.vector_store}<br />
+            (fusion top-K: {config.retrieval.search_candidates}, dense min: {config.retrieval.min_dense_similarity})
+          </dd>
+        </dl>
       </div>
     </div>
   );
