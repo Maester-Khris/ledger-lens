@@ -134,6 +134,8 @@ def decide(
         except IntegrityError as exc:  # a concurrent decision won the primary key
             raise AlreadyDecided(f"Tool invocation {invocation_id} has already been decided.") from exc
     return record
+
+
 def count_pending(session: Session, tenant_id: uuid.UUID) -> int:
     return session.scalar(
         select(func.count())

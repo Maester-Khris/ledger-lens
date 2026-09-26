@@ -12,6 +12,7 @@ from app.contracts import dao as contracts_dao
 from app.contracts.types import ReviewDecision
 from app.deps import DECIDED_BY, get_session, get_tenant_id
 from app.documents import dao as documents_dao
+from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/reviews", tags=["contracts"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -60,8 +61,6 @@ def list_pending_reviews(session: SessionDep, tenant_id: TenantDep) -> list[Revi
     quotes = documents_dao.reveal(session, tenant_id, [i.quote for i in items], config.require("PII_VAULT_KEY"))
     return [ReviewItemOut(**(asdict(item) | {"quote": quote})) for item, quote in zip(items, quotes)]
 
-
-from app.reporting.dashboard import invalidate_dashboard_stats
 
 @router.post("", status_code=201, response_model=ReviewOut)
 def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep) -> ReviewOut:

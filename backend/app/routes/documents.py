@@ -12,6 +12,7 @@ from app.deps import DECIDED_BY, get_session, get_tenant_id
 from app.documents import dao, store
 from app.documents.sniff import MAX_UPLOAD_BYTES, inspect_pdf
 from app.ingestion_pipeline import PIPELINE, version_status
+from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -78,8 +79,6 @@ def _out(row: dao.DocumentRow) -> dict:
         events=[EventOut(stage=e.stage.value, at=e.created_at, detail=e.detail) for e in row.events],
     )
 
-
-from app.reporting.dashboard import invalidate_dashboard_stats
 
 @router.post("", status_code=202, response_model=UploadOut)
 def upload_document(
