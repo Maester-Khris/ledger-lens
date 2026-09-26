@@ -13,7 +13,8 @@ Fintech Ledger + Document Intelligence product.
 ## [Sprint — feat/demo-ready] · Release readiness before `/promote-release` — In Progress
 
 **Started — 2026-09-26 · branch: `feat/demo-ready`.** Scope review on Monday 2026-09-28 decides
-whether the sprint is extended.
+whether the sprint is extended. **Paused 2026-09-26** with the UI rounds done and verified in the browser;
+the fintech-audience features below are next. Commits are local; not yet pushed, not ready for `/end-sprint`.
 
 ### Scope
 
@@ -22,10 +23,13 @@ whether the sprint is extended.
 - [ ] `ops` — tracing with Langfuse (`artifacts/research/2026-09-24-tracing-stack.md`) → **Epic 2.3** (Week 2)
 - [x] `frontend` — UI fixes: chat message spacing, markdown rendering in answers, general pass → **Not epic-tracked** (live-run findings)
 - [x] `frontend` — landing page copy: replace the tax-slip / Form 941 demo with the fee-contract product → **Not epic-tracked** (live-run finding)
-- `frontend` — ledger and dashboard read real data; approvals from chat and the review screen; keyboard selection, focus styles, live API status → **Not epic-tracked** (UI audit 2026-09-26)
-- `api` — `/reviews` queue and decisions over `field_reviews`; account names on posting and proposed entries → **Not epic-tracked** (UI audit 2026-09-26)
+- [x] `frontend` — ledger and dashboard read real data; approvals from chat and the review screen; keyboard selection, focus styles, live API status → **Not epic-tracked** (UI audit 2026-09-26)
+- [x] `api` — `/reviews` queue and decisions over `field_reviews`; account names on posting and proposed entries → **Not epic-tracked** (UI audit 2026-09-26)
 - [x] `frontend` — ledger logo in the app chrome; dashboard tiles and corpus telemetry on real stats; in-app pdf.js viewer on Documents and a two-pane, paginated Review → **Not epic-tracked** (UI review round 2, 2026-09-26)
 - [x] `api` — cached `/stats` (TTL + invalidation + ETag) and `/config`; immutable caching for original PDFs → **Not epic-tracked** (UI review round 2, 2026-09-26)
+- [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech-audience feature, added 2026-09-26)
+- [ ] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech-audience feature, added 2026-09-26)
+- [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3** (with the Langfuse tracing item above)
 - [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
 - [ ] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding)
 
