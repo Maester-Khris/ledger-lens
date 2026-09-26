@@ -1,7 +1,7 @@
 .review {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  height: 100dvh;
 }
 
 .review__topbar {
@@ -11,9 +11,26 @@
   color: var(--color-text-secondary);
 }
 
-.review__body {
+.review__panes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(380px, 5fr) minmax(0, 7fr);
+}
+
+.review__list-pane {
+  overflow-y: auto;
   padding: var(--space-3);
-  max-width: 960px;
+  border-right: 1px solid var(--color-border);
+}
+
+.review__viewer-pane {
+  min-height: 0;
+  min-width: 0;
+}
+
+.review__viewer-empty {
+  padding: var(--space-3);
 }
 
 .review__title {
@@ -36,7 +53,7 @@
 }
 
 .review__section {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
 }
 
 .review__section-title {
@@ -64,6 +81,12 @@
   background: var(--color-surface);
 }
 
+.field-card--selected,
+.review__approval--selected .tool-card {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
 .field-card__head {
   display: flex;
   align-items: baseline;
@@ -80,6 +103,19 @@
 .field-card__doc {
   color: var(--color-text-secondary);
   flex: 1;
+}
+
+.field-card__show {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.field-card__show[aria-pressed='true'] {
+  color: var(--color-text-secondary);
 }
 
 .field-card__facts {
@@ -134,4 +170,53 @@
   align-items: center;
   gap: var(--space-1);
   flex-wrap: wrap;
+}
+
+.review__approval {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review__approval-show {
+  align-self: flex-end;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.pager__btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.pager__status {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1080px) {
+  .review {
+    height: auto;
+  }
+
+  .review__panes {
+    grid-template-columns: minmax(0, 1fr); /* plain 1fr can't shrink below a long mono value */
+  }
+
+  .review__list-pane {
+    overflow: visible;
+    border-right: none;
+    min-width: 0;
+  }
+
+  .review__viewer-pane {
+    height: 70dvh;
+    border-top: 1px solid var(--color-border);
+  }
 }
