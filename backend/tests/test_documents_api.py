@@ -80,3 +80,9 @@ def test_original_file_download(client):
 
 def test_unknown_document_is_404(client):
     response = client.get("/documents/00000000-0000-0000-0000-000000000000")
+
+def test_original_file_is_cached_as_immutable(client):
+    body = _post(client).json()
+    response = client.get(f"/documents/{body['document_id']}/versions/1/file")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, max-age=31536000, immutable"

@@ -19,6 +19,9 @@ TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
 PREVIEW_ELEMENTS = 5
 DOCUMENT_KEY_PATTERN = r"^[a-z0-9][a-z0-9-]{1,63}$"
 
+# A version's bytes never change (content-addressed, append-only), so browsers may keep it for good.
+ORIGINAL_FILE_CACHE_CONTROL = "private, max-age=31536000, immutable"
+
 
 class UploadOut(BaseModel):
     document_id: uuid.UUID
@@ -122,4 +125,8 @@ def get_document(document_id: uuid.UUID, session: SessionDep, tenant_id: TenantD
 def get_original_file(document_id: uuid.UUID, version: int, session: SessionDep, tenant_id: TenantDep) -> FileResponse:
     # ponytail: contains PII; behind the demo-user dependency only until real authorization exists
     row = dao.get_version_by_number(session, tenant_id, document_id, version)
-    return FileResponse(store.original_path(config.DOCUMENT_STORE_DIR, row.file_sha256), media_type="application/pdf")
+    return FileResponse(
+        store.original_path(config.DOCUMENT_STORE_DIR, row.file_sha256),
+        media_type="application/pdf",
+        headers={"Cache-Control": ORIGINAL_FILE_CACHE_CONTROL},
+    )
