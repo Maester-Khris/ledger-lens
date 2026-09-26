@@ -1,191 +1,28 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
+import { type PostingSourceDto, type ToolInvocationDto, listPostings, listToolInvocations, reversePosting } from '../api';
 import { CheckIcon, LockIcon, SearchIcon } from '../components/Icons';
 import { CopyButton } from '../components/CopyButton';
 import { StatusPill, type StatusVariant } from '../components/StatusPill';
+import { type PostingStatus, type PostingView, toPostingView } from '../lib/postings';
+import { selectableRow } from '../lib/rowSelect';
+import { formatUtc, formatUtcFull } from '../lib/time';
 import './Ledger.css';
 
-type Source = 'ai' | 'api' | 'stress';
-type PostingStatus = 'posted' | 'reversed' | 'reversal';
+const PAGE_SIZE = 50;
 
-type JournalLine = {
-  account: string;
-  debit?: string;
-  credit?: string;
-};
-
-type Provenance = {
-  tool: string;
-  toolInvocation: string;
-  sourceDoc: string;
-  citation: string;
-  session: string;
-};
-
-type Posting = {
-  id: string;
-  description: string;
-  sub: string;
-  amount: string;
-  createdAt: string;
-  createdAtFull: string;
-  source: Source;
-  status: PostingStatus;
-  idempotencyKey: string;
-  lines: JournalLine[];
-  provenance?: Provenance;
-  reversedBy?: string;
-};
-
-const POSTINGS: Posting[] = [
-  {
-    id: 'pst_98f102a4',
-    description: 'Total reported employment income — T4 2024',
-    sub: 'tool: total_reported_income · 2024_T4_AcmeCorp.pdf p.1',
-    amount: '94,500.00',
-    createdAt: 'Sep 22, 14:22 UTC',
-    createdAtFull: 'Sep 22, 2026 14:22:04 UTC',
-    source: 'ai',
-    status: 'posted',
-    idempotencyKey: 'doc_7f3a21c9:ti_0192e4b1',
-    lines: [
-      { account: 'Employment Income Receivable', debit: '94,500.00' },
-      { account: 'Reported Income', credit: '94,500.00' },
-    ],
-    provenance: {
-      tool: 'total_reported_income',
-      toolInvocation: 'ti_0192e4b1',
-      sourceDoc: '2024_T4_AcmeCorp.pdf',
-      citation: 'Page 1 · Employment income',
-      session: 'ses_5d21',
-    },
-  },
-  {
-    id: 'pst_77e034bc',
-    description: 'Opening balance — operating cash',
-    sub: 'idempotency: seed-opening-001',
-    amount: '10,000.00',
-    createdAt: 'Sep 22, 13:05 UTC',
-    createdAtFull: 'Sep 22, 2026 13:05:41 UTC',
-    source: 'api',
-    status: 'posted',
-    idempotencyKey: 'seed-opening-001',
-    lines: [
-      { account: 'Operating Cash', debit: '10,000.00' },
-      { account: 'Owner Equity', credit: '10,000.00' },
-    ],
-  },
-  {
-    id: 'pst_44a109fe',
-    description: 'Reversal of pst_62d891ce — duplicate invoice',
-    sub: 'Compensates pst_62d891ce',
-    amount: '1,250.00',
-    createdAt: 'Sep 22, 12:52 UTC',
-    createdAtFull: 'Sep 22, 2026 12:52:17 UTC',
-    source: 'api',
-    status: 'reversal',
-    idempotencyKey: 'reverse:pst_62d891ce',
-    lines: [
-      { account: 'Accounts Payable', debit: '1,250.00' },
-      { account: 'Office Expenses', credit: '1,250.00' },
-    ],
-  },
-  {
-    id: 'pst_62d891ce',
-    description: 'Vendor invoice INV-2291',
-    sub: 'Reversed by pst_44a109fe',
-    amount: '1,250.00',
-    createdAt: 'Sep 22, 12:40 UTC',
-    createdAtFull: 'Sep 22, 2026 12:40:09 UTC',
-    source: 'api',
-    status: 'reversed',
-    idempotencyKey: 'inv-2291',
-    lines: [
-      { account: 'Office Expenses', debit: '1,250.00' },
-      { account: 'Accounts Payable', credit: '1,250.00' },
-    ],
-    reversedBy: 'pst_44a109fe',
-  },
-  {
-    id: 'pst_31b74281',
-    description: 'Total reported employment income — W-2 2024',
-    sub: 'tool: total_reported_income · 2024_W2_AcmeCorp.pdf p.1',
-    amount: '61,300.00',
-    createdAt: 'Sep 22, 11:18 UTC',
-    createdAtFull: 'Sep 22, 2026 11:18:52 UTC',
-    source: 'ai',
-    status: 'posted',
-    idempotencyKey: 'doc_3b8e0f12:ti_0187c2d6',
-    lines: [
-      { account: 'Employment Income Receivable', debit: '61,300.00' },
-      { account: 'Reported Income', credit: '61,300.00' },
-    ],
-    provenance: {
-      tool: 'total_reported_income',
-      toolInvocation: 'ti_0187c2d6',
-      sourceDoc: '2024_W2_AcmeCorp.pdf',
-      citation: 'Page 1 · Wages, tips, other compensation',
-      session: 'ses_5d21',
-    },
-  },
-  {
-    id: 'pst_1c0e9d77',
-    description: 'Payroll accrual — September',
-    sub: 'idempotency: payroll-2026-09',
-    amount: '8,420.50',
-    createdAt: 'Sep 22, 10:02 UTC',
-    createdAtFull: 'Sep 22, 2026 10:02:30 UTC',
-    source: 'api',
-    status: 'posted',
-    idempotencyKey: 'payroll-2026-09',
-    lines: [
-      { account: 'Payroll Expense', debit: '8,420.50' },
-      { account: 'Payroll Payable', credit: '8,420.50' },
-    ],
-  },
-  {
-    id: 'pst_0a9f3e21',
-    description: 'Hot-account transfer #0187',
-    sub: 'idempotency: stress-0187',
-    amount: '12.00',
-    createdAt: 'Sep 22, 09:41 UTC',
-    createdAtFull: 'Sep 22, 2026 09:41:03 UTC',
-    source: 'stress',
-    status: 'posted',
-    idempotencyKey: 'stress-0187',
-    lines: [
-      { account: 'Stress Hot Account', debit: '12.00' },
-      { account: 'Stress Counterparty', credit: '12.00' },
-    ],
-  },
-  {
-    id: 'pst_0a9f3e20',
-    description: 'Hot-account transfer #0186',
-    sub: 'idempotency: stress-0186',
-    amount: '7.50',
-    createdAt: 'Sep 22, 09:41 UTC',
-    createdAtFull: 'Sep 22, 2026 09:41:03 UTC',
-    source: 'stress',
-    status: 'posted',
-    idempotencyKey: 'stress-0186',
-    lines: [
-      { account: 'Stress Counterparty', debit: '7.50' },
-      { account: 'Stress Hot Account', credit: '7.50' },
-    ],
-  },
-];
-
-const SOURCE_FILTERS: { id: 'all' | Source; label: string }[] = [
+const SOURCE_FILTERS: Array<{ id: 'all' | PostingSourceDto; label: string }> = [
   { id: 'all', label: 'All' },
-  { id: 'ai', label: 'AI tool' },
+  { id: 'ai_tool', label: 'AI tool' },
+  { id: 'fee_run', label: 'Fee run' },
   { id: 'api', label: 'API' },
-  { id: 'stress', label: 'Stress test' },
 ];
 
-const SOURCE_CHIP: Record<Source, { variant: StatusVariant; label: string }> = {
-  ai: { variant: 'accent', label: 'AI tool' },
+const SOURCE_CHIP: Record<PostingSourceDto, { variant: StatusVariant; label: string }> = {
+  ai_tool: { variant: 'accent', label: 'AI tool' },
+  fee_run: { variant: 'neutral', label: 'Fee run' },
   api: { variant: 'neutral', label: 'API' },
-  stress: { variant: 'warning', label: 'Stress test' },
+  stress_test: { variant: 'warning', label: 'Stress test' },
 };
 
 const STATUS_PILL: Record<PostingStatus, { variant: StatusVariant; label: string }> = {
@@ -194,27 +31,135 @@ const STATUS_PILL: Record<PostingStatus, { variant: StatusVariant; label: string
   reversal: { variant: 'purple', label: 'Reversal' },
 };
 
-function total(lines: JournalLine[], side: 'debit' | 'credit'): string {
-  const sum = lines.reduce((acc, l) => acc + Number((l[side] ?? '0').replace(/,/g, '')), 0);
-  return sum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+interface ProvenanceProps {
+  postingId: string;
+}
+
+function Provenance({ postingId }: ProvenanceProps) {
+  const [invocations, setInvocations] = useState<ToolInvocationDto[] | null>(null);
+
+  useEffect(() => {
+    listToolInvocations({ postingId })
+      .then(setInvocations)
+      .catch(() => setInvocations([]));
+  }, [postingId]);
+
+  if (invocations === null) return <p className="ledger__help">Loading provenance…</p>;
+  const invocation = invocations[0];
+  if (!invocation) return <p className="ledger__help">No tool invocation is linked to this posting.</p>;
+  return (
+    <dl className="ledger__provenance">
+      <dt>Tool</dt>
+      <dd className="mono">{invocation.tool_name}</dd>
+      <dt>Model</dt>
+      <dd className="mono">{invocation.model_id}</dd>
+      <dt>Prompt</dt>
+      <dd className="mono">{invocation.prompt_version}</dd>
+      <dt>Chat session</dt>
+      <dd className="mono">{invocation.session_id}</dd>
+      <dt>Approved by</dt>
+      <dd className="mono">
+        {invocation.decision ? `${invocation.decision.decided_by} · ${formatUtc(invocation.decision.decided_at)}` : '—'}
+      </dd>
+    </dl>
+  );
+}
+
+interface ReverseActionProps {
+  posting: PostingView;
+  onReversed: (reversalId: string) => void;
+}
+
+function ReverseAction({ posting, onReversed }: ReverseActionProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reverse = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const reversal = await reversePosting(posting.id);
+      onReversed(reversal.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'The reversal was not posted');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!confirming) {
+    return (
+      <>
+        <button type="button" className="btn btn-secondary ledger__reverse-btn" onClick={() => setConfirming(true)}>
+          Reverse posting
+        </button>
+        <p className="ledger__help">Creates a compensating posting. The original stays in the ledger.</p>
+      </>
+    );
+  }
+  return (
+    <>
+      <div className="ledger__confirm-row">
+        <button type="button" className="btn btn-primary" disabled={submitting} onClick={() => void reverse()}>
+          {submitting ? 'Posting reversal…' : 'Confirm reversal'}
+        </button>
+        <button type="button" className="btn btn-secondary" disabled={submitting} onClick={() => setConfirming(false)}>
+          Cancel
+        </button>
+      </div>
+      {error && (
+        <p className="ledger__error" role="alert">
+          {error}
+        </p>
+      )}
+    </>
+  );
 }
 
 export function Ledger() {
-  const [selectedId, setSelectedId] = useState(POSTINGS[0].id);
+  const [searchParams] = useSearchParams();
+  const [postings, setPostings] = useState<PostingView[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('posting'));
   const [query, setQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<'all' | Source>('all');
-  const [hideStress, setHideStress] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<'all' | PostingSourceDto>('all');
+  const [includeStress, setIncludeStress] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(
+    async (cursor?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const page = await listPostings({
+          source: sourceFilter === 'all' ? undefined : sourceFilter,
+          includeStress,
+          limit: PAGE_SIZE,
+          cursor,
+        });
+        const views = page.items.map(toPostingView);
+        setPostings((current) => (cursor ? [...current, ...views] : views));
+        setNextCursor(page.next_cursor);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not load postings');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sourceFilter, includeStress],
+  );
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const q = query.trim().toLowerCase();
-  const rows = POSTINGS.filter(
-    (p) =>
-      (sourceFilter === 'all' || p.source === sourceFilter) &&
-      !(hideStress && p.source === 'stress' && sourceFilter !== 'stress') &&
-      (!q || [p.id, p.idempotencyKey, p.description].some((f) => f.toLowerCase().includes(q))),
+  const rows = postings.filter(
+    (p) => !q || [p.id, p.idempotencyKey, p.description].some((field) => field.toLowerCase().includes(q)),
   );
-  const hiddenStress = POSTINGS.filter((p) => p.source === 'stress').length;
-  const selected = POSTINGS.find((p) => p.id === selectedId) ?? POSTINGS[0];
-  const status = STATUS_PILL[selected.status];
+  const selected = postings.find((p) => p.id === selectedId) ?? rows[0];
 
   return (
     <div className="ledger">
@@ -233,8 +178,8 @@ export function Ledger() {
             </span>
           </h1>
           <p className="ledger__subtitle">
-            Every journal entry in the double-entry ledger. Postings are immutable — corrections
-            are made by compensating reversals.
+            Every journal entry in the double-entry ledger. Postings are never edited — a correction is a compensating
+            reversal.
           </p>
         </div>
 
@@ -243,6 +188,7 @@ export function Ledger() {
             <SearchIcon size={14} />
             <input
               type="text"
+              aria-label="Filter postings"
               placeholder="Filter by posting ID, idempotency key, or description…"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -253,6 +199,7 @@ export function Ledger() {
               <button
                 type="button"
                 key={f.id}
+                aria-pressed={sourceFilter === f.id}
                 className={`segmented__item${sourceFilter === f.id ? ' segmented__item--active' : ''}`}
                 onClick={() => setSourceFilter(f.id)}
               >
@@ -261,15 +208,17 @@ export function Ledger() {
             ))}
           </div>
           <label className="ledger__checkbox">
-            <input
-              type="checkbox"
-              checked={hideStress}
-              onChange={(event) => setHideStress(event.target.checked)}
-            />
-            Hide stress-test postings
+            <input type="checkbox" checked={includeStress} onChange={(event) => setIncludeStress(event.target.checked)} />
+            Include stress-test postings
           </label>
           <span className="ledger__count mono">{rows.length} postings</span>
         </div>
+
+        {error && (
+          <p className="ledger__error" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="ledger__grid">
           <div className="panel ledger__table-panel">
@@ -298,170 +247,161 @@ export function Ledger() {
                     return (
                       <tr
                         key={posting.id}
-                        className={posting.id === selectedId ? 'ledger__row--selected' : undefined}
-                        onClick={() => setSelectedId(posting.id)}
+                        className={posting.id === selected?.id ? 'ledger__row--selected' : undefined}
+                        {...selectableRow(posting.id === selected?.id, () => setSelectedId(posting.id))}
                       >
-                        <td className="mono ledger__id">{posting.id}</td>
+                        <td className="mono ledger__id">{posting.id.slice(0, 8)}</td>
                         <td>
                           <div className="ledger__desc">{posting.description}</div>
-                          <div className="ledger__desc-sub mono" title={posting.sub}>
-                            {posting.sub}
+                          <div className="ledger__desc-sub mono" title={posting.idempotencyKey}>
+                            {posting.idempotencyKey}
                           </div>
                         </td>
                         <td className="ledger__amount-cell">
-                          <div
-                            className={`mono ledger__amount${
-                              posting.status === 'reversed' ? ' ledger__amount--struck' : ''
-                            }`}
-                          >
-                            {posting.amount} CAD
+                          <div className={`mono ledger__amount${posting.status === 'reversed' ? ' ledger__amount--struck' : ''}`}>
+                            {posting.amount}
                           </div>
                           <StatusPill variant={pill.variant}>{pill.label}</StatusPill>
                         </td>
-                        <td className="mono ledger__created">{posting.createdAt}</td>
+                        <td className="mono ledger__created">{formatUtc(posting.createdAt)}</td>
                         <td>
                           <StatusPill variant={chip.variant}>{chip.label}</StatusPill>
                         </td>
                       </tr>
                     );
                   })}
+                  {!loading && rows.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="ledger__empty">
+                        No postings match. Approve a fee correction in Review, or post through the API.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="ledger__table-foot">
               <span>
-                Showing {rows.length} postings
-                {hideStress && sourceFilter !== 'stress' && ` (${hiddenStress} stress-test hidden)`}
+                {loading ? 'Loading…' : `Showing ${rows.length} postings`}
+                {nextCursor && !loading && (
+                  <>
+                    {' · '}
+                    <button type="button" className="ledger__link-btn" onClick={() => void load(nextCursor)}>
+                      Load more
+                    </button>
+                  </>
+                )}
               </span>
               <span className="ledger__invariant">
-                <CheckIcon size={13} /> Every posting balances — debits = credits enforced by a
-                database constraint
+                <CheckIcon size={13} /> Every posting balances — debits = credits enforced by a database constraint
               </span>
             </div>
           </div>
 
-          <aside className="panel ledger__detail-panel">
-            <div className="ledger__detail-head">
-              <span className="ledger__label mono">Posting</span>
-              <span className="ledger__detail-id-value mono">{selected.id}</span>
-              <CopyButton value={selected.id} />
-              <span className="ledger__detail-immutable">
-                <StatusPill variant="neutral">
-                  <LockIcon size={10} /> Immutable
-                </StatusPill>
-              </span>
-            </div>
-
-            <h2 className="ledger__detail-desc">{selected.description}</h2>
-            <div
-              className={`ledger__detail-amount mono${
-                selected.status === 'reversed' ? ' ledger__amount--struck' : ''
-              }`}
-            >
-              {selected.amount} CAD
-            </div>
-            <div className="ledger__detail-meta">
-              <StatusPill variant={status.variant}>{status.label}</StatusPill>
-              <span className="mono">Created {selected.createdAtFull}</span>
-            </div>
-
-            <section className="ledger__detail-section">
-              <div className="ledger__detail-section-head">
-                <span>Journal entries</span>
-                <StatusPill variant="success">Balanced</StatusPill>
+          {selected ? (
+            <aside className="panel ledger__detail-panel">
+              <div className="ledger__detail-head">
+                <span className="ledger__label mono">Posting</span>
+                <span className="ledger__detail-id-value mono">{selected.id}</span>
+                <CopyButton value={selected.id} />
+                <span className="ledger__detail-immutable">
+                  <StatusPill variant="neutral">
+                    <LockIcon size={10} /> Immutable
+                  </StatusPill>
+                </span>
               </div>
-              <table className="ledger__journal">
-                <thead>
-                  <tr>
-                    <th>Account</th>
-                    <th className="num">Debit</th>
-                    <th className="num">Credit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selected.lines.map((line) => (
-                    <tr key={line.account}>
-                      <td>{line.account}</td>
-                      <td className="num mono">{line.debit ?? '—'}</td>
-                      <td className="num mono">{line.credit ?? '—'}</td>
+
+              <h2 className="ledger__detail-desc">{selected.description}</h2>
+              <div className={`ledger__detail-amount mono${selected.status === 'reversed' ? ' ledger__amount--struck' : ''}`}>
+                {selected.amount}
+              </div>
+              <div className="ledger__detail-meta">
+                <StatusPill variant={STATUS_PILL[selected.status].variant}>{STATUS_PILL[selected.status].label}</StatusPill>
+                <span className="mono">Created {formatUtcFull(selected.createdAt)}</span>
+              </div>
+
+              <section className="ledger__detail-section">
+                <div className="ledger__detail-section-head">
+                  <span>Journal entries</span>
+                  <StatusPill variant={selected.balanced ? 'success' : 'error'}>
+                    {selected.balanced ? 'Balanced' : 'Unbalanced'}
+                  </StatusPill>
+                </div>
+                <table className="ledger__journal">
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th className="num">Debit</th>
+                      <th className="num">Credit</th>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td>Total</td>
-                    <td className="num mono">{total(selected.lines, 'debit')}</td>
-                    <td className="num mono">{total(selected.lines, 'credit')}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </section>
+                  </thead>
+                  <tbody>
+                    {selected.lines.map((line, index) => (
+                      <tr key={index}>
+                        <td>{line.account}</td>
+                        <td className="num mono">{line.debit ?? '—'}</td>
+                        <td className="num mono">{line.credit ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td>Total</td>
+                      <td className="num mono">{selected.debitTotal}</td>
+                      <td className="num mono">{selected.creditTotal}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </section>
 
-            <section className="ledger__detail-section">
-              <div className="ledger__detail-section-head">
-                <span>Idempotency</span>
-              </div>
-              <div className="ledger__key-box mono">
-                <span>{selected.idempotencyKey}</span>
-                <CopyButton value={selected.idempotencyKey} />
-              </div>
-              <p className="ledger__help">
-                Replaying this key returns this same posting. Same key with a different payload is
-                rejected (409).
-              </p>
-            </section>
+              <section className="ledger__detail-section">
+                <div className="ledger__detail-section-head">
+                  <span>Idempotency</span>
+                </div>
+                <div className="ledger__key-box mono">
+                  <span>{selected.idempotencyKey}</span>
+                  <CopyButton value={selected.idempotencyKey} />
+                </div>
+                <p className="ledger__help">
+                  Replaying this key returns this same posting. Same key with a different payload is rejected (409).
+                </p>
+              </section>
 
-            <section className="ledger__detail-section">
-              <div className="ledger__detail-section-head">
-                <span>AI provenance</span>
-              </div>
-              {selected.provenance ? (
-                <>
-                  <dl className="ledger__provenance">
-                    <dt>Tool</dt>
-                    <dd className="mono">{selected.provenance.tool}</dd>
-                    <dt>Tool invocation</dt>
-                    <dd className="mono">{selected.provenance.toolInvocation}</dd>
-                    <dt>Input</dt>
-                    <dd>document_id only (no model-supplied amount)</dd>
-                    <dt>Source document</dt>
-                    <dd className="mono">{selected.provenance.sourceDoc}</dd>
-                    <dt>Citation</dt>
-                    <dd>{selected.provenance.citation}</dd>
-                    <dt>Chat session</dt>
-                    <dd className="mono">{selected.provenance.session}</dd>
-                  </dl>
-                  <div className="ledger__detail-links">
-                    <Link to="/chat">View tool invocation →</Link>
-                    <Link to="/documents">View source document →</Link>
+              {selected.source === 'ai_tool' && (
+                <section className="ledger__detail-section">
+                  <div className="ledger__detail-section-head">
+                    <span>AI provenance</span>
                   </div>
-                </>
-              ) : (
-                <p className="ledger__help">Created via POST /postings — no AI provenance.</p>
+                  <Provenance postingId={selected.id} />
+                </section>
               )}
-            </section>
 
-            <div className="ledger__detail-actions">
-              {selected.reversedBy ? (
-                <button
-                  type="button"
-                  className="ledger__link-btn"
-                  onClick={() => setSelectedId(selected.reversedBy!)}
-                >
-                  Reversed by {selected.reversedBy} →
-                </button>
-              ) : selected.status === 'reversal' ? null : (
-                <>
-                  <button type="button" className="btn btn-secondary ledger__reverse-btn">
-                    Reverse posting
+              <div className="ledger__detail-actions">
+                {selected.reversedBy ? (
+                  <button type="button" className="ledger__link-btn" onClick={() => setSelectedId(selected.reversedBy)}>
+                    Reversed by {selected.reversedBy.slice(0, 8)} →
                   </button>
-                  <p className="ledger__help">
-                    Creates a compensating posting. The original stays in the ledger.
-                  </p>
-                </>
-              )}
-            </div>
-          </aside>
+                ) : selected.status === 'reversal' ? (
+                  <Link to={`/ledger?posting=${selected.reverses}`} onClick={() => setSelectedId(selected.reverses)}>
+                    Reverses {selected.reverses?.slice(0, 8)} →
+                  </Link>
+                ) : (
+                  <ReverseAction
+                    key={selected.id}
+                    posting={selected}
+                    onReversed={(reversalId) => {
+                      setSelectedId(reversalId);
+                      void load();
+                    }}
+                  />
+                )}
+              </div>
+            </aside>
+          ) : (
+            <aside className="panel ledger__detail-panel">
+              <p className="ledger__help">{loading ? 'Loading…' : 'Select a posting to see its journal entries.'}</p>
+            </aside>
+          )}
         </div>
       </div>
     </div>
