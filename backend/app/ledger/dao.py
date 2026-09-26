@@ -372,6 +372,8 @@ def sum_entries_by_gl_code(
         for gl_code, names, debit_sum, credit_sum, count in rows
     )
     return GlTotals(lines=lines, accounts_missing_gl_code=tuple(sorted(missing, key=str)))
+
+
 @dataclasses.dataclass(frozen=True)
 class AccountLabel:
     name: str

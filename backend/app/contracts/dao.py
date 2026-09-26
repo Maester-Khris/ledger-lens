@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
+from sqlalchemy.orm import Session
 
+from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
 from app.contracts.fields import FieldResult
 from app.contracts.models import ExtractedField, ExtractionRun, FieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
@@ -57,9 +57,7 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
     if documents_dao.find_document(session, tenant_id, document_id) is None:
         return None
     version_id = documents_dao.current_version_id(session, document_id)
-    run = session.scalars(
-        select(ExtractionRun).where(ExtractionRun.version_id == version_id).order_by(ExtractionRun.created_at.desc())
-    ).first()
+    run = _latest_run(session, version_id)
     if run is None:
         return None
     reviews = {r.field_path: r for r in session.scalars(select(FieldReview).where(FieldReview.run_id == run.id))}

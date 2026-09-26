@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 
 from app.deps import DECIDED_BY, get_session, get_tenant_id
 from app.governance.dao import decide, list_invocations
-from app.ledger.dao import account_labels
 from app.governance.models import ToolInvocation, ToolInvocationDecision
 from app.governance.types import ToolDecision
+from app.ledger.dao import account_labels
 
 router = APIRouter(prefix="/tool-invocations", tags=["governance"])
 
@@ -51,7 +51,6 @@ class InvocationOut(BaseModel):
     proposed_entries: list | None
     approval_required: bool
     decision: DecisionOut | None
-
 
 
 def _labelled(session: Session, entries: list | None) -> list | None:

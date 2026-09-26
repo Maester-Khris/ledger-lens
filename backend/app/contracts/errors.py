@@ -6,6 +6,7 @@ class ContractNotComparable(DomainError):
     type_slug = "contract-not-comparable"
     title = "This contract can't be compared with billing yet"
 
+
 class FieldNotFound(DomainError):
     status = 404
     type_slug = "field-not-found"
