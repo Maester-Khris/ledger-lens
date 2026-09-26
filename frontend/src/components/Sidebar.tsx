@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router';
 import { type ApiHealth, useApiHealth } from '../lib/useApiHealth';
 import { ChatIcon, CheckIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
+import { BrandMark } from './BrandMark';
 import './Sidebar.css';
 
 type NavItem = {
@@ -28,7 +29,7 @@ export function Sidebar() {
   return (
     <nav className="sidebar">
       <div className="sidebar__brand">
-        <span className="sidebar__brand-mark" aria-hidden="true" />
+        <BrandMark size={24} />
         <span className="sidebar__brand-name">Ledger Assistant</span>
         <span className="sidebar__brand-tag mono">Demo</span>
       </div>

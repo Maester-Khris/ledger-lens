@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { BrandMark } from '../components/BrandMark';
 import { CheckIcon, LockIcon, SparkleIcon } from '../components/Icons';
 import './Landing.css';
 
@@ -29,7 +30,7 @@ export function Landing() {
     <div className="landing">
       <header className="landing__nav">
         <div className="landing__brand">
-          <span className="landing__brand-mark" aria-hidden="true" />
+          <BrandMark size={24} />
           Ledger Assistant
         </div>
         <nav className="landing__nav-links" aria-label="Page sections">
@@ -119,7 +120,7 @@ export function Landing() {
 
       <footer className="landing__footer">
         <div className="landing__brand landing__brand--dark">
-          <span className="landing__brand-mark" aria-hidden="true" />
+          <BrandMark size={24} />
           Ledger Assistant
         </div>
         <span className="landing__footer-copy">A working demo: fee-contract review on a double-entry ledger.</span>

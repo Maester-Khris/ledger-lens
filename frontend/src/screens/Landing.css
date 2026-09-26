@@ -17,13 +17,7 @@
   color: var(--color-text-primary);
 }
 
-.landing__brand-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  flex-shrink: 0;
-}
+
 
 .landing__nav {
   display: flex;
