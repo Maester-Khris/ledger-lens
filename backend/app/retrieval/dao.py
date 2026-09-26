@@ -81,3 +81,6 @@ def section_texts(session: Session, version_id: uuid.UUID, section_path: Sequenc
         .order_by(DocumentElement.ordinal)
     ))
 
+
+def indexed_chunk_count(session: Session, tenant_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(ElementSearch).where(ElementSearch.tenant_id == tenant_id)) or 0

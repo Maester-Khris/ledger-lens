@@ -1,7 +1,6 @@
 """Manual golden-set run against real OpenAI + Pinecone on ledger_dev (samples ingested).
 Run: $PYDEV/bin/pytest -m eval tests/eval -s"""
 import asyncio
-import hashlib
 import json
 from decimal import Decimal
 from pathlib import Path
@@ -10,7 +9,7 @@ import pytest
 
 from app import config
 from app.assistant.citations import numbers_in
-from app.assistant.graph import prompt_version
+from app.assistant.graph import prompt_version, eval_config_hash
 from app.assistant.runtime import get_runtime
 from app.assistant.service import run_turn
 from app.ledger.db import SessionLocal
@@ -46,7 +45,7 @@ def _run(case: dict) -> dict:
 @pytest.mark.eval
 def test_golden_set():
     results = [_run(case) for case in CASES]
-    config_hash = hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}".encode()).hexdigest()[:12]
+    config_hash = eval_config_hash()
     metrics = {key: sum(r[key] for r in results) / len(results) for key in ("refusal_ok", "citation_hit", "numbers_ok")}
     REPORTS.mkdir(exist_ok=True)
     report = REPORTS / f"eval-{config_hash}.json"

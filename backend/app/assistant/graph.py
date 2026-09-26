@@ -53,6 +53,13 @@ def prompt_version() -> str:
     return hashlib.sha256((AGENT_PROMPT + ANSWER_PROMPT).encode()).hexdigest()[:12]
 
 
+def eval_config_hash() -> str:
+    """Identifies the chat configuration a golden-set report was produced with (see tests/eval/test_golden.py)."""
+    from app import config
+    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}".encode()).hexdigest()[:12]
+
+
+
 def route_tool_choice(question: str, registered: set[str]) -> str | None:
     """Tool calls for calculations are forced, not left to model discretion (backlog Epic 2.5)."""
     return FORCED_TOOL if FORCED_TOOL in registered and CALCULATION_PATTERN.search(question) else None

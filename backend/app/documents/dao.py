@@ -2,6 +2,7 @@ import re
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -230,3 +231,11 @@ def first_page(session: Session, element_ids: Sequence[uuid.UUID]) -> int | None
     if not element_ids:
         return None
     return session.scalar(select(func.min(DocumentElement.page_start)).where(DocumentElement.id.in_(element_ids)))
+
+def last_event_at(session: Session, tenant_id: uuid.UUID) -> datetime | None:
+    return session.scalar(
+        select(func.max(VersionEvent.created_at))
+        .join(DocumentVersion, DocumentVersion.id == VersionEvent.version_id)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(Document.tenant_id == tenant_id)
+    )

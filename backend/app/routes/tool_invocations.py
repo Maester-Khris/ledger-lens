@@ -95,6 +95,8 @@ def list_tool_invocations(
     return [_invocation_out(session, invocation, decision) for invocation, decision in rows]
 
 
+from app.reporting.dashboard import invalidate_dashboard_stats
+
 @router.post("/{invocation_id}/decision", status_code=201, response_model=DecisionOut)
 def decide_tool_invocation(
     invocation_id: uuid.UUID, body: DecisionIn, session: SessionDep, tenant_id: TenantDep
@@ -103,4 +105,5 @@ def decide_tool_invocation(
         session, tenant_id=tenant_id, invocation_id=invocation_id,
         decision=body.decision, decided_by=DECIDED_BY, reason=body.reason,
     )
+    invalidate_dashboard_stats(tenant_id)
     return _decision_out(decision)

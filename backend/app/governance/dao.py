@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Mapping
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -134,3 +134,14 @@ def decide(
         except IntegrityError as exc:  # a concurrent decision won the primary key
             raise AlreadyDecided(f"Tool invocation {invocation_id} has already been decided.") from exc
     return record
+def count_pending(session: Session, tenant_id: uuid.UUID) -> int:
+    return session.scalar(
+        select(func.count())
+        .select_from(ToolInvocation)
+        .outerjoin(ToolInvocationDecision, ToolInvocationDecision.invocation_id == ToolInvocation.id)
+        .where(
+            ToolInvocation.tenant_id == tenant_id,
+            ToolInvocation.approval_required.is_(True),
+            ToolInvocationDecision.invocation_id.is_(None),
+        )
+    ) or 0

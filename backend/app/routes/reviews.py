@@ -61,12 +61,15 @@ def list_pending_reviews(session: SessionDep, tenant_id: TenantDep) -> list[Revi
     return [ReviewItemOut(**(asdict(item) | {"quote": quote})) for item, quote in zip(items, quotes)]
 
 
+from app.reporting.dashboard import invalidate_dashboard_stats
+
 @router.post("", status_code=201, response_model=ReviewOut)
 def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep) -> ReviewOut:
     review = contracts_dao.record_review(
         session, tenant_id=tenant_id, run_id=body.run_id, field_path=body.field_path, decision=body.decision,
         corrected_value=body.corrected_value, reason=body.reason, decided_by=DECIDED_BY,
     )
+    invalidate_dashboard_stats(tenant_id)
     return ReviewOut(run_id=review.run_id, field_path=review.field_path, decision=review.decision,
                      corrected_value=review.corrected_value, decided_by=review.decided_by, reason=review.reason,
                      decided_at=review.decided_at)

@@ -79,6 +79,8 @@ def _out(row: dao.DocumentRow) -> dict:
     )
 
 
+from app.reporting.dashboard import invalidate_dashboard_stats
+
 @router.post("", status_code=202, response_model=UploadOut)
 def upload_document(
     response: Response,
@@ -96,6 +98,7 @@ def upload_document(
         data=data, facts=inspect_pdf(data), uploaded_by=DECIDED_BY, store_root=config.DOCUMENT_STORE_DIR,
         household_id=household_id,
     )
+    invalidate_dashboard_stats(tenant_id)
     if not result.created:
         response.status_code = 200
     return UploadOut(document_id=result.document.id, version_id=result.version.id, version=result.version.version,
