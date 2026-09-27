@@ -346,9 +346,10 @@ renaming them would move the prompt version and the golden set):**
       animation first; respect `prefers-reduced-motion`.
 
 **Now — document-centred features (share the selected-document context; one brainstorming pass):**
-- [ ] **N12** Chat optionally scoped to one document: start a chat from a selected document, or a general chat
+- [x] **N19** "not comparable" key decision: show the tool's reason as a fixed system message.
+- [x] **N12** Chat optionally scoped to one document: start a chat from a selected document, or a general chat
       as today (`Chat.tsx` takes no document yet).
-- [ ] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):
+- [x] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):
       extracted terms as structured cards (parties, fee bands, fee basis/method, billing frequency
       and timing, termination notice, governing law), each with a citation chip to its page and a
       status badge (accepted / confirmed / corrected / needs review + reason); the linked household
@@ -356,12 +357,12 @@ renaming them would move the prompt version and the golden set):**
       endpoint (`GET /documents/{id}/terms`) over `contracts_dao.served_fields` + pending fields.
       **Coming-soon slots shown greyed out** on the final dashboard profile: fee schedule version
       history (D15), client type, exceptions, referral arrangements, expense allocation (D14).
-- [ ] **N11** Unvalidated fields disclosed: a banner on the selected document and in the chat answer
+- [x] **N11** Unvalidated fields disclosed: a banner on the selected document and in the chat answer
       naming what the agent couldn't confirm and why. The backend already returns `not_validated`
       from `get_contract_fields`; nothing shows it. Named as "compliance-scoped refusal".
-- [ ] **N13** Audit panel in the chat session: tool, inputs, model, prompt version, decision — REST,
+- [x] **N13** Audit panel in the chat session: tool, inputs, model, prompt version, decision — REST,
       refreshed per turn, from `tool_invocations` + `chat_turns` (live stream is D6).
-- [ ] **N14** Per-document ledger timeline: ingestion → extraction run → fields → reviews → proposed
+- [x] **N14** Per-document ledger timeline: ingestion → extraction run → fields → reviews → proposed
       correction → decision → posting ("how a document becomes a financial record").
 - [ ] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
       to end: contract → gap → proposal → approve → post).

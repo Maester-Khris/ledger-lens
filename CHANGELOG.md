@@ -27,8 +27,13 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 - [x] `api` — `/reviews` queue and decisions over `field_reviews`; account names on posting and proposed entries → **Not epic-tracked** (UI audit 2026-09-26)
 - [x] `frontend` — ledger logo in the app chrome; dashboard tiles and corpus telemetry on real stats; in-app pdf.js viewer on Documents and a two-pane, paginated Review → **Not epic-tracked** (UI review round 2, 2026-09-26)
 - [x] `api` — cached `/stats` (TTL + invalidation + ETag) and `/config`; immutable caching for original PDFs → **Not epic-tracked** (UI review round 2, 2026-09-26)
-- [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech-audience feature, added 2026-09-26)
-- [ ] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech-audience feature, added 2026-09-26)
+- [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech reframing, backlog D6)
+- [x] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech reframing, backlog N11)
+- [x] `assistant` — "not comparable" key decision: show the tool's reason as a fixed system message → **Not epic-tracked** (fintech reframing, backlog N19)
+- [x] `frontend` — chat optionally scoped to one document → **Not epic-tracked** (fintech reframing, backlog N12)
+- [x] `frontend` — contract profile panel (structured client profile) → **Not epic-tracked** (fintech reframing, backlog N17)
+- [x] `frontend` — audit panel in the chat session (rest refreshed) → **Not epic-tracked** (fintech reframing, backlog N13)
+- [x] `frontend` — per-document ledger timeline (ingestion to posting) → **Not epic-tracked** (fintech reframing, backlog N14)
 - [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3** (with the Langfuse tracing item above)
 - [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
 - [x] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding). Done 2026-09-27: street addresses and postal codes tokenised in documents; unknown emails, phones, SINs, cards, IBANs, addresses and postal codes tokenised in chat questions (Luhn-checked, amounts and fee terms left readable). Report: `artifacts/research/2026-09-27-redaction-boundary-review.md`
