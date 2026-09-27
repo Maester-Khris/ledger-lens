@@ -27,7 +27,8 @@ def luhn(digits: str) -> bool:
 
 def validate_sin(text: str) -> bool:
     digits = "".join(filter(str.isdigit, text))
-    if len(digits) != 9 or (digits[0] in ("0", "8") and digits != "046454286"):
+    # 8xx is a business number. 0xx is never issued but is the documented sample range: tokenising it is harmless.
+    if len(digits) != 9 or digits[0] == "8":
         return False
     return luhn(digits)
 
