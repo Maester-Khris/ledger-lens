@@ -34,6 +34,8 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 - [x] `frontend` — contract profile panel (structured client profile) → **Not epic-tracked** (fintech reframing, backlog N17)
 - [x] `frontend` — audit panel in the chat session (rest refreshed) → **Not epic-tracked** (fintech reframing, backlog N13)
 - [x] `frontend` — per-document ledger timeline (ingestion to posting) → **Not epic-tracked** (fintech reframing, backlog N14)
+- [x] `docs` — source URLs added for every competitor claim used in demo copy; two unsourced claims corrected (Ethoca's acquisition price, the "zero-hallucination" guarantee's attribution) → **Not epic-tracked** (fintech reframing, backlog N5)
+- [x] `frontend` — reframed copy for the fintech audience: billing reconciliation, extraction anomaly queue, AI decision audit trail, the citation promise, and a 3-layer (ops/governance/audit) narrative on the landing page → **Not epic-tracked** (fintech reframing, backlog N6-N10)
 - [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3** (with the Langfuse tracing item above)
 - [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
 - [x] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding). Done 2026-09-27: street addresses and postal codes tokenised in documents; unknown emails, phones, SINs, cards, IBANs, addresses and postal codes tokenised in chat questions (Luhn-checked, amounts and fee terms left readable). Report: `artifacts/research/2026-09-27-redaction-boundary-review.md`

@@ -333,11 +333,11 @@ make it visible. IDs (N = now, D = deferred, I = icebox) are kept for cross-refe
 
 **Now — reframed copy (UI text only; internal names like `compare_contract_to_billing` unchanged,
 renaming them would move the prompt version and the golden set):**
-- [ ] **N6** "Leakage" → **billing reconciliation / fee validation**.
-- [ ] **N7** Approval screen → **AI Decision Audit Trail / Governed AI**.
-- [ ] **N8** Review queue → **Extraction Anomaly Queue**, with the reason per field.
-- [ ] **N9** Citation promise: "every number traceable to its source page".
-- [ ] **N10** Landing and dashboard copy follow the 3-layer narrative: ops → governance → audit.
+- [x] **N6** "Leakage" → **billing reconciliation / fee validation**.
+- [x] **N7** Approval screen → **AI Decision Audit Trail / Governed AI**.
+- [x] **N8** Review queue → **Extraction Anomaly Queue**, with the reason per field.
+- [x] **N9** Citation promise: "every number traceable to its source page".
+- [x] **N10** Landing and dashboard copy follow the 3-layer narrative: ops → governance → audit.
 - [ ] **N18** **Landing hero: animated product visual.** Add a moving visual to the hero section
       that illustrates the core of the product (document → cited terms → reconciliation → approved
       posting), in the style of reference product pages where each main product (stablecoin, ledger,
