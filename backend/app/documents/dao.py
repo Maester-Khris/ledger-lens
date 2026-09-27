@@ -256,3 +256,6 @@ def last_event_at(session: Session, tenant_id: uuid.UUID) -> datetime | None:
         .join(Document, Document.id == DocumentVersion.document_id)
         .where(Document.tenant_id == tenant_id)
     )
+
+def version_number(session: Session, version_id: uuid.UUID) -> int:
+    return session.get(DocumentVersion, version_id).version

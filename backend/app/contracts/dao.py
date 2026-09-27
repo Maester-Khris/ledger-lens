@@ -12,6 +12,11 @@ from app.contracts.fields import FieldResult
 from app.contracts.models import ExtractedField, ExtractionRun, FieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents import dao as documents_dao
+from datetime import date, datetime
+from app.billing import dao as billing_dao
+from app.billing.errors import NoScheduleAssigned
+from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, field_group, field_label, field_reason,
+                                 field_sort_key, field_status)
 
 
 @dataclass(frozen=True)
@@ -66,12 +71,10 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
     served, unserved = {}, []
     for field in session.scalars(select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path)):
         review = reviews.get(field.field_path)
-        if review is not None and review.decision is ReviewDecision.corrected:
-            served[field.field_path] = ServedField(field.field_path, review.corrected_value, field.element_ids, field.quote)
-        elif (review is not None and review.decision is ReviewDecision.confirmed) or (
-            review is None and field.routing is FieldRouting.accepted
-        ):
-            served[field.field_path] = ServedField(field.field_path, field.value, field.element_ids, field.quote)
+        status = field_status(field.routing, None if review is None else review.decision)
+        if status in SERVED_STATUSES:
+            value = review.corrected_value if status == "corrected" else field.value
+            served[field.field_path] = ServedField(field.field_path, value, field.element_ids, field.quote)
         else:
             unserved.append(field.field_path)
     return ServedTerms(version_id, run.id, served, unserved)
@@ -147,3 +150,76 @@ def record_review(
         session.rollback()
         raise FieldAlreadyReviewed(f"Field {field_path} of extraction run {run_id} has already been reviewed.") from exc
     return review
+
+@dataclass(frozen=True)
+class TermField:
+    path: str
+    label: str
+    group: str
+    value: object
+    status: FieldStatus
+    reason: str | None
+    page: int | None
+    quote: str  # tokenised; the route reveals it for display
+
+
+@dataclass(frozen=True)
+class ScheduleView:
+    version: int
+    method: str
+    tiers: list[dict]
+    valid_from: date | None
+
+
+@dataclass(frozen=True)
+class TermsView:
+    document_id: uuid.UUID
+    title: str
+    version: int
+    run_id: uuid.UUID | None
+    extracted_at: datetime | None
+    fields: list[TermField]
+    household: tuple[uuid.UUID, str] | None
+    schedule: ScheduleView | None
+    coming_soon: tuple[str, ...] = COMING_SOON
+
+
+def _schedule_in_effect(session: Session, household_id: uuid.UUID, on: date) -> ScheduleView | None:
+    try:
+        _schedule, version, tiers = billing_dao.schedule_in_effect(session, household_id, on)
+    except NoScheduleAssigned:
+        return None
+    return ScheduleView(version.version, version.method.value,
+                        [{"up_to_minor": t.up_to_minor, "rate_bps": str(t.rate_bps)} for t in tiers],
+                        version.valid_during.lower)
+
+
+def terms_view(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, on: date) -> TermsView | None:
+    """None = unknown document. A document without an extraction yet has run_id None and no fields."""
+    document = documents_dao.find_document(session, tenant_id, document_id)
+    if document is None:
+        return None
+    version_id = documents_dao.current_version_id(session, document_id)
+    version_no = documents_dao.version_number(session, version_id)
+    household = None
+    schedule = None
+    if document.household_id is not None and (row := billing_dao.find_household(session, tenant_id, document.household_id)):
+        household = (row.id, row.name)
+        schedule = _schedule_in_effect(session, row.id, on)
+    run = _latest_run(session, version_id)
+    if run is None:
+        return TermsView(document_id, document.title, version_no, None, None, [], household, schedule)
+    reviews = {r.field_path: r for r in session.scalars(select(FieldReview).where(FieldReview.run_id == run.id))}
+    fields = []
+    for f in sorted(session.scalars(select(ExtractedField).where(ExtractedField.run_id == run.id)),
+                    key=lambda f: field_sort_key(f.field_path)):
+        review = reviews.get(f.field_path)
+        status = field_status(f.routing, None if review is None else review.decision)
+        fields.append(TermField(
+            path=f.field_path, label=field_label(f.field_path), group=field_group(f.field_path),
+            value=review.corrected_value if status == "corrected" else f.value, status=status,
+            reason=field_reason(status, f.grounded, list(f.validator_errors), f.page_grade,
+                                None if review is None else review.reason),
+            page=documents_dao.first_page(session, f.element_ids), quote=f.quote,
+        ))
+    return TermsView(document_id, document.title, version_no, run.id, run.created_at, fields, household, schedule)
