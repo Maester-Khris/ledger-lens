@@ -31,7 +31,13 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 - [ ] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech-audience feature, added 2026-09-26)
 - [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3** (with the Langfuse tracing item above)
 - [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
-- [ ] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding)
+- [x] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding). Done 2026-09-27: street addresses and postal codes tokenised in documents; unknown emails, phones, SINs, cards, IBANs, addresses and postal codes tokenised in chat questions (Luhn-checked, amounts and fee terms left readable). Report: `artifacts/research/2026-09-27-redaction-boundary-review.md`
+
+### Required once the demo-ready state is reached
+
+- **Clear the database and re-ingest every document.** Documents ingested before 2026-09-27 still hold untokenised street addresses and postal codes (in the DB, Pinecone and anything derived). Then **re-run the golden set**: re-ingestion changes what extraction reads.
+- Accepted gap: a person's name typed in chat that appears in no ingested document is sent to the model untokenised.
+- Deferred gaps: account numbers (other than IBAN / US bank numbers) and dates of birth are not tokenised.
 
 ### Reference
 
