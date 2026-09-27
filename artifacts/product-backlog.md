@@ -272,6 +272,13 @@ the final demo version with the SEC documents. Priorities for the next sprint:
       "I can't find that in the indexed contracts". Either show the tool's reason as a fixed,
       non-generated message, or keep the generic refusal and change the golden case to
       `expect_refusal: true`. It's the only golden miss (refusals 0.875, citations 0.875).
+      **Decided 2026-09-27: option A.** The tool's reason is shown as a fixed, non-generated message
+      credited to the system ("system: billing records"), so the verifier accepts it without a document
+      citation; `fund-not-comparable` passes when that reason is shown. Unverified fields (case 1) get an
+      explained abstention with an inline marker and a link to the review queue. Built in N11. Research:
+      `artifacts/research/2026-09-27-flagged-items-framing.md` — conclusions only; its sources are
+      unverified (company claims without links, placeholder URLs), so this is a design choice, not a
+      cited industry standard, and nothing from it goes into copy.
 - [x] **Chat: messages have no vertical spacing.** Consecutive question and answer
       blocks sit flush against each other in the chat container.
 - [x] **Review path broken.** The dashboard shows 3 items to review with a link; the
@@ -312,14 +319,14 @@ described in engineering terms. This sprint reframes it and adds the document-ce
 make it visible. IDs (N = now, D = deferred, I = icebox) are kept for cross-reference.
 
 **Now — research doc fixes (no code):**
-- [ ] **N1** Fix the metric data sources in the reframing doc: STP from `extracted_fields.routing`;
+- [x] **N1** Fix the metric data sources in the reframing doc: STP from `extracted_fields.routing`;
       review queue age = extraction run created → `field_reviews.decided_at`; approval latency =
       invocation created → `tool_invocation_decisions.decided_at`; risk score from `grounded` /
       `validator_errors` / `page_grade` (there are no reason codes); "invariant score" is a check
       query, not a counter (violations roll back and are never recorded).
-- [ ] **N2** Fix regulator references: IIROC → CIRO (merged 2023); OSFI isn't the fee-disclosure
+- [x] **N2** Fix regulator references: IIROC → CIRO (merged 2023); OSFI isn't the fee-disclosure
       regulator; MiFID II is EU-only; add CSA Staff Notice 11-348 (AI in capital markets).
-- [ ] **N3** Correct the GL claim: SHA-256 byte-identical regeneration is true; per-line chain of
+- [x] **N3** Correct the GL claim: SHA-256 byte-identical regeneration is true; per-line chain of
       custody to the PDF page is not built (`reporting/gl_csv.py` aggregates per `gl_code`) — see D13.
 - [ ] **N5** Add source URLs to every competitor claim used in demo copy (WealthBar BCSC fine,
       Questrade MCP, Finn AI, Versapay 90% STP); mark the rest unverified.
@@ -339,7 +346,7 @@ renaming them would move the prompt version and the golden set):**
       animation first; respect `prefers-reduced-motion`.
 
 **Now — document-centred features (share the selected-document context; one brainstorming pass):**
-- [ ] **N12** Chat scoped to one document: start a chat from a selected document, or a general chat
+- [ ] **N12** Chat optionally scoped to one document: start a chat from a selected document, or a general chat
       as today (`Chat.tsx` takes no document yet).
 - [ ] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):
       extracted terms as structured cards (parties, fee bands, fee basis/method, billing frequency
@@ -360,7 +367,19 @@ renaming them would move the prompt version and the golden set):**
       to end: contract → gap → proposal → approve → post).
 - [ ] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
 
-Order: N1–N3, N5 → N6–N10 → N12 → N17 → N11 → N13 → N14 → N18 → N15, with N16 alongside.
+**Implementation order (agreed 2026-09-27; copy last so it covers every finished screen):**
+1. **Phase 0 — research doc fixes:** N1–N3 (the later specs quote these docs).
+2. **Phase 1 — foundation:** the address-leak security review (release-readiness item above) *before*
+   N16, since Langfuse Cloud would otherwise receive untokenised addresses; then N16.
+3. **Phase 2 — document features (one brainstorm/spec):** N12 → N17 → N11 → N13 → N14.
+   - N12: the document is **optional** — a chat can be scoped to one document or stay general.
+   - Before N11: settle the "not comparable" key decision above through a separate industry search
+     (run in Gemini) on how agents frame flagged / unverifiable items.
+   - Working labels = the target terms in the reframing doc's "Current → Target" table (the glossary),
+     so Phase 3 polishes wording instead of renaming.
+4. **Phase 3 — copy:** N5 → N6–N10 (with the copywriting skill and related installed skills) → N18
+   (executed by Gemini from a prompt with explicit direction: flow, wording, style references).
+5. **Phase 4 — demo:** N15 script + full live run (seed fixtures may land earlier if Phase 2 needs them).
 
 **Deferred — agentic depth:**
 - [ ] **D1** Context growth tracking, intra-trace (per hop) and inter-trace (per turn). Needs N16.
