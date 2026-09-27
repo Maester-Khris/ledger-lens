@@ -4,7 +4,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
-from app.assistant.tools import RESULT_KEY, ToolContext, ToolOutcome, ToolSpec
+from app.assistant.tools import RESULT_KEY, ToolContext, ToolOutcome, ToolSpec, scope_violation
 from app.ledger.dao import EntryInput
 from app.ledger.types import Direction
 from app.contracts import dao as contracts_dao
@@ -37,6 +37,8 @@ def _element_sources(ctx: ToolContext, element_ids: set[uuid.UUID]) -> tuple[dic
 
 def _get_contract_fields(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, FieldsArgs)
+    if (blocked := scope_violation(ctx, args.document_id)) is not None:
+        return blocked
     served = contracts_dao.served_fields(ctx.session, ctx.tenant_id, args.document_id)
     if served is None:
         return ToolOutcome(json.dumps({"error": "This contract hasn't been extracted yet."}))
@@ -52,6 +54,8 @@ def _get_contract_fields(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
 
 def _compare(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, CompareArgs)
+    if (blocked := scope_violation(ctx, args.document_id)) is not None:
+        return blocked
     try:
         comparison = compare_contract_to_billing(ctx.session, tenant_id=ctx.tenant_id, document_id=args.document_id, as_of=args.as_of)
     except ContractNotComparable as exc:

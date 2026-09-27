@@ -28,6 +28,7 @@ class ToolContext:
     model: ModelConfig
     hmac_key: str
     vault_key: str
+    document_id: uuid.UUID | None = None  # set = the chat is scoped to this document
 
 
 @dataclass(frozen=True)
@@ -73,7 +74,7 @@ class SearchArgs(BaseModel):
 
 
 def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
-    rows = documents_dao.list_documents(ctx.session, ctx.tenant_id)
+    rows = [r for r in documents_dao.list_documents(ctx.session, ctx.tenant_id) if ctx.document_id is None or r.document.id == ctx.document_id]
     return ToolOutcome(json.dumps([
         {"document_id": str(r.document.id), "document_key": r.document.document_key, "title": r.document.title}
         for r in rows
@@ -83,7 +84,7 @@ def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
 def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, SearchArgs)
     hits = search(ctx.session, tenant_id=ctx.tenant_id, query=args.query, embeddings=ctx.embeddings,
-                  vector_index=ctx.vector_index, document_ids=args.document_ids)
+                  vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids)
     payload = [
         {"id": str(h.element_id), "document": h.document_title, "page": h.page_start,
          "section": " › ".join(h.section_path), "text": h.text, "context": h.context}
@@ -132,3 +133,11 @@ def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
         result_amount_minor=outcome.result_amount_minor, result_currency=outcome.result_currency,
         proposed_entries=outcome.proposed_entries,
     )
+
+def scope_violation(ctx: ToolContext, document_id: uuid.UUID) -> ToolOutcome | None:
+    """A scoped chat may only touch its own document; the model can't widen the scope."""
+    if ctx.document_id is None or document_id == ctx.document_id:
+        return None
+    scoped = documents_dao.find_document(ctx.session, ctx.tenant_id, ctx.document_id)
+    title = scoped.title if scoped is not None else str(ctx.document_id)
+    return ToolOutcome(json.dumps({"error": f"This chat is scoped to {title}."}))
