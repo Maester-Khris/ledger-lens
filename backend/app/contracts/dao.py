@@ -40,10 +40,12 @@ class ServedTerms:
     unserved: list[str]
 
 
-def save_run(session: Session, version_id: uuid.UUID, config: RunConfig, raw_output: dict, results: Sequence[FieldResult]) -> ExtractionRun:
+def save_run(session: Session, version_id: uuid.UUID, config: RunConfig, raw_output: dict, results: Sequence[FieldResult], run_id: uuid.UUID = None) -> ExtractionRun:
     run = ExtractionRun(version_id=version_id, schema_version=config.schema_version, model_id=config.model_id,
                         prompt_version=config.prompt_version, temperature=config.temperature,
                         config_hash=config.config_hash, input_hash=config.input_hash, raw_output=raw_output)
+    if run_id is not None:
+        run.id = run_id
     session.add(run)
     session.flush()
     session.add_all(ExtractedField(

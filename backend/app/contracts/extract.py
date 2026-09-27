@@ -51,11 +51,13 @@ def render_input(elements: Sequence[DocumentElement]) -> str:
     return "<document>\n" + "\n".join(tags) + "\n</document>"
 
 
-def call_model(chat_model: BaseChatModel, document_text: str) -> ContractTerms:
+def call_model(chat_model: BaseChatModel, document_text: str, config: dict = None) -> ContractTerms:
     structured = chat_model.with_structured_output(ContractTerms, method="json_schema", include_raw=True)
     messages = [SystemMessage(PROMPT), HumanMessage(document_text)]
+    if config is None:
+        config = {}
     for _attempt in range(2):  # one repair attempt with the validation error, then give up
-        result = structured.invoke(messages)
+        result = structured.invoke(messages, config=config)
         if result["parsed"] is not None:
             return result["parsed"]
         error = str(result["parsing_error"])
@@ -69,15 +71,31 @@ def run_extraction(session: Session, version_id: uuid.UUID, *, chat_model: BaseC
     session.commit()  # no transaction held open across the model call
 
     document_text = render_input(elements)
-    terms = call_model(chat_model, document_text)
+    
+    run_id = uuid.uuid4()
+    from app.tracing import get_tracing_handler
+    handler = get_tracing_handler()
+    run_config = {}
+    if handler:
+        run_config["callbacks"] = [handler]
+        run_config["tags"] = ["extraction"]
+        run_config["metadata"] = {"run_id": str(run_id), "prompt_version": prompt_version()}
+        run_config["run_name"] = f"extract_{run_id}"
+
+    terms = call_model(chat_model, document_text, config=run_config)
     refs = {f"E{e.ordinal}": ElementRef(e.id, e.text_redacted, e.page_start, e.page_end) for e in elements}
     results = evaluate_terms(terms, refs, detail.get("page_grades", {}))
 
-    run_config = dao.RunConfig(SCHEMA_VERSION, model_id, prompt_version(), TEMPERATURE,
+    dao_run_config = dao.RunConfig(SCHEMA_VERSION, model_id, prompt_version(), TEMPERATURE,
                                config_hash(model_id, detail.get("parser_version", "unknown")), _sha256(document_text))
-    run = dao.save_run(session, version_id, run_config, terms.model_dump(mode="json"), results)
+    run = dao.save_run(session, version_id, dao_run_config, terms.model_dump(mode="json"), results, run_id=run_id)
     accepted = sum(r.routing is FieldRouting.accepted for r in results)
-    documents_dao.append_event(session, version_id, VersionStage.extracted, {
+    
+    event_detail = {
         "run_id": str(run.id), "accepted": accepted, "needs_review": len(results) - accepted,
-    })
+    }
+    if handler and hasattr(handler, "last_trace_id"):
+        event_detail["trace_id"] = handler.last_trace_id
+        
+    documents_dao.append_event(session, version_id, VersionStage.extracted, event_detail)
     session.commit()

@@ -101,14 +101,14 @@ from langfuse.langchain import CallbackHandler
 
 def test_tracing_enabled_and_no_pii_leakage(client, session_factory, db_session, tenant_id):
     embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
-    version = parsed_version(db_session, tenant_id, texts=("Sensitive John Doe details",))
+    version = parsed_version(db_session, tenant_id, texts=("Sensitive [PERSON_1] details",))
     index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
     
-    element_id = str(search(db_session, tenant_id=tenant_id, query="John", embeddings=embeddings, vector_index=index)[0].element_id)
+    element_id = str(search(db_session, tenant_id=tenant_id, query="PERSON", embeddings=embeddings, vector_index=index)[0].element_id)
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "John"}, "id": "c1"}]),
         AIMessage(content="done"),
-        Answer(text="Found John Doe", citations=[element_id], refused=False),
+        Answer(text="Found [PERSON_1]", citations=[element_id], refused=False),
     ])
     
     class CapturingHandler(CallbackHandler):
@@ -130,8 +130,10 @@ def test_tracing_enabled_and_no_pii_leakage(client, session_factory, db_session,
 
     handler = CapturingHandler()
     
-    with patch("app.tracing.get_tracing_handler", return_value=handler):
+    with patch("app.tracing.get_tracing_handler", return_value=handler), \
+         patch("app.documents.dao.tokenize_known_values", return_value="Who is [PERSON_1]?"):
         _override(client, _runtime(model, embeddings, index), session_factory)
+        # The user asks with PII
         response = client.post("/chat", json={"session_id": "s-5", "message": "Who is John Doe?"})
         
         events = _events(response)
