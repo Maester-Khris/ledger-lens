@@ -390,3 +390,15 @@ export interface TermsDto {
 export function getTerms(documentId: string): Promise<TermsDto> {
   return fetch(`${API_BASE}/documents/${documentId}/terms`).then((r) => json<TermsDto>(r));
 }
+
+export interface TimelineItemDto {
+  at: string;
+  kind: 'ingested' | 'extracted' | 'reviewed' | 'ai_proposed' | 'decided' | 'posted';
+  title: string;
+  detail: { entries?: { account: string; direction: 'debit' | 'credit'; amount_minor: number; currency: string }[] } & Record<string, unknown>;
+  links: { ledger?: string };
+}
+
+export function getTimeline(documentId: string): Promise<TimelineItemDto[]> {
+  return fetch(`${API_BASE}/documents/${documentId}/timeline`).then((r) => json<TimelineItemDto[]>(r));
+}

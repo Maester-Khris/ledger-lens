@@ -292,9 +292,12 @@ export function Documents() {
               <div className="documents__detail-id mono">
                 {current.id} <CopyButton value={current.id} />
               </div>
-              <button type="button" className="btn btn-primary documents__view-btn" onClick={() => setViewerOpen(true)}>
-                View document
-              </button>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <button type="button" className="btn btn-primary documents__view-btn" onClick={() => setViewerOpen(true)}>
+                  View document
+                </button>
+                <Link className="btn btn-secondary" to={`/chat?document=${detail?.id || current.id}`}>Ask about this document</Link>
+              </div>
 
               <dl className="documents__meta">
                 <dt>Pages</dt>

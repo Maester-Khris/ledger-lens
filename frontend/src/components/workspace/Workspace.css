@@ -27,3 +27,4 @@
 
 .ws-notice { border-left: 3px solid var(--color-accent); padding: var(--space-2); background: var(--color-bg-subtle); margin-top: var(--space-2); }
 .ws-audit { list-style: none; padding: 0; display: grid; gap: var(--space-2); } .ws-input { font-size: 0.8em; white-space: pre-wrap; margin: 0; }
+.ws-timeline { list-style: none; padding: 0 0 0 var(--space-3); border-left: 2px solid var(--color-border); display: grid; gap: var(--space-2); }

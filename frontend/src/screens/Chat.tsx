@@ -10,6 +10,7 @@ import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
 import { ContractProfile } from '../components/workspace/ContractProfile';
 import { AuditLog } from '../components/workspace/AuditLog';
+import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
@@ -104,11 +105,15 @@ export function Chat() {
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);
   const [auditKey, setAuditKey] = useState(0);
+  const [ledgerKey, setLedgerKey] = useState(0);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
 
   const tabs: PanelTab[] = [
-    ...(scopeId ? [{ id: 'profile', label: 'Profile', content: <ContractProfile documentId={scopeId} /> }] : []),
+    ...(scopeId ? [
+      { id: 'profile', label: 'Profile', content: <ContractProfile documentId={scopeId} /> },
+      { id: 'ledger', label: 'Ledger', content: <LedgerTimeline documentId={scopeId} refreshKey={ledgerKey} /> },
+    ] : []),
     { id: 'audit', label: 'Audit trail', content: <AuditLog sessionId={sessionId} refreshKey={auditKey} /> },
   ];
 
@@ -256,7 +261,7 @@ export function Chat() {
                 <div className="chat__approvals">
                   <span className="chat__approvals-label">Correction proposed in this session</span>
                   {approvals.map((invocation) => (
-                    <ApprovalCard key={invocation.id} invocation={invocation} />
+                    <ApprovalCard key={invocation.id} invocation={invocation} onDecided={() => { refreshApprovals(sessionId); setLedgerKey((k) => k + 1); setAuditKey((k) => k + 1); }} />
                   ))}
                 </div>
               )}
