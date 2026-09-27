@@ -328,7 +328,7 @@ make it visible. IDs (N = now, D = deferred, I = icebox) are kept for cross-refe
       regulator; MiFID II is EU-only; add CSA Staff Notice 11-348 (AI in capital markets).
 - [x] **N3** Correct the GL claim: SHA-256 byte-identical regeneration is true; per-line chain of
       custody to the PDF page is not built (`reporting/gl_csv.py` aggregates per `gl_code`) — see D13.
-- [ ] **N5** Add source URLs to every competitor claim used in demo copy (WealthBar BCSC fine,
+- [x] **N5** Add source URLs to every competitor claim used in demo copy (WealthBar BCSC fine,
       Questrade MCP, Finn AI, Versapay 90% STP); mark the rest unverified.
 
 **Now — reframed copy (UI text only; internal names like `compare_contract_to_billing` unchanged,
