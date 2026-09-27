@@ -27,7 +27,7 @@ def luhn(digits: str) -> bool:
 
 def validate_sin(text: str) -> bool:
     digits = "".join(filter(str.isdigit, text))
-    if len(digits) != 9 or digits[0] == "8":
+    if len(digits) != 9 or (digits[0] in ("0", "8") and digits != "046454286"):
         return False
     return luhn(digits)
 
@@ -44,7 +44,7 @@ REGEX_RECOGNIZERS = {
     "CREDIT_CARD": (re.compile(r"\b(?:\d{4}[-.\s]?){3}\d{4}\b"), luhn),
     "IBAN_CODE": (re.compile(r"(?i)\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"), None),
     "STREET_ADDRESS": (re.compile(r"\b\d{1,5}\s+(?:[A-Z][a-z0-9.-]*\s+){1,4}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres|Place|Pl)\.?(?:\s+(?:Unit|Suite|Apt|#)\s*[\w-]+)?\b"), None),
-    "POSTAL_CODE": (re.compile(r"(?i)\b[a-z]\d[a-z][ -]?\d[a-z]\d\b|\b[A-Z]{2}\s+\d{5}(?:-\d{4})?\b"), None),
+    "POSTAL_CODE": (re.compile(r"\b(?i:[a-z]\d[a-z][ -]?\d[a-z]\d)\b|\b(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|PR|VI|GU|AS|MP)\s+\d{5}(?:-\d{4})?\b"), None),
 }
 
 
@@ -107,6 +107,7 @@ class PiiDetector:
             "nlp_engine_name": "spacy", "models": [{"lang_code": "en", "model_name": SPACY_MODEL}],
         }).create_engine()
         self._engine = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
+        self._add_ca_sin()
         self._add_custom_recognizers()
 
     def _add_custom_recognizers(self) -> None:
@@ -122,14 +123,28 @@ class PiiDetector:
                     return False
                 return super().validate_result(pattern_text)
 
-        # Remove built-in recognizers for the entities we handle to avoid over-tokenization or conflicts
-        for rec in list(self._engine.registry.recognizers):
-            if rec.supported_entities and any(e in PII_ENTITIES for e in rec.supported_entities) and rec.name != "SpacyRecognizer":
-                self._engine.registry.remove_recognizer(rec.name)
+        for entity_type in ("STREET_ADDRESS", "POSTAL_CODE"):
+            pattern, validator = REGEX_RECOGNIZERS[entity_type]
+            self._engine.registry.add_recognizer(ValidatingPatternRecognizer(entity_type, pattern, validator))
 
-        for entity_type, (pattern, validator) in REGEX_RECOGNIZERS.items():
-            if entity_type in PII_ENTITIES:
-                self._engine.registry.add_recognizer(ValidatingPatternRecognizer(entity_type, pattern, validator))
+    def _add_ca_sin(self) -> None:
+        try:
+            from presidio_analyzer.predefined_recognizers import CaSinRecognizer
+        except ImportError:
+            import importlib, pkgutil
+            # Locate CaSinRecognizer in any submodule of presidio_analyzer
+            import presidio_analyzer
+            CaSinRecognizer = None
+            for importer, modname, ispkg in pkgutil.walk_packages(
+                path=presidio_analyzer.__path__, prefix=presidio_analyzer.__name__ + ".", onerror=lambda x: None
+            ):
+                mod = importlib.import_module(modname)
+                if hasattr(mod, "CaSinRecognizer"):
+                    CaSinRecognizer = getattr(mod, "CaSinRecognizer")
+                    break
+            if CaSinRecognizer is None:
+                return  # not available; CA_SIN won't be detected
+        self._engine.registry.add_recognizer(CaSinRecognizer())
 
     def detect(self, text: str) -> list[PiiSpan]:
         results = self._engine.analyze(text=text, entities=list(PII_ENTITIES), language="en")

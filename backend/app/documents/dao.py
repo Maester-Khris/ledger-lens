@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
 from app.documents.models import Document, DocumentElement, DocumentVersion, PiiToken, VersionEvent
-from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token
+from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
 
@@ -207,8 +207,6 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
     """Tokenise PII in a question without loading spaCy in the API: hash every 1–4 word window and keep
     the ones the vault already knows. Only values seen in an ingested document can match (by design).
     Then, apply regex recognizers to tokenise standard PII even if it wasn't seen before."""
-    from app.documents.redact import REGEX_RECOGNIZERS
-
     words = list(_WORD.finditer(text))
     candidates: dict[str, PiiSpan] = {}
     for i in range(len(words)):

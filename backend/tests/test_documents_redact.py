@@ -92,7 +92,8 @@ def test_shared_regexes_do_not_tokenise_amounts():
     from app.documents.redact import REGEX_RECOGNIZERS
     
     cases = ["50000", "$100 000 000", "$1,250,000", "25 basis points by way of fee",
-             "File No. 811-02729", "CIK 0000052136", "0.25% on the first $500,000", "within 30 days"]
+             "File No. 811-02729", "CIK 0000052136", "0.25% on the first $500,000", "within 30 days",
+             "fee up to 50000 of assets", "Fees on 25000 dollars", "at 12345 Main", "046 454 287", "012 345 678"]
     
     for text in cases:
         for entity_type, (pattern, validator) in REGEX_RECOGNIZERS.items():
@@ -109,6 +110,7 @@ def test_shared_regexes_tokenise_true_pii():
         "123 Main Street Unit 4B": "STREET_ADDRESS",
         "2020 Calamos Court": "STREET_ADDRESS",
         "046 454 286": "CA_SIN",
+        "SIN 046454286": "CA_SIN",
         "(416) 555-0199": "PHONE_NUMBER",
         "+1 416-555-0199": "PHONE_NUMBER",
         "4111 1111 1111 1111": "CREDIT_CARD",
@@ -122,3 +124,11 @@ def test_shared_regexes_tokenise_true_pii():
                     if entity_type == expected_entity:
                         found = True
         assert found, f"Failed to match {expected_entity} in '{text}'"
+
+@pytest.mark.slow
+def test_presidio_finds_us_bank_number(monkeypatch):
+    import app.documents.redact
+    monkeypatch.setattr(app.documents.redact, "MIN_PII_SCORE", 0.4)
+    text = "Account number: 123456789012"
+    spans = PiiDetector().detect(text)
+    assert any(s.entity_type == "US_BANK_NUMBER" for s in spans)
