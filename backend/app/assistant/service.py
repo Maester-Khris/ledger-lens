@@ -21,6 +21,7 @@ from app.assistant.tools import ToolContext, ToolSpec
 from app.documents import dao as documents_dao
 from app.governance.dao import ModelConfig
 from app.retrieval.vector_index import VectorIndex
+from app.tracing import get_tracing_handler
 
 logger = logging.getLogger(__name__)
 HISTORY_TURNS = 4
@@ -68,17 +69,16 @@ async def run_turn(
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         
-        from app.tracing import get_tracing_handler
         handler = get_tracing_handler()
         
         run_config = {"recursion_limit": RECURSION_LIMIT}
         if handler:
             run_config["callbacks"] = [handler]
-            run_config["tags"] = ["chat"]
             run_config["metadata"] = {
                 "langfuse_session_id": session_id,
+                "langfuse_tags": ["chat"],
                 "prompt_version": record["prompt_version"],
-                "GRAPH_VERSION": record["graph_version"],
+                "graph_version": record["graph_version"],
                 "model_id": record["model_id"],
             }
         

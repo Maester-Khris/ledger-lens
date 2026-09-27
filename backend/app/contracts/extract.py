@@ -17,6 +17,7 @@ from app.contracts.types import FieldRouting
 from app.documents import dao as documents_dao
 from app.documents.models import DocumentElement
 from app.documents.types import VersionStage
+from app.tracing import get_tracing_handler
 
 PROMPT = (Path(__file__).parent / "prompts" / "extract_v1.md").read_text()
 TEMPERATURE = Decimal(0)
@@ -51,7 +52,7 @@ def render_input(elements: Sequence[DocumentElement]) -> str:
     return "<document>\n" + "\n".join(tags) + "\n</document>"
 
 
-def call_model(chat_model: BaseChatModel, document_text: str, config: dict = None) -> ContractTerms:
+def call_model(chat_model: BaseChatModel, document_text: str, config: dict | None = None) -> ContractTerms:
     structured = chat_model.with_structured_output(ContractTerms, method="json_schema", include_raw=True)
     messages = [SystemMessage(PROMPT), HumanMessage(document_text)]
     if config is None:
@@ -73,13 +74,11 @@ def run_extraction(session: Session, version_id: uuid.UUID, *, chat_model: BaseC
     document_text = render_input(elements)
     
     run_id = uuid.uuid4()
-    from app.tracing import get_tracing_handler
     handler = get_tracing_handler()
     run_config = {}
     if handler:
         run_config["callbacks"] = [handler]
-        run_config["tags"] = ["extraction"]
-        run_config["metadata"] = {"run_id": str(run_id), "prompt_version": prompt_version()}
+        run_config["metadata"] = {"langfuse_tags": ["extraction"], "run_id": str(run_id), "prompt_version": prompt_version()}
         run_config["run_name"] = f"extract_{run_id}"
 
     terms = call_model(chat_model, document_text, config=run_config)

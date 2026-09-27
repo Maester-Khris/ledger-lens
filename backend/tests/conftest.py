@@ -80,3 +80,13 @@ def document_settings(tmp_path_factory):
     config.PII_VAULT_KEY = Fernet.generate_key().decode()
     config.DOCUMENT_STORE_DIR = tmp_path_factory.mktemp("document-store")
     return config.DOCUMENT_STORE_DIR
+
+
+@pytest.fixture(autouse=True)
+def disable_tracing(monkeypatch, request):
+    if "enable_tracing" in request.keywords:
+        return
+    monkeypatch.setattr("app.tracing.get_tracing_handler", lambda: None)
+    monkeypatch.setattr("app.tracing.flush_tracing", lambda: None)
+    monkeypatch.setattr("app.assistant.service.get_tracing_handler", lambda: None, raising=False)
+    monkeypatch.setattr("app.contracts.extract.get_tracing_handler", lambda: None, raising=False)
