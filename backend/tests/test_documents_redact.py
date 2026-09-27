@@ -87,3 +87,38 @@ def test_detector_loads_the_medium_spacy_model():
     # md, not presidio's default lg: same NER accuracy for names, ~5x less RAM next to Docling in the worker
     nlp = PiiDetector()._engine.nlp_engine.nlp["en"]
     assert nlp.meta["name"] == "core_web_md"
+
+def test_shared_regexes_do_not_tokenise_amounts():
+    from app.documents.redact import REGEX_RECOGNIZERS
+    
+    cases = ["50000", "$100 000 000", "$1,250,000", "25 basis points by way of fee",
+             "File No. 811-02729", "CIK 0000052136", "0.25% on the first $500,000", "within 30 days"]
+    
+    for text in cases:
+        for entity_type, (pattern, validator) in REGEX_RECOGNIZERS.items():
+            for match in pattern.finditer(text):
+                if validator is None or validator(match.group(0)):
+                    pytest.fail(f"'{text}' falsely matched {entity_type} ({match.group(0)})")
+
+def test_shared_regexes_tokenise_true_pii():
+    from app.documents.redact import REGEX_RECOGNIZERS
+    
+    cases = {
+        "M5V 2T6": "POSTAL_CODE",
+        "Philadelphia, PA 19103": "POSTAL_CODE",
+        "123 Main Street Unit 4B": "STREET_ADDRESS",
+        "2020 Calamos Court": "STREET_ADDRESS",
+        "046 454 286": "CA_SIN",
+        "(416) 555-0199": "PHONE_NUMBER",
+        "+1 416-555-0199": "PHONE_NUMBER",
+        "4111 1111 1111 1111": "CREDIT_CARD",
+    }
+    
+    for text, expected_entity in cases.items():
+        found = False
+        for entity_type, (pattern, validator) in REGEX_RECOGNIZERS.items():
+            for match in pattern.finditer(text):
+                if validator is None or validator(match.group(0)):
+                    if entity_type == expected_entity:
+                        found = True
+        assert found, f"Failed to match {expected_entity} in '{text}'"
