@@ -55,6 +55,33 @@ export type ChatEvent =
   | { type: 'answer' | 'refused'; data: { text: string; citations: Citation[] } }
   | { type: 'error'; data: { text: string } };
 
+const GUEST_KEY = 'ledgerlens.guest';
+let guestPromise: Promise<string> | null = null;
+
+function storedGuest(): string | null {
+  try { return localStorage.getItem(GUEST_KEY); } catch { return null; }
+}
+
+function storeGuest(id: string): void {
+  try { localStorage.setItem(GUEST_KEY, id); } catch { /* storage blocked: the id lives for this tab only */ }
+}
+
+/** Registers once per page load; the server replaces an id it no longer knows (e.g. after a DB reset). */
+export function guestId(): Promise<string> {
+  guestPromise ??= (async () => {
+    const known = storedGuest();
+    const response = await fetch(`${API_BASE}/guests`, { method: 'POST', headers: known ? { 'X-Guest-Id': known } : {} });
+    const { id } = await json<{ id: string }>(response);
+    storeGuest(id);
+    return id;
+  })();
+  return guestPromise;
+}
+
+export async function guestHeaders(): Promise<Record<string, string>> {
+  try { return { 'X-Guest-Id': await guestId() }; } catch { return {}; }
+}
+
 async function json<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const problem = (await response.json().catch(() => ({}))) as { detail?: string };
@@ -84,11 +111,15 @@ export function uploadDocument(file: File): Promise<{ document_id: string }> {
   return fetch(`${API_BASE}/documents`, { method: 'POST', body: form }).then((r) => json<{ document_id: string }>(r));
 }
 
-export async function streamChat(sessionId: string, message: string, onEvent: (event: ChatEvent) => void): Promise<void> {
+export interface StreamChatOptions { documentId?: string }
+
+export async function streamChat(
+  sessionId: string, message: string, onEvent: (event: ChatEvent) => void, options: StreamChatOptions = {},
+): Promise<void> {
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, message }),
+    headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
+    body: JSON.stringify({ session_id: sessionId, message, ...(options.documentId ? { document_id: options.documentId } : {}) }),
   });
   if (!response.ok || !response.body) throw new Error(`Chat failed (${response.status})`);
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -220,8 +251,12 @@ function withQuery(path: string, params: Record<string, string | number | boolea
   return query ? `${path}?${query}` : path;
 }
 
-function postJson(url: string, body: unknown, headers: Record<string, string> = {}): Promise<Response> {
-  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) });
+async function postJson(url: string, body: unknown, headers: Record<string, string> = {}): Promise<Response> {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await guestHeaders()), ...headers },
+    body: JSON.stringify(body),
+  });
 }
 
 export function listPostings(options: ListPostingsOptions = {}): Promise<PostingPage> {

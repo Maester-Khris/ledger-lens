@@ -300,3 +300,9 @@
   font-weight: 500;
   color: var(--color-text-secondary);
 }
+
+.chat__column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}

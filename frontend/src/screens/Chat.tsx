@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, type ToolInvocationDto, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
+import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
+import { DocumentCards } from '../components/workspace/DocumentCards';
+import { ScopeChip } from '../components/workspace/ScopeChip';
+import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
+import '../components/workspace/Workspace.css';
 import './Chat.css';
 
 const SUGGESTED_QUESTIONS = [
@@ -82,12 +86,28 @@ function indexedLabel(count: number | null): string {
 }
 
 export function Chat() {
+  const [searchParams] = useSearchParams();
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [scopeId, setScopeId] = useState<string | null>(searchParams.get('document'));
+  const [cardsOpen, setCardsOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const scoped = documents.find((d) => d.id === scopeId) ?? null;
+  const tabs: PanelTab[] = [];  // Tasks 5, 9 and 11 add Profile, Audit trail and Ledger
+
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
 
   const [approvals, setApprovals] = useState<ToolInvocationDto[]>([]);
+
+  const startConversation = (nextScope: string | null) => {
+    setScopeId(nextScope);
+    setSessionId(newSessionId());
+    setTurns([]);
+    setApprovals([]);
+    setCardsOpen(true);
+  };
 
   const refreshApprovals = useCallback((session: string) => {
     listToolInvocations({ limit: 50 })
@@ -100,7 +120,7 @@ export function Chat() {
 
   useEffect(() => {
     listDocuments()
-      .then((docs) => setIndexedCount(docs.filter((d) => d.status === 'ready').length))
+      .then((docs) => { setDocuments(docs); setIndexedCount(docs.filter((d) => d.status === 'ready').length); })
       .catch(() => setIndexedCount(null));
   }, []);
 
@@ -115,6 +135,7 @@ export function Chat() {
   const ask = async (question: string) => {
     if (!question.trim() || busy) return;
     setInputValue('');
+    setCardsOpen(false);
     setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [] }]);
     const onEvent = (event: ChatEvent) => {
       if (event.type === 'progress') updateLast({ step: event.data.step });
@@ -122,7 +143,7 @@ export function Chat() {
       else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations });
     };
     try {
-      await streamChat(sessionId, question, onEvent);
+      await streamChat(sessionId, question, onEvent, { documentId: scopeId ?? undefined });
     } catch (error) {
       updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
     } finally {
@@ -149,103 +170,109 @@ export function Chat() {
         <button
           type="button"
           className="btn btn-secondary chat__new-session"
-          onClick={() => {
-            setSessionId(newSessionId());
-            setTurns([]);
-            setApprovals([]);
-          }}
+          onClick={() => startConversation(scopeId)}
         >
           + New session
         </button>
       </div>
 
-      <div className="chat__scroll" ref={scrollRef}>
-        <div className="chat__thread">
-          {turns.length === 0 && (
-            <div className="chat__prompts">
-              <span className="chat__prompts-label">Suggested questions</span>
-              <div className="chat__prompt-chips">
-                {SUGGESTED_QUESTIONS.map((question) => (
-                  <button type="button" className="chat__prompt-chip" key={question} onClick={() => void ask(question)}>
-                    {question}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      <div className={`ws-layout${tabs.length ? ' ws-layout--with-panel' : ''}`}>
+        <div className="chat__column">
+          <div className="chat__scroll" ref={scrollRef}>
+            <div className="chat__thread">
+              {cardsOpen ? (
+                <DocumentCards documents={documents} selectedId={scopeId} onSelect={(id) => id !== scopeId && startConversation(id)} />
+              ) : (
+                <ScopeChip title={scoped?.title ?? null} onOpen={() => { setCardsOpen(true); setPanelOpen(true); }} onClear={() => startConversation(null)} />
+              )}
+              {turns.length === 0 && (
+                <div className="chat__prompts">
+                  <span className="chat__prompts-label">Suggested questions</span>
+                  <div className="chat__prompt-chips">
+                    {SUGGESTED_QUESTIONS.map((question) => (
+                      <button type="button" className="chat__prompt-chip" key={question} onClick={() => void ask(question)}>
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {turns.map((turn, index) => (
-            <div className="chat__exchange" key={index}>
-              <div className="chat__turn chat__turn--user">
-                <div className="chat__bubble--user">{turn.question}</div>
-              </div>
-              <div className="chat__turn chat__turn--assistant" aria-live="polite">
-                {turn.outcome === 'pending' && <AssistantHead label={turn.step ?? 'thinking'} variant="accent" />}
-                {turn.outcome === 'answer' && (
-                  <>
-                    <AssistantHead label="Answer" variant="neutral" detail={`${turn.citations.length} citation(s)`} />
-                    <Markdown className="chat__prose" text={turn.text} />
-                    {turn.citations.length > 0 && (
-                      <div className="chat__citations">
-                        {turn.citations.map((c) => (
-                          <CitationCard key={c.id} citation={c} />
-                        ))}
-                      </div>
+              {turns.map((turn, index) => (
+                <div className="chat__exchange" key={index}>
+                  <div className="chat__turn chat__turn--user">
+                    <div className="chat__bubble--user">{turn.question}</div>
+                  </div>
+                  <div className="chat__turn chat__turn--assistant" aria-live="polite">
+                    {turn.outcome === 'pending' && <AssistantHead label={turn.step ?? 'thinking'} variant="accent" />}
+                    {turn.outcome === 'answer' && (
+                      <>
+                        <AssistantHead label="Answer" variant="neutral" detail={`${turn.citations.length} citation(s)`} />
+                        <Markdown className="chat__prose" text={turn.text} />
+                        {turn.citations.length > 0 && (
+                          <div className="chat__citations">
+                            {turn.citations.map((c) => (
+                              <CitationCard key={c.id} citation={c} />
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-                {(turn.outcome === 'refused' || turn.outcome === 'error') && (
-                  <>
-                    <AssistantHead label={turn.outcome === 'refused' ? 'No answer' : 'Error'} variant="warning" />
-                    <Markdown className="chat__prose" text={turn.text} />
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-          {approvals.length > 0 && (
-            <div className="chat__approvals">
-              <span className="chat__approvals-label">Correction proposed in this session</span>
-              {approvals.map((invocation) => (
-                <ApprovalCard key={invocation.id} invocation={invocation} />
+                    {(turn.outcome === 'refused' || turn.outcome === 'error') && (
+                      <>
+                        <AssistantHead label={turn.outcome === 'refused' ? 'No answer' : 'Error'} variant="warning" />
+                        <Markdown className="chat__prose" text={turn.text} />
+                      </>
+                    )}
+                  </div>
+                </div>
               ))}
+              {approvals.length > 0 && (
+                <div className="chat__approvals">
+                  <span className="chat__approvals-label">Correction proposed in this session</span>
+                  {approvals.map((invocation) => (
+                    <ApprovalCard key={invocation.id} invocation={invocation} />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="chat__composer">
-        <form
-          className="chat__composer-inner"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void ask(inputValue);
-          }}
-        >
-          <div className="chat__composer-bar">
-            <input
-              ref={inputRef}
-              type="text"
-              className="chat__composer-input"
-              placeholder="Ask about your indexed contracts…"
-              aria-label="Ask about your indexed contracts"
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-            />
-            <button
-              type="submit"
-              className="chat__composer-send"
-              aria-label="Send message"
-              disabled={busy || !inputValue.trim()}
+          <div className="chat__composer">
+            <form
+              className="chat__composer-inner"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void ask(inputValue);
+              }}
             >
-              <ArrowUpIcon size={16} />
-            </button>
+              <div className="chat__composer-bar">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="chat__composer-input"
+                  placeholder="Ask about your indexed contracts…"
+                  aria-label="Ask about your indexed contracts"
+                  value={inputValue}
+                  onChange={(event) => setInputValue(event.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="chat__composer-send"
+                  aria-label="Send message"
+                  disabled={busy || !inputValue.trim()}
+                >
+                  <ArrowUpIcon size={16} />
+                </button>
+              </div>
+              <div className="chat__composer-foot">
+                Answers come only from your indexed contracts, every number is checked against the cited text, and the
+                assistant says so when it can't find an answer.
+              </div>
+            </form>
           </div>
-          <div className="chat__composer-foot">
-            Answers come only from your indexed contracts, every number is checked against the cited text, and the
-            assistant says so when it can't find an answer.
-          </div>
-        </form>
+        </div>
+        {(panelOpen || window.matchMedia('(min-width: 1100px)').matches) && <DocumentPanel tabs={tabs} />}
       </div>
     </div>
   );
