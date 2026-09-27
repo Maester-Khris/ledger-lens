@@ -40,7 +40,7 @@ export function AuditLog({ sessionId, refreshKey }: AuditLogProps) {
                   {r.decision.posting_id && <> · <Link to={`/ledger?posting=${r.decision.posting_id}`}>View posting →</Link></>}</div>
               : r.approval_required && <Link to="/review#approvals">Awaiting approval →</Link>}
             {r.trace_id && LANGFUSE_URL && (
-              <a href={`${LANGFUSE_URL}/trace/${r.trace_id}`} target="_blank" rel="noreferrer">View trace →</a>
+              <a href={`${LANGFUSE_URL}/traces/${r.trace_id}`} target="_blank" rel="noreferrer">View trace →</a>
             )}
           </li>
         ))}

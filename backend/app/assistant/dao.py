@@ -1,9 +1,8 @@
 import uuid
-
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 
-from collections.abc import Iterable
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
