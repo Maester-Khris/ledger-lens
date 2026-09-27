@@ -66,6 +66,17 @@ def test_presidio_finds_name_sin_email_and_phone():
 
 
 @pytest.mark.slow
+def test_presidio_finds_address_and_postal_code():
+    text = "Home address: 123 Main Street Unit 4B, Toronto, Province of Ontario, M5V 2T6, Canada."
+    spans = PiiDetector().detect(text)
+    found = {span.entity_type for span in spans}
+    assert "STREET_ADDRESS" in found
+    assert "POSTAL_CODE" in found
+    # Province of Ontario and Toronto should not be tokenised as LOCATION
+    assert "LOCATION" not in found
+
+
+@pytest.mark.slow
 def test_presidio_leaves_governing_law_and_dates_alone():
     text = "This Agreement shall be governed by the laws of the Province of Ontario, effective January 1, 2026."
     assert PiiDetector().detect(text) == []

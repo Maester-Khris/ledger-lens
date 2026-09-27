@@ -6,9 +6,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 # Personal data only. Organisations, locations and dates stay readable: contracts need
-# "Province of Ontario" and "January 1, 2026" as terms. Known gap: a street address is not tokenised.
+# "Province of Ontario" and "January 1, 2026" as terms.
 PII_ENTITIES = (
     "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "CA_SIN", "US_SSN", "CREDIT_CARD", "IBAN_CODE", "US_BANK_NUMBER",
+    "STREET_ADDRESS", "POSTAL_CODE"
 )
 MIN_PII_SCORE = 0.5
 # md, not presidio's default lg: name detection (NER) is on par; lg's extra word vectors don't help it,
@@ -78,6 +79,28 @@ class PiiDetector:
         }).create_engine()
         self._engine = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
         self._add_ca_sin()
+        self._add_custom_recognizers()
+
+    def _add_custom_recognizers(self) -> None:
+        from presidio_analyzer import PatternRecognizer, Pattern
+        
+        # Street address (civic number + street name + type, optional unit)
+        address_pattern = Pattern(
+            name="street_address",
+            regex=r"(?i)\b\d{1,5}\s+(?:[a-z0-9.-]+\s+){1,4}(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|court|ct|circle|cir|trail|trl|way)(?:\s+(?:apt|suite|unit|#)\s*[\w-]+)?\b",
+            score=0.85
+        )
+        address_recognizer = PatternRecognizer(supported_entity="STREET_ADDRESS", patterns=[address_pattern])
+        self._engine.registry.add_recognizer(address_recognizer)
+
+        # Postal code (CA / US Zip)
+        postal_pattern = Pattern(
+            name="postal_code",
+            regex=r"(?i)\b(?:[a-z]\d[a-z][ -]?\d[a-z]\d|\d{5}(?:-\d{4})?)\b",
+            score=0.85
+        )
+        postal_recognizer = PatternRecognizer(supported_entity="POSTAL_CODE", patterns=[postal_pattern])
+        self._engine.registry.add_recognizer(postal_recognizer)
 
     def _add_ca_sin(self) -> None:
         try:
