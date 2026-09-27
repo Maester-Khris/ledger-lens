@@ -11,6 +11,7 @@ from app.assistant.tools import ToolContext, default_tools, execute
 from app.governance.dao import ModelConfig
 from app.governance.models import ToolInvocation
 from app.retrieval.index import index_version
+from app.retrieval.search import search
 from app.retrieval.vector_index import InMemoryVectorIndex
 from tests.fakes import RecordingEmbeddings, ScriptedChatModel
 from tests.test_api_chat import _override, _runtime
@@ -74,3 +75,20 @@ def test_scoped_chat_records_the_document_on_the_turn(client, session_factory, d
     client.post("/chat", json={"session_id": "s-scoped", "message": "hi", "document_id": str(a)})
     turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-scoped")).one()
     assert turn.document_id == a
+
+
+def test_scoped_chat_turn_only_retrieves_the_scoped_document(client, session_factory, db_session, tenant_id):
+    # end to end: the scope reaches the agent's tools, not just the turn row
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    a, b = _two_documents(db_session, tenant_id, embeddings, index)
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": "search_contracts",
+                                           "args": {"query": "billed quarterly", "document_ids": [str(b)]}, "id": "c1"}]),
+        AIMessage(content="done"),
+    ])
+    _override(client, _runtime(model, embeddings, index), session_factory)
+    client.post("/chat", json={"session_id": "s-scoped-e2e", "message": "How are fees billed?", "document_id": str(a)})
+    invocation = db_session.scalars(select(ToolInvocation).where(ToolInvocation.session_id == "s-scoped-e2e")).one()
+    cited = {h.element_id for h in search(db_session, tenant_id=tenant_id, query="billed quarterly",
+                                         embeddings=embeddings, vector_index=index, document_ids=[a])}
+    assert invocation.citation and {uuid.UUID(i) for i in invocation.citation["ids"]} <= cited

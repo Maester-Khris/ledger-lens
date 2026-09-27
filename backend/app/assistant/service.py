@@ -66,7 +66,8 @@ async def run_turn(
             history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=uuid.uuid4(),
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
-                          model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key)
+                          model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
+                          document_id=document_id)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         
