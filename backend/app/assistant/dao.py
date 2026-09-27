@@ -3,6 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
+from collections.abc import Iterable
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,14 @@ from app.assistant.models import ChatTurn, Guest
 def save_turn(session: Session, turn: ChatTurn) -> None:
     session.add(turn)
     session.commit()
+
+
+def trace_ids(session: Session, tenant_id: uuid.UUID, turn_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, str | None]:
+    ids = list(turn_ids)
+    if not ids:
+        return {}
+    rows = session.execute(select(ChatTurn.id, ChatTurn.trace_id).where(ChatTurn.tenant_id == tenant_id, ChatTurn.id.in_(ids)))
+    return {turn_id: trace_id for turn_id, trace_id in rows}
 
 
 def recent_turns(session: Session, tenant_id: uuid.UUID, session_id: str, limit: int) -> list[ChatTurn]:

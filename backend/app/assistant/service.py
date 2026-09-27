@@ -4,23 +4,22 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Literal
-from datetime import date
-from sqlalchemy.orm import Session
-from app.contracts import dao as contracts_dao
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.errors import GraphRecursionError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app import config
 from app.assistant import dao
 from app.assistant.graph import GRAPH_VERSION, RECURSION_LIMIT, build_graph, prompt_version
 from app.assistant.models import ChatOutcome, ChatTurn
 from app.assistant.tools import ToolContext, ToolSpec
+from app.contracts import dao as contracts_dao
 from app.documents import dao as documents_dao
 from app.governance.dao import ModelConfig
 from app.retrieval.vector_index import VectorIndex
@@ -29,6 +28,8 @@ from app.tracing import get_tracing_handler
 logger = logging.getLogger(__name__)
 HISTORY_TURNS = 4
 PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "verify": "checking citations"}
+SYSTEM_CITATION_ID = "system"
+NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,18 @@ def _usage(messages: list) -> tuple[int, int]:
     return sum(u["input_tokens"] for u in usage), sum(u["output_tokens"] for u in usage)
 
 
+def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str]) -> list[TurnEvent]:
+    events = []
+    for document_id in dict.fromkeys(document_ids):  # once per document, in order
+        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today())
+        if view is None:
+            continue
+        fields = [{"path": f.path, "label": f.label, "reason": f.reason} for f in view.fields if f.status in ("needs_review", "rejected")]
+        if fields:
+            events.append(TurnEvent("unvalidated", {"document_id": document_id, "title": view.title, "fields": fields}))
+    return events
+
+
 async def run_turn(
     *, session_factory: sessionmaker, runtime: AssistantRuntime, tenant_id: uuid.UUID, session_id: str,
     message: str, hmac_key: str, vault_key: str,
@@ -67,7 +80,9 @@ async def run_turn(
         history = []
         for turn in dao.recent_turns(session, tenant_id, session_id, HISTORY_TURNS):
             history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
-        ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=uuid.uuid4(),
+        turn_id = uuid.uuid4()
+        record["id"] = turn_id
+        ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=turn_id,
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
                           document_id=document_id)
@@ -135,16 +150,4 @@ async def run_turn(
             record["latency_ms"] = int((time.perf_counter() - started) * 1000)
             dao.save_turn(session, ChatTurn(outcome=outcome, **record))
 
-SYSTEM_CITATION_ID = "system"
-NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
 
-def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str]) -> list[TurnEvent]:
-    events = []
-    for document_id in dict.fromkeys(document_ids):  # once per document, in order
-        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today())
-        if view is None:
-            continue
-        fields = [{"path": f.path, "label": f.label, "reason": f.reason} for f in view.fields if f.status in ("needs_review", "rejected")]
-        if fields:
-            events.append(TurnEvent("unvalidated", {"document_id": document_id, "title": view.title, "fields": fields}))
-    return events

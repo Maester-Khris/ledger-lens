@@ -77,6 +77,7 @@ def list_invocations(
     posting_id: uuid.UUID | None = None,
     pending: bool | None = None,
     limit: int = 50,
+    session_id: str | None = None,
 ) -> list[tuple[ToolInvocation, ToolInvocationDecision | None]]:
     query = (
         select(ToolInvocation, ToolInvocationDecision)
@@ -89,6 +90,8 @@ def list_invocations(
         query = query.where(ToolInvocation.approval_required.is_(True), ToolInvocationDecision.invocation_id.is_(None))
     elif pending is False:
         query = query.where(ToolInvocationDecision.invocation_id.is_not(None))
+    if session_id is not None:
+        query = query.where(ToolInvocation.session_id == session_id)
     query = query.order_by(ToolInvocation.created_at.desc(), ToolInvocation.id.desc()).limit(limit)
     return [(invocation, decision) for invocation, decision in session.execute(query)]
 
