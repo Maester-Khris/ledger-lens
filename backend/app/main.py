@@ -1,9 +1,16 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.problem import install_problem_handlers
 from app.routes import health, postings, fee_runs, tool_invocations, gl_exports, documents, chat, reviews, stats
+from app.tracing import flush_tracing
 
-app = FastAPI(title="Fintech Ledger + Document Intelligence")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    flush_tracing()
+
+app = FastAPI(title="Fintech Ledger + Document Intelligence", lifespan=lifespan)
 install_problem_handlers(app)
 
 app.include_router(health.router)

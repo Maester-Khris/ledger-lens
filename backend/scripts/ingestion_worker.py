@@ -52,6 +52,8 @@ def main() -> None:
     # ponytail: one worker, one stage at a time (RAM budget); the advisory lock makes more workers safe when needed
     while True:
         ran = run_pending(SessionLocal, runners, PIPELINE)
+        from app.tracing import flush_tracing
+        flush_tracing()
         if args.once:
             logging.info("ran %d stage(s)", ran)
             return

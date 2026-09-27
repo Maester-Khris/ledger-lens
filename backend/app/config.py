@@ -62,6 +62,14 @@ def require(name: str) -> str:
     return value
 
 
+# Tracing
+LANGFUSE_PUBLIC_KEY = os.environ.get("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.environ.get("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.environ.get("LANGFUSE_HOST")
+LANGFUSE_TRACING_ENVIRONMENT = os.environ.get("LANGFUSE_TRACING_ENVIRONMENT", "local")
+TRACING_ENABLED = bool(LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)
+
+
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "contracts")
