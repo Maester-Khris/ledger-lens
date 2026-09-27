@@ -186,6 +186,8 @@ def test_tracing_enabled_and_no_pii_leakage(client, session_factory, db_session,
         turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-5")).one()
         assert turn.trace_id == "trace-123"
         
+        # the handler saw the tokenised question, so the loop below isn't checking an empty capture
+        assert any(t_email in inp and t_loc in inp for inp in handler.captured)
         for inp in handler.captured:
             assert "bob@example.com" not in inp
             assert "123 Main Street" not in inp
