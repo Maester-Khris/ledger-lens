@@ -266,7 +266,7 @@ the final demo version with the SEC documents. Priorities for the next sprint:
   is designed. Hosted secrets (new `PII_HMAC_KEY` / `PII_VAULT_KEY`, API keys) live in Infisical, never in the repo.
 
 **Found in the 2026-09-24 live run and end-to-end UI test, deferred to the next iteration:**
-- [ ] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
+- [x] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
       billing household (golden case `fund-not-comparable`), `compare_contract_to_billing`
       returns the reason, but with no citable evidence the answer step gives the generic
       "I can't find that in the indexed contracts". Either show the tool's reason as a fixed,
@@ -346,7 +346,7 @@ renaming them would move the prompt version and the golden set):**
       animation first; respect `prefers-reduced-motion`.
 
 **Now — document-centred features (share the selected-document context; one brainstorming pass):**
-- [x] **N19** "not comparable" key decision: show the tool's reason as a fixed system message.
+- [x] **N19** Guests: a `guests` table, `X-Guest-Id` attribution on chats and decisions (`decided_by = guest:<8>`); attribution, not authentication.
 - [x] **N12** Chat optionally scoped to one document: start a chat from a selected document, or a general chat
       as today (`Chat.tsx` takes no document yet).
 - [x] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):

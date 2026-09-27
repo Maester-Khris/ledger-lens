@@ -50,3 +50,12 @@ def test_rejected_proposal_is_decided_without_a_posting(client, db_session, tena
 
 def test_unknown_document_is_404(client):
     assert client.get(f"/documents/{uuid.uuid4()}/timeline").status_code == 404
+
+
+def test_field_lookups_stay_in_the_audit_trail_not_the_timeline(client, db_session, tenant_id):
+    document_id = _contract(db_session, tenant_id, None, key="timeline-read-only")
+    fields = {s.name: s for s in contract_tools()}["get_contract_fields"]
+    execute(fields, _ctx(db_session, tenant_id), {"document_id": str(document_id)})
+    db_session.commit()
+    kinds = [i["kind"] for i in client.get(f"/documents/{document_id}/timeline").json()]
+    assert "ai_proposed" not in kinds and "extracted" in kinds

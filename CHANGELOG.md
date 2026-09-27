@@ -18,7 +18,7 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 
 ### Scope
 
-- [ ] `assistant` — **key decision first:** the answer for a contract with no billing household (golden case `fund-not-comparable`) → **Not epic-tracked** (live-run finding)
+- [x] `assistant` — **key decision first:** the answer for a contract with no billing household (golden case `fund-not-comparable`) → **Not epic-tracked** (live-run finding). Decided option A, built with N11: a fixed message with a `system` citation; the golden case gets `expect_system_notice`
 - [x] `frontend` — human review loop: dashboard "to review" link → the fields awaiting review → decision logged append-only → **Not epic-tracked** (live-run finding)
 - [ ] `ops` — tracing with Langfuse (`artifacts/research/2026-09-24-tracing-stack.md`) → **Epic 2.3** (Week 2). Built 2026-09-27 (one trace per chat turn and per extraction run, `chat_turns.trace_id`, tracing off without keys and in tests, PII boundary tested); **live verification pending** — see below
 - [x] `frontend` — UI fixes: chat message spacing, markdown rendering in answers, general pass → **Not epic-tracked** (live-run findings)
@@ -29,7 +29,7 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 - [x] `api` — cached `/stats` (TTL + invalidation + ETag) and `/config`; immutable caching for original PDFs → **Not epic-tracked** (UI review round 2, 2026-09-26)
 - [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech reframing, backlog D6)
 - [x] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech reframing, backlog N11)
-- [x] `assistant` — "not comparable" key decision: show the tool's reason as a fixed system message → **Not epic-tracked** (fintech reframing, backlog N19)
+- [x] `api` — guests: `X-Guest-Id` attribution on chats, reviews and approvals → **Not epic-tracked** (fintech reframing, backlog N19)
 - [x] `frontend` — chat optionally scoped to one document → **Not epic-tracked** (fintech reframing, backlog N12)
 - [x] `frontend` — contract profile panel (structured client profile) → **Not epic-tracked** (fintech reframing, backlog N17)
 - [x] `frontend` — audit panel in the chat session (rest refreshed) → **Not epic-tracked** (fintech reframing, backlog N13)

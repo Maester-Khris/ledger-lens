@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.contracts import dao as contracts_dao
+from app.contracts.terms import field_label
 from app.documents import dao as documents_dao
 from app.governance import dao as governance_dao
 from app.ledger import dao as ledger_dao
@@ -34,9 +35,11 @@ def document_timeline(session: Session, tenant_id: uuid.UUID, document_id: uuid.
     for run, reviews in contracts_dao.runs_with_reviews(session, document_id):
         accepted = contracts_dao.accepted_count(session, run.id)
         items.append(TimelineItem(run.created_at, "extracted", "Terms extracted", {"run_id": str(run.id), "accepted": accepted}))
-        items += [TimelineItem(r.decided_at, "reviewed", f"{r.field_path} {r.decision.value}",
+        items += [TimelineItem(r.decided_at, "reviewed", f"{field_label(r.field_path)} {r.decision.value}",
                                {"field_path": r.field_path, "decided_by": r.decided_by}) for r in reviews]
     for invocation, decision in governance_dao.invocations_for_document(session, tenant_id, document_id):
+        if not invocation.approval_required:  # reads (field lookups) belong in the audit trail, not the path to the ledger
+            continue
         items.append(TimelineItem(invocation.created_at, "ai_proposed", invocation.tool_name, {
             "document_id": str(document_id), "amount_minor": invocation.result_amount_minor,
             "currency": invocation.result_currency, "invocation_id": str(invocation.id)}))

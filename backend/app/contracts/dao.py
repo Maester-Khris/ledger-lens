@@ -12,6 +12,7 @@ from app.contracts.fields import FieldResult
 from app.contracts.models import ExtractedField, ExtractionRun, FieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents import dao as documents_dao
+from app.documents.models import DocumentVersion
 from datetime import date, datetime
 from app.billing import dao as billing_dao
 from app.billing.errors import NoScheduleAssigned
@@ -82,8 +83,8 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
 
 def runs_with_reviews(session: Session, document_id: uuid.UUID) -> list[tuple[ExtractionRun, list[FieldReview]]]:
     runs = session.scalars(
-        select(ExtractionRun).join(documents_dao.DocumentVersion, documents_dao.DocumentVersion.id == ExtractionRun.version_id)
-        .where(documents_dao.DocumentVersion.document_id == document_id).order_by(ExtractionRun.created_at)
+        select(ExtractionRun).join(DocumentVersion, DocumentVersion.id == ExtractionRun.version_id)
+        .where(DocumentVersion.document_id == document_id).order_by(ExtractionRun.created_at)
     ).all()
     return [(run, list(session.scalars(select(FieldReview).where(FieldReview.run_id == run.id)))) for run in runs]
 
