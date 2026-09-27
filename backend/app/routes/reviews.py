@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app import config
 from app.contracts import dao as contracts_dao
 from app.contracts.types import ReviewDecision
-from app.deps import DECIDED_BY, get_session, get_tenant_id
+from app.deps import decided_by, get_guest_id, get_session, get_tenant_id
 from app.documents import dao as documents_dao
 from app.reporting.dashboard import invalidate_dashboard_stats
 
@@ -63,10 +63,10 @@ def list_pending_reviews(session: SessionDep, tenant_id: TenantDep) -> list[Revi
 
 
 @router.post("", status_code=201, response_model=ReviewOut)
-def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep) -> ReviewOut:
+def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]) -> ReviewOut:
     review = contracts_dao.record_review(
         session, tenant_id=tenant_id, run_id=body.run_id, field_path=body.field_path, decision=body.decision,
-        corrected_value=body.corrected_value, reason=body.reason, decided_by=DECIDED_BY,
+        corrected_value=body.corrected_value, reason=body.reason, decided_by=decided_by(guest_id),
     )
     invalidate_dashboard_stats(tenant_id)
     return ReviewOut(run_id=review.run_id, field_path=review.field_path, decision=review.decision,

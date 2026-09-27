@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app import config
 from app.assistant.service import AssistantRuntime, run_turn
-from app.deps import get_tenant_id
+from app.deps import get_guest_id, get_tenant_id
 from app.ledger.db import SessionLocal
 
 router = APIRouter(prefix="/chat", tags=["assistant"])
@@ -35,13 +35,15 @@ class ChatIn(BaseModel):
 async def chat(
     body: ChatIn,
     tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
+    guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
     runtime: Annotated[AssistantRuntime, Depends(get_assistant_runtime)],
     session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
 ) -> StreamingResponse:
     async def stream() -> AsyncIterator[str]:
         async for event in run_turn(session_factory=session_factory, runtime=runtime, tenant_id=tenant_id,
                                     session_id=body.session_id, message=body.message,
-                                    hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY")):
+                                    hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY"),
+                                    guest_id=guest_id):
             yield f"event: {event.type}\ndata: {json.dumps(event.data)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})

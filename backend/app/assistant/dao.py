@@ -3,10 +3,10 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.assistant.models import ChatTurn
+from app.assistant.models import ChatTurn, Guest
 
 
 def save_turn(session: Session, turn: ChatTurn) -> None:
@@ -37,3 +37,22 @@ def latency_summary(session: Session, tenant_id: uuid.UUID, since: datetime) -> 
         ).where(ChatTurn.tenant_id == tenant_id, ChatTurn.created_at >= since)
     ).one()
     return LatencySummary(turns, None if p50 is None else round(p50), None if p95 is None else round(p95))
+
+def touch_guest(session: Session, tenant_id: uuid.UUID, guest_id: uuid.UUID) -> uuid.UUID | None:
+    """Known guest → bump last_seen_at and return its id; unknown → None. Commits."""
+    found = session.execute(
+        update(Guest).where(Guest.id == guest_id, Guest.tenant_id == tenant_id)
+        .values(last_seen_at=func.now()).returning(Guest.id)
+    ).scalar_one_or_none()
+    session.commit()
+    return found
+
+
+def register_guest(session: Session, tenant_id: uuid.UUID, known_id: uuid.UUID | None) -> uuid.UUID:
+    """Reuse a known guest; otherwise (none, or stale after a DB reset) create a new one."""
+    if known_id is not None and (found := touch_guest(session, tenant_id, known_id)) is not None:
+        return found
+    guest = Guest(tenant_id=tenant_id)
+    session.add(guest)
+    session.commit()
+    return guest.id

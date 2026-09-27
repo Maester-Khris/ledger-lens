@@ -18,6 +18,16 @@ class ChatOutcome(str, enum.Enum):
     error = "error"
 
 
+class Guest(Base):
+    """A browser visitor. Attribution, not authentication: a guest id never grants access."""
+    __tablename__ = "guests"
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    last_seen_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+
 class ChatTurn(Base):
     __tablename__ = "chat_turns"
     __mapper_args__ = {"eager_defaults": True}
@@ -33,6 +43,8 @@ class ChatTurn(Base):
     prompt_version: Mapped[str] = mapped_column(Text, nullable=False)
     graph_version: Mapped[str] = mapped_column(Text, nullable=False)
     trace_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    guest_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("guests.id"), nullable=True)
+    document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=True)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)

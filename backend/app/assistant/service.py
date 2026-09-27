@@ -50,12 +50,13 @@ def _usage(messages: list) -> tuple[int, int]:
 async def run_turn(
     *, session_factory: sessionmaker, runtime: AssistantRuntime, tenant_id: uuid.UUID, session_id: str,
     message: str, hmac_key: str, vault_key: str,
+    guest_id: uuid.UUID | None = None, document_id: uuid.UUID | None = None,
 ) -> AsyncIterator[TurnEvent]:
     started = time.perf_counter()
     model_id = getattr(runtime.chat_model, "model_name", None) or config.CHAT_MODEL
     record = dict(tenant_id=tenant_id, session_id=session_id, citations=[], retrieved=[], answer_redacted=None,
                   model_id=model_id, prompt_version=prompt_version(), graph_version=GRAPH_VERSION,
-                  input_tokens=0, output_tokens=0)
+                  input_tokens=0, output_tokens=0, guest_id=guest_id, document_id=document_id)
     outcome = ChatOutcome.cancelled  # anything that exits early without setting an outcome was a disconnect
     with session_factory() as session:
         question = documents_dao.tokenize_known_values(session, tenant_id, message, hmac_key, vault_key)

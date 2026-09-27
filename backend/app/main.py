@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.problem import install_problem_handlers
-from app.routes import health, postings, fee_runs, tool_invocations, gl_exports, documents, chat, reviews, stats
+from app.routes import health, postings, fee_runs, tool_invocations, gl_exports, documents, chat, reviews, stats, guests
 from app.tracing import flush_tracing
 
 @asynccontextmanager
@@ -22,3 +22,4 @@ app.include_router(gl_exports.router)
 app.include_router(documents.router)
 app.include_router(chat.router)
 app.include_router(stats.router)
+app.include_router(guests.router)

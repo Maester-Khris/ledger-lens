@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.deps import DECIDED_BY, get_session, get_tenant_id
+from app.deps import decided_by, get_guest_id, get_session, get_tenant_id
 from app.governance.dao import decide, list_invocations
 from app.governance.models import ToolInvocation, ToolInvocationDecision
 from app.governance.types import ToolDecision
@@ -98,11 +98,11 @@ def list_tool_invocations(
 
 @router.post("/{invocation_id}/decision", status_code=201, response_model=DecisionOut)
 def decide_tool_invocation(
-    invocation_id: uuid.UUID, body: DecisionIn, session: SessionDep, tenant_id: TenantDep
+    invocation_id: uuid.UUID, body: DecisionIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]
 ) -> DecisionOut:
     decision = decide(
         session, tenant_id=tenant_id, invocation_id=invocation_id,
-        decision=body.decision, decided_by=DECIDED_BY, reason=body.reason,
+        decision=body.decision, decided_by=decided_by(guest_id), reason=body.reason,
     )
     invalidate_dashboard_stats(tenant_id)
     return _decision_out(decision)
