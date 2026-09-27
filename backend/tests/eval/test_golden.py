@@ -23,22 +23,28 @@ def _normal(number: str) -> str:
     return format(Decimal(number).normalize(), "f")
 
 
+def score_case(case: dict, event_type: str, data: dict) -> dict:
+    """Pure scoring, unit-tested in tests/test_golden_scoring.py without OpenAI."""
+    citations = data.get("citations", [])
+    found = numbers_in(data.get("text", ""))
+    refusal_ok = (event_type == "refused") == case["expect_refusal"]
+    citation_hit = case["expect_refusal"] or any(
+        case["expect_page"] is None or c.get("page") == case["expect_page"] for c in citations
+    )
+    if case.get("expect_system_notice"):  # explained abstention: only a system citation counts
+        refusal_ok = citation_hit = any(c.get("kind") == "system" for c in citations)
+    return {"id": case["id"], "event": event_type, "refusal_ok": refusal_ok, "citation_hit": citation_hit,
+            "numbers_ok": {_normal(n) for n in case["expect_numbers"]} <= found}
+
+
 def _run(case: dict) -> dict:
     async def go():
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
                                           session_id=f"eval-{case['id']}", message=case["question"],
                                           hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY"))]
     final = asyncio.run(go())[-1]
-    citations = final.data.get("citations", [])
-    found = numbers_in(final.data.get("text", ""))
-    return {
-        "id": case["id"], "event": final.type,
-        "refusal_ok": (final.type == "refused") == case["expect_refusal"],
-        "citation_hit": case["expect_refusal"] or any(
-            case["expect_page"] is None or c.get("page") == case["expect_page"] for c in citations
-        ),
-        "numbers_ok": {_normal(n) for n in case["expect_numbers"]} <= found,
-        "answer": final.data.get("text"), "citations": citations,
+    return score_case(case, final.type, final.data) | {
+        "answer": final.data.get("text"), "citations": final.data.get("citations", []),
     }
 
 

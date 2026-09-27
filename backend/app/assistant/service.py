@@ -6,6 +6,9 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
+from datetime import date
+from sqlalchemy.orm import Session
+from app.contracts import dao as contracts_dao
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -30,7 +33,7 @@ PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "ver
 
 @dataclass(frozen=True)
 class TurnEvent:
-    type: Literal["progress", "answer", "refused", "error"]
+    type: Literal["progress", "answer", "refused", "error", "unvalidated"]
     data: dict
 
 
@@ -97,6 +100,17 @@ async def run_turn(
                         for node in data:
                             yield TurnEvent("progress", {"step": PROGRESS.get(node, "thinking")})
             answer = state["answer"]
+            for event in _unvalidated_events(session, tenant_id, state.get("unvalidated", [])):
+                yield event
+            notices = state.get("system_notices", [])
+            if answer.refused and notices:
+                citation = {"id": SYSTEM_CITATION_ID, "kind": "system", "source": "billing records", "detail": notices[-1]}
+                record.update(answer_redacted=NOT_COMPARABLE_TEXT.format(reason=notices[-1]), citations=[citation],
+                              retrieved=state.get("retrieved", []))
+                record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
+                outcome = ChatOutcome.refused
+                yield TurnEvent("refused", {"text": NOT_COMPARABLE_TEXT.format(reason=notices[-1]), "citations": [citation]})
+                return
             cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
             record.update(answer_redacted=answer.text, citations=cited, retrieved=state.get("retrieved", []))
             record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
@@ -120,3 +134,17 @@ async def run_turn(
             session.rollback()
             record["latency_ms"] = int((time.perf_counter() - started) * 1000)
             dao.save_turn(session, ChatTurn(outcome=outcome, **record))
+
+SYSTEM_CITATION_ID = "system"
+NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
+
+def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str]) -> list[TurnEvent]:
+    events = []
+    for document_id in dict.fromkeys(document_ids):  # once per document, in order
+        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today())
+        if view is None:
+            continue
+        fields = [{"path": f.path, "label": f.label, "reason": f.reason} for f in view.fields if f.status in ("needs_review", "rejected")]
+        if fields:
+            events.append(TurnEvent("unvalidated", {"document_id": document_id, "title": view.title, "fields": fields}))
+    return events

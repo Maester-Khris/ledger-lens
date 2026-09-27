@@ -36,6 +36,8 @@ class ToolOutcome:
     content: str  # JSON the model reads
     sources: dict[str, str] = field(default_factory=dict)  # citable id -> text the verifier checks numbers against
     citations: dict[str, dict] = field(default_factory=dict)  # citable id -> payload the client renders
+    unvalidated_document_id: uuid.UUID | None = None  # this document has fields the agent may not use
+    system_notice: str | None = None  # a fixed, non-generated reason (e.g. not comparable with billing)
     result_amount_minor: int | None = None
     result_currency: str | None = None
     proposed_entries: tuple[EntryInput, ...] | None = None  # present = critical: a human must approve (governance)
@@ -130,6 +132,8 @@ def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
         sources={(invocation_id if k == RESULT_KEY else k): v for k, v in outcome.sources.items()},
         citations={(invocation_id if k == RESULT_KEY else k): v | ({"invocation_id": invocation_id} if k == RESULT_KEY else {})
                    for k, v in outcome.citations.items()},
+        unvalidated_document_id=outcome.unvalidated_document_id,
+        system_notice=outcome.system_notice,
         result_amount_minor=outcome.result_amount_minor, result_currency=outcome.result_currency,
         proposed_entries=outcome.proposed_entries,
     )
