@@ -51,7 +51,7 @@ export function ContractProfile({ documentId }: ContractProfileProps) {
   return (
     <div className="ws-profile">
       <p className="ws-reason">Every field here traces to a page in the source agreement.</p>
-{GROUPS.map((group) => {
+      {GROUPS.map((group) => {
         const rows = fields.filter((f) => f.group === group.id);
         if (rows.length === 0) return null;
         return (

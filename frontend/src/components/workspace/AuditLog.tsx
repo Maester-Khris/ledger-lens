@@ -27,7 +27,7 @@ export function AuditLog({ sessionId, refreshKey }: AuditLogProps) {
   return (
     <div>
       <div className="ws-pane__head"><h3>Audit trail</h3><RefreshButton onClick={load} busy={busy} /></div>
-<p className="ws-reason">Every AI decision that touched this conversation, logged: tool, model, inputs and the human decision.</p>
+      <p className="ws-reason">Every AI decision that touched this conversation, logged: tool, model, inputs and the human decision.</p>
       {error && <p className="ws-error">{error}</p>}
       {!error && rows === null && <p className="ws-empty">Loading…</p>}
       {rows?.length === 0 && <p className="ws-empty">No AI decisions in this conversation yet.</p>}
