@@ -49,3 +49,18 @@ def test_no_raw_pii_reaches_embeddings_or_the_model(session_factory, db_session,
     seen = "\n".join(embeddings.seen + model.prompts)
     for value in RAW_PII:
         assert value not in seen, f"raw PII {value!r} reached an external model"
+
+def test_unknown_pii_in_chat_is_redacted(db_session, tenant_id):
+    question = "Contact me at bob@example.com or 456 Elm Street."
+    # Tokenise the question (simulating what the chat route does)
+    redacted = documents_dao.tokenize_known_values(db_session, tenant_id, question, config.PII_HMAC_KEY, config.PII_VAULT_KEY)
+    
+    assert "bob@example.com" not in redacted
+    assert "456 Elm Street" not in redacted
+    assert "<EMAIL_ADDRESS_" in redacted
+    assert "<STREET_ADDRESS_" in redacted
+
+    # Reveal restores them
+    revealed = documents_dao.reveal(db_session, tenant_id, [redacted], config.PII_VAULT_KEY)[0]
+    assert "bob@example.com" in revealed
+    assert "456 Elm Street" in revealed

@@ -203,9 +203,21 @@ MAX_WINDOW_WORDS = 4
 _WORD = re.compile(r"\S+")
 _TRAILING_PUNCTUATION = ".,;:!?)\"'"
 
-def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hmac_key: str) -> str:
+_REGEX_RECOGNIZERS = {
+    "EMAIL_ADDRESS": re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"),
+    "PHONE_NUMBER": re.compile(r"\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b"),
+    "CA_SIN": re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{3}\b"),
+    "US_SSN": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+    "CREDIT_CARD": re.compile(r"\b(?:\d{4}[-.\s]?){3}\d{4}\b"),
+    "IBAN_CODE": re.compile(r"(?i)\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"),
+    "STREET_ADDRESS": re.compile(r"(?i)\b\d{1,5}\s+(?:[a-z0-9.-]+\s+){1,4}(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|court|ct|circle|cir|trail|trl|way)(?:\s+(?:apt|suite|unit|#)\s*[\w-]+)?\b"),
+    "POSTAL_CODE": re.compile(r"(?i)\b(?:[a-z]\d[a-z][ -]?\d[a-z]\d|\d{5}(?:-\d{4})?)\b"),
+}
+
+def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hmac_key: str, vault_key: str) -> str:
     """Tokenise PII in a question without loading spaCy in the API: hash every 1–4 word window and keep
-    the ones the vault already knows. Only values seen in an ingested document can match (by design)."""
+    the ones the vault already knows. Only values seen in an ingested document can match (by design).
+    Then, apply regex recognizers to tokenise standard PII even if it wasn't seen before."""
     words = list(_WORD.finditer(text))
     candidates: dict[str, PiiSpan] = {}
     for i in range(len(words)):
@@ -218,7 +230,22 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
             for entity_type in PII_ENTITIES:
                 candidates[make_token(tenant_id, entity_type, text[start:end], hmac_key)] = PiiSpan(start, end, entity_type, 1.0)
     known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(candidates))))
-    return apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
+    
+    # First apply known values
+    redacted_text = apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
+
+    # Then apply regexes for unknown standard PII
+    new_spans: list[PiiSpan] = []
+    for entity_type, pattern in _REGEX_RECOGNIZERS.items():
+        for match in pattern.finditer(redacted_text):
+            new_spans.append(PiiSpan(match.start(), match.end(), entity_type, 1.0))
+            
+    if new_spans:
+        redaction = apply_redaction(redacted_text, new_spans, tenant_id, hmac_key)
+        save_tokens(session, tenant_id, redaction.tokens, vault_key)
+        redacted_text = redaction.text
+
+    return redacted_text
 
 
 

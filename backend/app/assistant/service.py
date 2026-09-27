@@ -57,14 +57,14 @@ async def run_turn(
                   input_tokens=0, output_tokens=0)
     outcome = ChatOutcome.cancelled  # anything that exits early without setting an outcome was a disconnect
     with session_factory() as session:
-        question = documents_dao.tokenize_known_values(session, tenant_id, message, hmac_key)
+        question = documents_dao.tokenize_known_values(session, tenant_id, message, hmac_key, vault_key)
         record["question_redacted"] = question
         history = []
         for turn in dao.recent_turns(session, tenant_id, session_id, HISTORY_TURNS):
             history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=uuid.uuid4(),
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
-                          model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key)
+                          model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         try:

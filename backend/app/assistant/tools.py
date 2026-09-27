@@ -27,6 +27,7 @@ class ToolContext:
     vector_index: VectorIndex
     model: ModelConfig
     hmac_key: str
+    vault_key: str
 
 
 @dataclass(frozen=True)
@@ -110,7 +111,7 @@ def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
         problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors())
         return ToolOutcome(json.dumps({"error": f"invalid arguments ({problems})"}))
     tokenised = {
-        key: documents_dao.tokenize_known_values(ctx.session, ctx.tenant_id, value, ctx.hmac_key) if isinstance(value, str) else value
+        key: documents_dao.tokenize_known_values(ctx.session, ctx.tenant_id, value, ctx.hmac_key, ctx.vault_key) if isinstance(value, str) else value
         for key, value in raw.items()
     }
     parsed = spec.args_model.model_validate(tokenised)

@@ -20,7 +20,7 @@ def _ctx(db_session, tenant_id, embeddings, index):
     import uuid
     from app import config
     return ToolContext(session=db_session, tenant_id=tenant_id, session_id="s1", turn_id=uuid.uuid4(),
-                       embeddings=embeddings, vector_index=index, model=MODEL, hmac_key=config.PII_HMAC_KEY)
+                       embeddings=embeddings, vector_index=index, model=MODEL, hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)
 
 
 def _search_call(query):
