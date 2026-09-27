@@ -1,4 +1,5 @@
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? '/api';
+export const LANGFUSE_URL: string | undefined = import.meta.env.VITE_LANGFUSE_URL;
 
 export type DocumentStatus = 'processing' | 'ready' | 'failed';
 
@@ -200,6 +201,7 @@ export interface ToolDecisionDto {
 export interface ToolInvocationDto {
   id: string;
   session_id: string;
+  trace_id: string | null;
   created_at: string;
   tool_name: string;
   tool_version: string;
@@ -251,6 +253,7 @@ export interface ListInvocationsOptions {
   pending?: boolean;
   postingId?: string;
   limit?: number;
+  sessionId?: string;
 }
 
 function withQuery(path: string, params: Record<string, string | number | boolean | undefined>): string {
@@ -290,6 +293,7 @@ export function listToolInvocations(options: ListInvocationsOptions = {}): Promi
     pending: options.pending,
     posting_id: options.postingId,
     limit: options.limit,
+    session_id: options.sessionId,
   });
   return fetch(url).then((r) => json<ToolInvocationDto[]>(r));
 }
