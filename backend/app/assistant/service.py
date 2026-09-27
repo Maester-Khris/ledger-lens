@@ -67,12 +67,27 @@ async def run_turn(
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
+        
+        from app.tracing import get_tracing_handler
+        handler = get_tracing_handler()
+        
+        run_config = {"recursion_limit": RECURSION_LIMIT}
+        if handler:
+            run_config["callbacks"] = [handler]
+            run_config["tags"] = ["chat"]
+            run_config["metadata"] = {
+                "langfuse_session_id": session_id,
+                "prompt_version": record["prompt_version"],
+                "GRAPH_VERSION": record["graph_version"],
+                "model_id": record["model_id"],
+            }
+        
         try:
             async with asyncio.timeout(config.CHAT_TURN_TIMEOUT_SECONDS):
                 # Nodes are sync (DB + model calls); LangGraph runs them in a thread pool under astream.
                 # ponytail: a timed-out node keeps running in its thread until its own call timeout (30 s) ends it
                 async for mode, data in graph.astream({"messages": [*history, HumanMessage(question)]},
-                                                      config={"recursion_limit": RECURSION_LIMIT},
+                                                      config=run_config,
                                                       stream_mode=["updates", "values"]):
                     if mode == "values":
                         state = data
@@ -98,6 +113,8 @@ async def run_turn(
             outcome = ChatOutcome.error
             yield TurnEvent("error", {"text": "Something went wrong answering that question."})
         finally:
+            if handler and hasattr(handler, "last_trace_id"):
+                record["trace_id"] = handler.last_trace_id
             session.rollback()
             record["latency_ms"] = int((time.perf_counter() - started) * 1000)
             dao.save_turn(session, ChatTurn(outcome=outcome, **record))

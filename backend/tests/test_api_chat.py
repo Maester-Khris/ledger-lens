@@ -95,3 +95,50 @@ def test_disconnect_records_cancelled(session_factory, db_session, tenant_id):
     asyncio.run(consume_one_then_close())
     turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-4")).one()
     assert turn.outcome is ChatOutcome.cancelled
+
+from unittest.mock import patch
+from langfuse.langchain import CallbackHandler
+
+def test_tracing_enabled_and_no_pii_leakage(client, session_factory, db_session, tenant_id):
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    version = parsed_version(db_session, tenant_id, texts=("Sensitive John Doe details",))
+    index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
+    
+    element_id = str(search(db_session, tenant_id=tenant_id, query="John", embeddings=embeddings, vector_index=index)[0].element_id)
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "John"}, "id": "c1"}]),
+        AIMessage(content="done"),
+        Answer(text="Found John Doe", citations=[element_id], refused=False),
+    ])
+    
+    class CapturingHandler(CallbackHandler):
+        def __init__(self):
+            super().__init__(public_key="pk-123")
+            self.captured = []
+            
+        def on_chain_start(self, serialized, inputs, **kwargs):
+            self.captured.append(str(inputs))
+            return super().on_chain_start(serialized, inputs, **kwargs)
+            
+        def on_llm_start(self, serialized, prompts, **kwargs):
+            self.captured.append(str(prompts))
+            return super().on_llm_start(serialized, prompts, **kwargs)
+            
+        def on_chat_model_start(self, serialized, messages, **kwargs):
+            self.captured.append(str(messages))
+            return super().on_chat_model_start(serialized, messages, **kwargs)
+
+    handler = CapturingHandler()
+    
+    with patch("app.tracing.get_tracing_handler", return_value=handler):
+        _override(client, _runtime(model, embeddings, index), session_factory)
+        response = client.post("/chat", json={"session_id": "s-5", "message": "Who is John Doe?"})
+        
+        events = _events(response)
+        assert events[-1][0] == "answer"
+        
+        turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-5")).one()
+        assert turn.trace_id == handler.last_trace_id
+        
+        for inp in handler.captured:
+            assert "John Doe" not in inp

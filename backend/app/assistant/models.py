@@ -32,6 +32,7 @@ class ChatTurn(Base):
     model_id: Mapped[str] = mapped_column(Text, nullable=False)
     prompt_version: Mapped[str] = mapped_column(Text, nullable=False)
     graph_version: Mapped[str] = mapped_column(Text, nullable=False)
+    trace_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
