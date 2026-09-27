@@ -211,9 +211,12 @@ approval posts the correction through the existing approve-to-post path
 - [ ] **CI eval gate** (D19): hash the config (model + snapshot, prompt version,
       embedding model, Docling version); a change runs the golden set; the
       workflow triggers only when the config file changes.
-- [ ] **Review UI** for `needs_review` fields: the source page side by side with
-      the extracted value; decisions logged append-only.
-- [ ] **Agent serving upgrade path** (decided 2026-09-23, research:
+- [x] **Review UI** for `needs_review` fields: the source page side by side with
+      the extracted value; decisions logged append-only. **Built** in the demo-ready sprint
+      (two-pane review with pagination and the in-app document viewer, `1efa292`).
+- [ ] **Agent serving upgrade path** — **superseded 2026-09-27 by D4** in "Demo-ready sprint — fintech
+      reframing" below (worker pool + Postgres checkpointer + Redis hot state, with measured results).
+      Original decision kept for the reasoning (decided 2026-09-23, research:
       `artifacts/research/2026-09-23-agent-deployment.md`). Today the chat agent
       runs **in the API process** as an async LangGraph stream over **SSE**: a
       60 s timeout for the whole turn, `recursion_limit`, each step saved to
@@ -298,6 +301,101 @@ workers), WebSocket transport (nothing sends input during a run; approvals go
 through the DB), S3 storage/retention
 (local disk for now), `rule_versions` table, the three adversarial ingestion
 test categories, and the full 15–20 question golden set.
+
+### Demo-ready sprint — fintech reframing (logged 2026-09-27)
+
+Source: `artifacts/research/2026-09-26-canada-fintech-competitor-research.md`,
+`artifacts/research/2026-09-26-reframing-metrics-regulatory-output.md`,
+`artifacts/2026-09-26-feature-backlog-agentic-fintech.md`, `artifacts/demo-ready-fintech-feature.md`.
+Finding: most of the fintech value (payments, wealth and asset management) is already built but
+described in engineering terms. This sprint reframes it and adds the document-centred features that
+make it visible. IDs (N = now, D = deferred, I = icebox) are kept for cross-reference.
+
+**Now — research doc fixes (no code):**
+- [ ] **N1** Fix the metric data sources in the reframing doc: STP from `extracted_fields.routing`;
+      review queue age = extraction run created → `field_reviews.decided_at`; approval latency =
+      invocation created → `tool_invocation_decisions.decided_at`; risk score from `grounded` /
+      `validator_errors` / `page_grade` (there are no reason codes); "invariant score" is a check
+      query, not a counter (violations roll back and are never recorded).
+- [ ] **N2** Fix regulator references: IIROC → CIRO (merged 2023); OSFI isn't the fee-disclosure
+      regulator; MiFID II is EU-only; add CSA Staff Notice 11-348 (AI in capital markets).
+- [ ] **N3** Correct the GL claim: SHA-256 byte-identical regeneration is true; per-line chain of
+      custody to the PDF page is not built (`reporting/gl_csv.py` aggregates per `gl_code`) — see D13.
+- [ ] **N5** Add source URLs to every competitor claim used in demo copy (WealthBar BCSC fine,
+      Questrade MCP, Finn AI, Versapay 90% STP); mark the rest unverified.
+
+**Now — reframed copy (UI text only; internal names like `compare_contract_to_billing` unchanged,
+renaming them would move the prompt version and the golden set):**
+- [ ] **N6** "Leakage" → **billing reconciliation / fee validation**.
+- [ ] **N7** Approval screen → **AI Decision Audit Trail / Governed AI**.
+- [ ] **N8** Review queue → **Extraction Anomaly Queue**, with the reason per field.
+- [ ] **N9** Citation promise: "every number traceable to its source page".
+- [ ] **N10** Landing and dashboard copy follow the 3-layer narrative: ops → governance → audit.
+- [ ] **N18** **Landing hero: animated product visual.** Add a moving visual to the hero section
+      that illustrates the core of the product (document → cited terms → reconciliation → approved
+      posting), in the style of reference product pages where each main product (stablecoin, ledger,
+      payments) has its own animated image. References: moderntreasury.com/products/ledgers,
+      moderntreasury.com/products/payments, moderntreasury.com/products/stablecoins. CSS/SVG
+      animation first; respect `prefers-reduced-motion`.
+
+**Now — document-centred features (share the selected-document context; one brainstorming pass):**
+- [ ] **N12** Chat scoped to one document: start a chat from a selected document, or a general chat
+      as today (`Chat.tsx` takes no document yet).
+- [ ] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):
+      extracted terms as structured cards (parties, fee bands, fee basis/method, billing frequency
+      and timing, termination notice, governing law), each with a citation chip to its page and a
+      status badge (accepted / confirmed / corrected / needs review + reason); the linked household
+      and the billing schedule version in effect next to the contract's fee bands. Needs one read
+      endpoint (`GET /documents/{id}/terms`) over `contracts_dao.served_fields` + pending fields.
+      **Coming-soon slots shown greyed out** on the final dashboard profile: fee schedule version
+      history (D15), client type, exceptions, referral arrangements, expense allocation (D14).
+- [ ] **N11** Unvalidated fields disclosed: a banner on the selected document and in the chat answer
+      naming what the agent couldn't confirm and why. The backend already returns `not_validated`
+      from `get_contract_fields`; nothing shows it. Named as "compliance-scoped refusal".
+- [ ] **N13** Audit panel in the chat session: tool, inputs, model, prompt version, decision — REST,
+      refreshed per turn, from `tool_invocations` + `chat_turns` (live stream is D6).
+- [ ] **N14** Per-document ledger timeline: ingestion → extraction run → fields → reviews → proposed
+      correction → decision → posting ("how a document becomes a financial record").
+- [ ] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
+      to end: contract → gap → proposal → approve → post).
+- [ ] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
+
+Order: N1–N3, N5 → N6–N10 → N12 → N17 → N11 → N13 → N14 → N18 → N15, with N16 alongside.
+
+**Deferred — agentic depth:**
+- [ ] **D1** Context growth tracking, intra-trace (per hop) and inter-trace (per turn). Needs N16.
+- [ ] **D2** Context SNR, per-component token accounting (system / RAG / history / input), bloat
+      alerts + UI notification. Needs D1 data for thresholds.
+- [ ] **D3** Context management: drop retrieved chunks from history after each turn, keep turn
+      summaries, cap by hop or token count. Measure with D1 first.
+- [ ] **D4** **Agent deployment at production scale** (replaces the "Agent serving upgrade path"
+      above): stateless worker pool runs agent turns; LangGraph Postgres checkpointer
+      (`AsyncPostgresSaver`, `thread_id` = session); Redis for hot session state with Postgres as the
+      durable fallback; resume from cursor; explicit stop endpoint; retrieved chunks never stored in
+      graph state; TTL purge of old threads. **Deliverable includes measured results** (turn latency,
+      concurrent sessions, recovery after a worker crash) from the asyncio stress harness, for the
+      resume and public pitch. Adds Redis to the stack.
+- [ ] **D6** Live audit stream: trigger → `NOTIFY` (id only) → FastAPI `LISTEN` → SSE, REST catch-up
+      on reconnect. On the existing append-only tables; an `audit_events` table only once more event
+      types exist. CDC rejected (WAL retention risk without Kafka; Debezium needs a JVM).
+- [ ] **D7** Prompt management beyond surfacing the version.
+
+**Deferred — fintech value (domain metrics wait until the demo is published):**
+- [ ] **D8** Domain metrics dashboard: STP rate, billing reconciliation gap, fee agreement coverage,
+      review queue age P50/P95, AI decision coverage, approval latency, ledger invariant check.
+- [ ] **D9** Extraction risk score per document (severity weighting to define).
+- [ ] **D10** Fee Agreement Compliance Report (per contract: clauses, status, reviewer, date).
+- [ ] **D11** AI Decision Audit Trail export (report form of N13).
+- [ ] **D12** Household Billing Reconciliation Report per period.
+- [ ] **D13** GL chain of custody per line: PDF page → clause → schedule version → calculation → GL line.
+- [ ] **D14** Extract new clause types: client type, exceptions, referral arrangements, expense
+      allocation. Schema change → prompt version and golden set change; check the SEC demo docs
+      actually contain them.
+- [ ] **D15** Fee schedule version history view (the IMA v8.0 pattern) over `fee_schedule_versions`.
+- [ ] **D16** Later metrics: extraction precision@K, reconciliation confidence rollup.
+
+**Icebox:** **I1** MCP server for the ledger (Questrade pattern — market signal only). **I2**
+reconciliation against an external statement is already Epic 2.2.
 
 ---
 
