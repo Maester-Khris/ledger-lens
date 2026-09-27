@@ -93,6 +93,14 @@ def version_events(session: Session, version_id: uuid.UUID) -> list[VersionEvent
     return list(session.scalars(select(VersionEvent).where(VersionEvent.version_id == version_id).order_by(VersionEvent.id)))
 
 
+def version_events_for_document(session: Session, document_id: uuid.UUID) -> list[tuple[int, VersionEvent]]:
+    rows = session.execute(
+        select(DocumentVersion.version, VersionEvent).join(VersionEvent, VersionEvent.version_id == DocumentVersion.id)
+        .where(DocumentVersion.document_id == document_id).order_by(VersionEvent.id)
+    )
+    return [(version, event) for version, event in rows]
+
+
 def get_version(session: Session, version_id: uuid.UUID) -> DocumentVersion:
     version = session.get(DocumentVersion, version_id)
     if version is None:

@@ -3,9 +3,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy import func, select
 
 from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
 from app.contracts.fields import FieldResult
@@ -78,6 +78,19 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
         else:
             unserved.append(field.field_path)
     return ServedTerms(version_id, run.id, served, unserved)
+
+
+def runs_with_reviews(session: Session, document_id: uuid.UUID) -> list[tuple[ExtractionRun, list[FieldReview]]]:
+    runs = session.scalars(
+        select(ExtractionRun).join(documents_dao.DocumentVersion, documents_dao.DocumentVersion.id == ExtractionRun.version_id)
+        .where(documents_dao.DocumentVersion.document_id == document_id).order_by(ExtractionRun.created_at)
+    ).all()
+    return [(run, list(session.scalars(select(FieldReview).where(FieldReview.run_id == run.id)))) for run in runs]
+
+
+def accepted_count(session: Session, run_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(ExtractedField).where(
+        ExtractedField.run_id == run_id, ExtractedField.routing == FieldRouting.accepted))
 
 
 @dataclass(frozen=True)

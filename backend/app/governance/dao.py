@@ -96,6 +96,18 @@ def list_invocations(
     return [(invocation, decision) for invocation, decision in session.execute(query)]
 
 
+def invocations_for_document(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
+                             ) -> list[tuple[ToolInvocation, ToolInvocationDecision | None]]:
+    # ponytail: scans tool_invocations by JSONB; add an index on (tenant_id, (input->>'document_id')) when volume grows
+    query = (
+        select(ToolInvocation, ToolInvocationDecision)
+        .outerjoin(ToolInvocationDecision, ToolInvocationDecision.invocation_id == ToolInvocation.id)
+        .where(ToolInvocation.tenant_id == tenant_id, ToolInvocation.input["document_id"].astext == str(document_id))
+        .order_by(ToolInvocation.created_at)
+    )
+    return [(i, d) for i, d in session.execute(query)]
+
+
 def decide(
     session: Session,
     *,
