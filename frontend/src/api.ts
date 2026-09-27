@@ -40,7 +40,7 @@ export interface DocumentDetail extends DocumentSummary {
 
 export interface Citation {
   id: string;
-  kind: 'element' | 'tool';
+  kind: 'element' | 'tool' | 'system';
   document_title?: string;
   version?: number;
   page?: number;
@@ -48,12 +48,21 @@ export interface Citation {
   quote?: string;
   file_url?: string;
   tool?: string;
+  source?: string;
+  detail?: string;
+}
+
+export interface UnvalidatedDto {
+  document_id: string;
+  title: string;
+  fields: { path: string; label: string; reason: string | null }[];
 }
 
 export type ChatEvent =
   | { type: 'progress'; data: { step: string } }
   | { type: 'answer' | 'refused'; data: { text: string; citations: Citation[] } }
-  | { type: 'error'; data: { text: string } };
+  | { type: 'error'; data: { text: string } }
+  | { type: 'unvalidated'; data: UnvalidatedDto };
 
 const GUEST_KEY = 'ledgerlens.guest';
 let guestPromise: Promise<string> | null = null;

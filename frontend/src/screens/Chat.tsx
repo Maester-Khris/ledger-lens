@@ -4,11 +4,12 @@ import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
+import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
 import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
 import { ContractProfile } from '../components/workspace/ContractProfile';
+import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
 
@@ -41,6 +42,7 @@ type Turn = {
   outcome: 'pending' | 'answer' | 'refused' | 'error';
   text: string;
   citations: Citation[];
+  unvalidated: UnvalidatedDto[];
 };
 
 interface CitationCardProps {
@@ -52,7 +54,11 @@ function CitationCard({ citation }: CitationCardProps) {
   return (
     <div className="citation-card">
       <div className="citation-card__head">
-        <span className="citation-card__doc">{citation.document_title ?? citation.tool}</span>
+        {citation.kind === 'system' ? (
+          <span className="citation-card__doc">System · {citation.source}</span>
+        ) : (
+          <span className="citation-card__doc">{citation.document_title ?? citation.tool}</span>
+        )}
         {citation.page !== undefined && (
           <span className="citation-card__loc">
             v{citation.version} · p.{citation.page}
@@ -61,6 +67,7 @@ function CitationCard({ citation }: CitationCardProps) {
         )}
       </div>
       {citation.quote && <p className="mono citation-card__excerpt">{citation.quote}</p>}
+      {citation.detail && <p className="mono citation-card__excerpt">{citation.detail}</p>}
       <div className="citation-card__foot">
         <span className="mono">{citation.id}</span>
         {href && (
@@ -139,9 +146,10 @@ export function Chat() {
     if (!question.trim() || busy) return;
     setInputValue('');
     setCardsOpen(false);
-    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [] }]);
+    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [] }]);
     const onEvent = (event: ChatEvent) => {
       if (event.type === 'progress') updateLast({ step: event.data.step });
+      else if (event.type === 'unvalidated') setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, unvalidated: [...t.unvalidated, event.data] } : t)));
       else if (event.type === 'error') updateLast({ outcome: 'error', text: event.data.text });
       else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations });
     };
@@ -208,6 +216,9 @@ export function Chat() {
                   </div>
                   <div className="chat__turn chat__turn--assistant" aria-live="polite">
                     {turn.outcome === 'pending' && <AssistantHead label={turn.step ?? 'thinking'} variant="accent" />}
+                    {turn.unvalidated.map((notice, i) => (
+                      <UnvalidatedNotice key={i} notice={notice} />
+                    ))}
                     {turn.outcome === 'answer' && (
                       <>
                         <AssistantHead label="Answer" variant="neutral" detail={`${turn.citations.length} citation(s)`} />
@@ -225,6 +236,13 @@ export function Chat() {
                       <>
                         <AssistantHead label={turn.outcome === 'refused' ? 'No answer' : 'Error'} variant="warning" />
                         <Markdown className="chat__prose" text={turn.text} />
+                        {turn.citations.length > 0 && (
+                          <div className="chat__citations">
+                            {turn.citations.map((c) => (
+                              <CitationCard key={c.id} citation={c} />
+                            ))}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

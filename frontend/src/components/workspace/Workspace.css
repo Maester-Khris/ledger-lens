@@ -24,3 +24,5 @@
 .ws-badge { font-size: 0.75em; border-radius: var(--radius-pill); padding: 0 var(--space-1); border: 1px solid var(--color-border); }
 
 .ws-field { display: grid; gap: 2px; margin-bottom: var(--space-2); } .ws-reason { color: var(--color-text-secondary); font-size: 0.85em; }
+
+.ws-notice { border-left: 3px solid var(--color-accent); padding: var(--space-2); background: var(--color-bg-subtle); margin-top: var(--space-2); }
