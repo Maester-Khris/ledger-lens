@@ -18,10 +18,18 @@
   flex-wrap: wrap;
 }
 
+.tool-card__label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .tool-card__name {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  margin-left: 8px;
 }
 
 .tool-card__head-right {

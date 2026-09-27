@@ -183,7 +183,7 @@ export function Dashboard() {
                     <QueueRow
                       count={data.stats.approvals_pending}
                       label="fee corrections to approve"
-                      detail="Proposed by the assistant. Nothing posts to the ledger until someone approves it."
+                      detail="Billing reconciliation found a gap. Nothing posts to the ledger until someone approves it."
                       to="/review#approvals"
                       action="Review corrections"
                     />

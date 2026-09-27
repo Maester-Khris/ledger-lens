@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { LANGFUSE_URL, type ToolInvocationDto, listToolInvocations } from '../../api';
+import { toolLabel } from '../../lib/toolLabels';
 import { RefreshButton } from './RefreshButton';
 
 interface AuditLogProps {
@@ -26,13 +27,14 @@ export function AuditLog({ sessionId, refreshKey }: AuditLogProps) {
   return (
     <div>
       <div className="ws-pane__head"><h3>Audit trail</h3><RefreshButton onClick={load} busy={busy} /></div>
+<p className="ws-reason">Every AI decision that touched this conversation, logged: tool, model, inputs and the human decision.</p>
       {error && <p className="ws-error">{error}</p>}
       {!error && rows === null && <p className="ws-empty">Loading…</p>}
       {rows?.length === 0 && <p className="ws-empty">No AI decisions in this conversation yet.</p>}
       <ol className="ws-audit">
         {rows?.map((r) => (
           <li key={r.id}>
-            <div><strong>{r.tool_name}</strong> · {new Date(r.created_at).toLocaleTimeString()}</div>
+            <div><strong>{toolLabel(r.tool_name)}</strong> <span className="ws-reason mono">{r.tool_name}</span> · {new Date(r.created_at).toLocaleTimeString()}</div>
             <div className="ws-reason">{r.model_id} · prompt {r.prompt_version}</div>
             <pre className="ws-input">{JSON.stringify(Object.fromEntries(Object.entries(r.input).filter(([k]) => k !== 'turn_id')), null, 1)}</pre>
             {r.decision

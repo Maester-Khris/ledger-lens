@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { type ToolDecisionDto, type ToolInvocationDto, decideToolInvocation } from '../api';
+import { toolLabel } from '../lib/toolLabels';
 import { formatMinor } from '../lib/money';
 import { formatUtc } from '../lib/time';
 import { StatusPill } from './StatusPill';
@@ -38,6 +39,7 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
   return (
     <div className="tool-card">
       <div className="tool-card__head">
+        <span className="tool-card__label">{toolLabel(invocation.tool_name)}</span>
         <span className="tool-card__name mono">{invocation.tool_name}</span>
         {decision === null ? (
           <StatusPill variant="warning">Awaiting approval</StatusPill>

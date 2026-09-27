@@ -10,7 +10,7 @@ export function UnvalidatedNotice({ notice }: UnvalidatedNoticeProps) {
     <div className="ws-notice" role="note">
       <strong>Not confirmed, awaiting review</strong> in {notice.title}:{' '}
       {notice.fields.map((f) => f.label).join(', ')}.{' '}
-      <Link to="/review">Review →</Link>
+      <Link to="/review">See the anomaly queue →</Link>
     </div>
   );
 }

@@ -247,6 +247,26 @@
   padding-top: 0;
 }
 
+.landing__layers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.landing__layers li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+  line-height: 1.55;
+}
+
+.landing__layers li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
 .landing__check {
   color: var(--color-success);
   flex-shrink: 0;

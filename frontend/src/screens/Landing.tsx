@@ -9,19 +9,19 @@ const STEPS = [
     body: 'Upload an investment advisory agreement as a PDF. It is parsed on your machine, names, emails, phone and account numbers are replaced with tokens, and the fee schedule is extracted together with the clause it came from.',
   },
   {
-    title: 'Compare it with billing',
-    body: 'Ask about any contract in plain language. Answers cite the clause and page, and the fee comparison is computed in code from your billing schedule — the model never does the arithmetic.',
+    title: 'Reconcile it with billing',
+    body: 'Ask about any contract in plain language. Answers cite the clause and page, and billing reconciliation is computed in code from your billing schedule — the model never does the arithmetic.',
   },
   {
     title: 'Approve the correction',
-    body: 'When the contract and billing disagree, the assistant proposes a balanced journal entry. It reaches the ledger only after a person approves it, and it posts exactly once.',
+    body: 'When the contract and billing disagree, the assistant proposes a balanced journal entry — logged in the AI decision audit trail with its model, inputs and citations. It reaches the ledger only after a person approves it, and it posts exactly once.',
   },
 ];
 
 const GUARANTEES = [
   'Tools take document IDs, and code computes every fee. The model never supplies an amount.',
-  'Every number in an answer is checked against the passage it cites.',
-  'Fields the extractor could not ground wait for a person before the assistant can use them.',
+  'Every number in an answer traces to the page and clause that state it — never asserted without a citation.',
+  "A field the extractor couldn't confirm sits in the extraction anomaly queue until a person resolves it — the assistant won't use it.",
   'The ledger is append-only. A mistake is undone with a reversal, never an edit.',
 ];
 
@@ -45,9 +45,9 @@ export function Landing() {
       <section className="landing__hero">
         <h1 className="landing__headline">Bill what the contract says.</h1>
         <p className="landing__subhead">
-          Ledger Assistant reads your investment advisory agreements, answers questions with the clause cited, and checks
-          each fee schedule against what billing actually charges. When they differ, it proposes the correction — and a
-          person approves it before anything posts.
+          Ledger Assistant reads your investment advisory agreements, answers questions with the clause cited, and
+          reconciles each fee schedule against what billing actually charges. When they disagree, it proposes the exact
+          correcting entry — and it posts only after a person approves it, logged the moment they do.
         </p>
         <div className="landing__hero-actions">
           <Link to="/dashboard" className="btn btn-primary">
@@ -57,6 +57,21 @@ export function Landing() {
             Ask a contract
           </Link>
         </div>
+
+        <ul className="landing__layers" aria-label="What this demonstrates at three levels">
+          <li>
+            <strong>Ops</strong> — billing reconciliation: the gap between contract and billing, computed in
+            code, never by the model.
+          </li>
+          <li>
+            <strong>Governance</strong> — every AI tool call is logged with its model, inputs and decision,
+            before anything reaches the ledger.
+          </li>
+          <li>
+            <strong>Audit</strong> — the GL export is byte-identical on regeneration and verified by its
+            SHA-256 hash.
+          </li>
+        </ul>
 
         <figure className="landing__compare" aria-label="Example: a contract compared with billing">
           <figcaption className="landing__compare-caption mono">Example comparison</figcaption>
@@ -123,7 +138,7 @@ export function Landing() {
           <BrandMark size={24} />
           Ledger Assistant
         </div>
-        <span className="landing__footer-copy">A working demo: fee-contract review on a double-entry ledger.</span>
+        <span className="landing__footer-copy">A working demo: fee-contract reconciliation and a governed AI, on a double-entry ledger.</span>
         <Link to="/dashboard">Open the demo →</Link>
       </footer>
     </div>

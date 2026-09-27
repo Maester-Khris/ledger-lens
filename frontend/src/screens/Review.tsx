@@ -173,8 +173,8 @@ export function Review() {
         <div className="review__list-pane">
           <h1 className="review__title">Review</h1>
           <p className="review__subtitle">
-            Decisions are recorded append-only with your name and the time. Nothing here reaches the assistant or the
-            ledger until someone decides.
+            Every AI decision that reaches this screen is logged in the audit trail. Decisions are recorded append-only
+            with your name and the time — nothing reaches the assistant or the ledger until someone decides.
           </p>
           {error && (
             <p className="review__error" role="alert">
@@ -183,7 +183,7 @@ export function Review() {
           )}
 
           <section className="review__section">
-            <h2 className="review__section-title">Extracted fields to review ({items?.length ?? '…'})</h2>
+            <h2 className="review__section-title">Extraction anomaly queue ({items?.length ?? '…'})</h2>
             <p className="review__hint">
               Held back because the quote couldn't be grounded, a validator failed, or the page was hard to read.
             </p>
@@ -215,12 +215,12 @@ export function Review() {
           <section className="review__section" id="approvals">
             <h2 className="review__section-title">Fee corrections to approve ({approvals?.length ?? '…'})</h2>
             <p className="review__hint">
-              Proposed by the assistant when a contract and billing disagree. Approving posts exactly the entries shown.
+              Proposed when billing reconciliation finds a gap between the contract and what's billed. Approving posts exactly the entries shown.
             </p>
             {approvals === null ? (
               <p className="review__empty">Loading…</p>
             ) : approvals.length === 0 ? (
-              <p className="review__empty">No corrections are waiting. Ask the assistant to compare a contract with billing.</p>
+              <p className="review__empty">No corrections are waiting. Ask the assistant to reconcile a contract with billing.</p>
             ) : (
               <>
                 <div className="review__list">
