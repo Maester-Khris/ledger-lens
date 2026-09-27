@@ -358,3 +358,22 @@ export function getConfig(): Promise<ConfigDto> {
   }
   return cachedConfig;
 }
+
+export type FieldStatus = 'accepted' | 'confirmed' | 'corrected' | 'rejected' | 'needs_review';
+
+export interface TermFieldDto {
+  path: string; label: string; group: string; value: unknown;
+  status: FieldStatus; reason: string | null; page: number | null; quote: string;
+}
+
+export interface TermsDto {
+  document_id: string; title: string; version: number;
+  extraction: { run_id: string; extracted_at: string; fields: TermFieldDto[] } | null;
+  household: { id: string; name: string } | null;
+  billing_schedule: { version: number; method: string; tiers: { up_to_minor: number | null; rate_bps: string }[]; valid_from: string | null } | null;
+  coming_soon: string[];
+}
+
+export function getTerms(documentId: string): Promise<TermsDto> {
+  return fetch(`${API_BASE}/documents/${documentId}/terms`).then((r) => json<TermsDto>(r));
+}

@@ -8,6 +8,7 @@ import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSum
 import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
+import { ContractProfile } from '../components/workspace/ContractProfile';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
 
@@ -92,7 +93,9 @@ export function Chat() {
   const [cardsOpen, setCardsOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const scoped = documents.find((d) => d.id === scopeId) ?? null;
-  const tabs: PanelTab[] = [];  // Tasks 5, 9 and 11 add Profile, Audit trail and Ledger
+  const tabs: PanelTab[] = [
+    ...(scopeId ? [{ id: 'profile', label: 'Profile', content: <ContractProfile documentId={scopeId} /> }] : []),
+  ];
 
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);

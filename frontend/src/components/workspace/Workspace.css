@@ -22,3 +22,5 @@
 .ws-empty, .ws-error { color: var(--color-text-secondary); }
 .ws-muted { opacity: 0.55; }
 .ws-badge { font-size: 0.75em; border-radius: var(--radius-pill); padding: 0 var(--space-1); border: 1px solid var(--color-border); }
+
+.ws-field { display: grid; gap: 2px; margin-bottom: var(--space-2); } .ws-reason { color: var(--color-text-secondary); font-size: 0.85em; }
