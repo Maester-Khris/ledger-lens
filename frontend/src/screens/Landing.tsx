@@ -59,25 +59,45 @@ export function Landing() {
           </Link>
         </div>
 
-        <ul className="landing__layers" aria-label="What this demonstrates at three levels">
-          <li>
-            <RefreshIcon size={16} className="landing__layer-icon" />
-            <strong>Ops</strong>
-            <p>Billing reconciliation: the gap between contract and billing, computed in code, never by the model.</p>
-          </li>
-          <li>
-            <LockIcon size={16} className="landing__layer-icon" />
-            <strong>Governance</strong>
-            <p>Every AI tool call is logged with its model, inputs and decision, before anything reaches the ledger.</p>
-          </li>
-          <li>
-            <CheckIcon size={16} className="landing__layer-icon" />
-            <strong>Audit</strong>
-            <p>The GL export is byte-identical on regeneration and verified by its SHA-256 hash.</p>
-          </li>
-        </ul>
-
         <HeroFlow />
+      </section>
+
+      <section className="landing__pillars" aria-label="What this demonstrates at three levels">
+        <div className="landing__pillars-inner">
+          <div className="landing__pillar landing__pillar--ops">
+            <span className="landing__pillar-eyebrow">Rule engine</span>
+            <div className="landing__pillar-title">
+              <RefreshIcon size={16} className="landing__pillar-icon" />
+              Ops
+            </div>
+            <p className="landing__pillar-desc">
+              Billing reconciliation: the gap between contract and billing,{' '}
+              <code className="mono landing__pillar-code">computed in code</code>, never by the model.
+            </p>
+          </div>
+          <div className="landing__pillar landing__pillar--governance">
+            <span className="landing__pillar-eyebrow">Chain of custody</span>
+            <div className="landing__pillar-title">
+              <LockIcon size={16} className="landing__pillar-icon" />
+              Governance
+            </div>
+            <p className="landing__pillar-desc">
+              Every AI tool call is <code className="mono landing__pillar-code">logged</code> with its model, inputs
+              and decision, before anything reaches the ledger.
+            </p>
+          </div>
+          <div className="landing__pillar landing__pillar--audit">
+            <span className="landing__pillar-eyebrow">Cryptographic audit</span>
+            <div className="landing__pillar-title">
+              <CheckIcon size={16} className="landing__pillar-icon" />
+              Audit
+            </div>
+            <p className="landing__pillar-desc">
+              The GL export is byte-identical on regeneration and verified by its{' '}
+              <code className="mono landing__pillar-code">SHA-256</code> hash.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="landing__section" id="how-it-works">

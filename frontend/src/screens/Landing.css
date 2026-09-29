@@ -177,43 +177,86 @@
   padding-top: 0;
 }
 
-.landing__layers {
-  list-style: none;
-  margin: 0 0 var(--space-4);
-  padding: 0;
-  width: 100%;
-  max-width: 860px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-2);
-  text-align: left;
+.landing__pillars {
+  background: var(--color-bg);
+  padding: var(--space-4);
 }
 
-.landing__layers li {
+.landing__pillars-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.landing__pillar {
+  --pillar-color: var(--color-accent);
+  border: 1px solid var(--color-border-dark);
+  border-top: 3px solid var(--pillar-color);
+  background: var(--color-surface-dark);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border-dark);
-  border-radius: var(--radius-card);
-  background: var(--color-surface-dark);
+  text-align: left;
 }
 
-.landing__layer-icon {
-  color: var(--color-accent);
+.landing__pillar--governance {
+  --pillar-color: var(--color-success);
 }
 
-.landing__layers strong {
-  font-size: 13px;
+.landing__pillar--audit {
+  --pillar-color: #a78bfa;
+}
+
+.landing__pillar-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pillar-color);
+}
+
+.landing__pillar-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pillar-color);
+  flex-shrink: 0;
+}
+
+.landing__pillar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary-dark);
 }
 
-.landing__layers p {
+.landing__pillar-icon {
+  color: var(--pillar-color);
+}
+
+.landing__pillar-desc {
   margin: 0;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--color-text-secondary-dark);
+}
+
+.landing__pillar-code {
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary-dark);
 }
 
 .landing__check {
@@ -271,7 +314,7 @@
     grid-template-columns: 1fr;
   }
 
-  .landing__layers {
+  .landing__pillars-inner {
     grid-template-columns: 1fr;
   }
 
