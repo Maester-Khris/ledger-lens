@@ -30,9 +30,7 @@ function display(value: unknown): string {
   return String(value);
 }
 
-function percent(bps: string): string {
-  return `${(Number(bps) / 100).toFixed(2)}%`;
-}
+
 
 export function ContractProfile({ documentId }: ContractProfileProps) {
   const [terms, setTerms] = useState<TermsDto | null>(null);
@@ -76,18 +74,7 @@ export function ContractProfile({ documentId }: ContractProfileProps) {
           </section>
         );
       })}
-      <section>
-        <h3>Billing reconciliation</h3>
-        {terms.household ? (
-          <p>
-            Household <strong>{terms.household.name}</strong>
-            {terms.billing_schedule
-              ? <> — billed on schedule v{terms.billing_schedule.version} ({terms.billing_schedule.method}):{' '}
-                  {terms.billing_schedule.tiers.map((t) => percent(t.rate_bps)).join(' / ')}</>
-              : ' — no billing schedule in effect today.'}
-          </p>
-        ) : <p className="ws-empty">Not linked to a billing household.</p>}
-      </section>
+
       <section className="ws-muted" aria-disabled="true">
         <h3>Coming soon</h3>
         <ul>

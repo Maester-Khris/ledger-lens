@@ -9,6 +9,7 @@ import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
 import { ContractProfile } from '../components/workspace/ContractProfile';
+import { BillingReconciliation } from '../components/workspace/BillingReconciliation';
 import { AuditLog } from '../components/workspace/AuditLog';
 import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
@@ -112,6 +113,7 @@ export function Chat() {
   const tabs: PanelTab[] = [
     ...(scopeId ? [
       { id: 'profile', label: 'Profile', content: <ContractProfile documentId={scopeId} /> },
+      { id: 'billing', label: 'Billing reconciliation', content: <BillingReconciliation documentId={scopeId} /> },
       { id: 'ledger', label: 'Ledger', content: <LedgerTimeline documentId={scopeId} refreshKey={ledgerKey} /> },
     ] : []),
     { id: 'audit', label: 'Audit trail', content: <AuditLog sessionId={sessionId} refreshKey={auditKey} /> },
