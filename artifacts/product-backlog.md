@@ -366,7 +366,7 @@ renaming them would move the prompt version and the golden set):**
       correction → decision → posting ("how a document becomes a financial record").
 - [ ] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
       to end: contract → gap → proposal → approve → post).
-- [ ] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
+- [x] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
 
 **Implementation order (agreed 2026-09-27; copy last so it covers every finished screen):**
 1. **Phase 0 — research doc fixes:** N1–N3 (the later specs quote these docs).
