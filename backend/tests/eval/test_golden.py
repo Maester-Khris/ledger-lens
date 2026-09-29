@@ -2,6 +2,7 @@
 Run: $PYDEV/bin/pytest -m eval tests/eval -s"""
 import asyncio
 import json
+import os
 from decimal import Decimal
 from pathlib import Path
 
@@ -38,10 +39,13 @@ def score_case(case: dict, event_type: str, data: dict) -> dict:
 
 
 def _run(case: dict) -> dict:
+    # The session-scoped `document_settings` fixture overwrites config.PII_HMAC_KEY/PII_VAULT_KEY
+    # with random per-run keys for hermetic unit tests. This eval decrypts real vault rows written
+    # by a real ingestion run, so it needs the real keys from the environment, not the patched ones.
     async def go():
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
                                           session_id=f"eval-{case['id']}", message=case["question"],
-                                          hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY"))]
+                                          hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"])]
     final = asyncio.run(go())[-1]
     return score_case(case, final.type, final.data) | {
         "answer": final.data.get("text"), "citations": final.data.get("citations", []),
