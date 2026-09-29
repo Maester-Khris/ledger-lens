@@ -30,8 +30,6 @@ function display(value: unknown): string {
   return String(value);
 }
 
-
-
 export function ContractProfile({ documentId }: ContractProfileProps) {
   const [terms, setTerms] = useState<TermsDto | null>(null);
   const [error, setError] = useState<string | null>(null);
