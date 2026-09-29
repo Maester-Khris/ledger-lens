@@ -10,18 +10,18 @@ const STEPS = [
   },
   {
     title: 'Reconcile it with billing',
-    body: 'Ask about any contract in plain language. Answers cite the clause and page, and billing reconciliation is computed in code from your billing schedule — the model never does the arithmetic.',
+    body: 'Ask about any contract in plain language. Answers cite the clause and page, and billing reconciliation is computed in code from your billing schedule. The model never does the arithmetic.',
   },
   {
     title: 'Approve the correction',
-    body: 'When the contract and billing disagree, the assistant proposes a balanced journal entry — logged in the AI decision audit trail with its model, inputs and citations. It reaches the ledger only after a person approves it, and it posts exactly once.',
+    body: 'When the contract and billing disagree, the assistant proposes a balanced journal entry, logged in the AI decision audit trail with its model, inputs and citations. It reaches the ledger only after a person approves it, and it posts exactly once.',
   },
 ];
 
 const GUARANTEES = [
   'Tools take document IDs, and code computes every fee. The model never supplies an amount.',
-  'Every number in an answer traces to the page and clause that state it — never asserted without a citation.',
-  "A field the extractor couldn't confirm sits in the extraction anomaly queue until a person resolves it — the assistant won't use it.",
+  'Every number in an answer traces to the page and clause that state it, never asserted without a citation.',
+  "A field the extractor couldn't confirm sits in the extraction anomaly queue until a person resolves it; the assistant won't use it.",
   'The ledger is append-only. A mistake is undone with a reversal, never an edit.',
 ];
 
@@ -47,7 +47,7 @@ export function Landing() {
         <p className="landing__subhead">
           Ledger Assistant reads your investment advisory agreements, answers questions with the clause cited, and
           reconciles each fee schedule against what billing actually charges. When they disagree, it proposes the exact
-          correcting entry — and it posts only after a person approves it, logged the moment they do.
+          correcting entry, and it posts only after a person approves it, logged the moment they do.
         </p>
         <div className="landing__hero-actions">
           <Link to="/dashboard" className="btn btn-primary">
@@ -60,15 +60,15 @@ export function Landing() {
 
         <ul className="landing__layers" aria-label="What this demonstrates at three levels">
           <li>
-            <strong>Ops</strong> — billing reconciliation: the gap between contract and billing, computed in
+            <strong>Ops.</strong> Billing reconciliation: the gap between contract and billing, computed in
             code, never by the model.
           </li>
           <li>
-            <strong>Governance</strong> — every AI tool call is logged with its model, inputs and decision,
+            <strong>Governance.</strong> Every AI tool call is logged with its model, inputs and decision,
             before anything reaches the ledger.
           </li>
           <li>
-            <strong>Audit</strong> — the GL export is byte-identical on regeneration and verified by its
+            <strong>Audit.</strong> The GL export is byte-identical on regeneration and verified by its
             SHA-256 hash.
           </li>
         </ul>

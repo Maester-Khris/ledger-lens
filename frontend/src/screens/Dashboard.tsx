@@ -116,6 +116,7 @@ export function Dashboard() {
     <div className="dashboard">
       <div className="dashboard__topbar">
         <span className="dashboard__breadcrumb">Dashboard</span>
+        <Link to="/" className="dashboard__home-link">← Back home</Link>
       </div>
 
       <div className="dashboard__body">
@@ -303,6 +304,8 @@ export function Dashboard() {
             </div>
           </>
         )}
+
+        <Link to="/" className="dashboard__home-link dashboard__home-link--bottom">← Back home</Link>
       </div>
     </div>
   );

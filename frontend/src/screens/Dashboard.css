@@ -5,10 +5,28 @@
 }
 
 .dashboard__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 12px var(--space-3);
   border-bottom: 1px solid var(--color-border);
   font-size: 13px;
   color: var(--color-text-secondary);
+}
+
+.dashboard__home-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.dashboard__home-link:hover {
+  color: var(--color-accent);
+}
+
+.dashboard__home-link--bottom {
+  display: inline-block;
+  margin-top: var(--space-4);
 }
 
 .dashboard__body {
