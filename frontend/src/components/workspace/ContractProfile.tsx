@@ -60,12 +60,12 @@ export function ContractProfile({ documentId }: ContractProfileProps) {
             <dl>
               {rows.map((f) => (
                 <div key={f.path} className="ws-field">
-                  <dt>{f.label} <span className="ws-badge">{STATUS_LABEL[f.status]}</span></dt>
-                  <dd>
-                    {display(f.value)}
-                    {f.reason && <div className="ws-reason">{f.reason}</div>}
+                  <dt className="ws-field__label">{f.label} <span className={`ws-badge ws-badge--${f.status}`}>{STATUS_LABEL[f.status]}</span></dt>
+                  <dd className="ws-field__value">
+                    <span className="ws-field__value-text">{display(f.value)}</span>
+                    {f.reason && <p className="ws-field__reason">{f.reason}</p>}
                     {f.page !== null && (
-                      <a href={documentPageUrl(terms.document_id, terms.version, f.page)} target="_blank" rel="noreferrer">
+                      <a className="ws-field__page" href={documentPageUrl(terms.document_id, terms.version, f.page)} target="_blank" rel="noreferrer">
                         Page {f.page} →
                       </a>
                     )}
