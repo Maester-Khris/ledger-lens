@@ -37,6 +37,7 @@
   padding: 6px var(--space-2); border: 1px dashed var(--color-border); border-radius: var(--radius-control);
   font-size: 0.85em; color: var(--color-text-secondary); }
 .ws-badge { font-size: 0.75em; border-radius: var(--radius-pill); padding: 0 var(--space-1); border: 1px solid var(--color-border); }
+.ws-reason { color: var(--color-text-secondary); font-size: 0.85em; }
 
 .ws-field { display: grid; gap: 4px; margin-bottom: var(--space-3); }
 .ws-field__label { display: flex; align-items: center; gap: 6px; font-size: 0.78em; font-weight: 600;
