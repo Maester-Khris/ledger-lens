@@ -338,7 +338,7 @@ renaming them would move the prompt version and the golden set):**
 - [x] **N8** Review queue → **Extraction Anomaly Queue**, with the reason per field.
 - [x] **N9** Citation promise: "every number traceable to its source page".
 - [x] **N10** Landing and dashboard copy follow the 3-layer narrative: ops → governance → audit.
-- [ ] **N18** **Landing hero: animated product visual.** Add a moving visual to the hero section
+- [x] **N18** **Landing hero: animated product visual.** Add a moving visual to the hero section
       that illustrates the core of the product (document → cited terms → reconciliation → approved
       posting), in the style of reference product pages where each main product (stablecoin, ledger,
       payments) has its own animated image. References: moderntreasury.com/products/ledgers,
