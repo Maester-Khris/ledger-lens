@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { BrandMark } from '../components/BrandMark';
-import { CheckIcon, LockIcon, SparkleIcon } from '../components/Icons';
+import { CheckIcon, SparkleIcon } from '../components/Icons';
+import { HeroFlow } from '../components/HeroFlow';
 import './Landing.css';
 
 const STEPS = [
@@ -73,61 +74,7 @@ export function Landing() {
           </li>
         </ul>
 
-        <figure
-          className="landing__compare"
-          aria-label="Example: a contract compared with billing, reconciled and posted to the ledger"
-          aria-hidden="true"
-        >
-          <figcaption className="landing__compare-caption mono">Example comparison</figcaption>
-          <div className="landing__compare-frames">
-            <div className="landing__compare-frame landing__compare-frame--ops">
-              <div className="landing__compare-grid">
-                <div className="landing__compare-col">
-                  <span className="landing__compare-source mono">Agreement · §3 Fees · p.2</span>
-                  <p className="landing__compare-quote">
-                    “1.00% per annum on the first $1,000,000 of assets under management”
-                  </p>
-                </div>
-                <div className="landing__compare-col">
-                  <span className="landing__compare-source mono">Billing schedule · household</span>
-                  <p className="landing__compare-billed mono">0.85% on the first $1,000,000</p>
-                </div>
-              </div>
-              <div className="landing__compare-gap">
-                <span className="mono landing__gap-amount">Annual gap 1,500.00 CAD</span>
-              </div>
-            </div>
-
-            <div className="landing__compare-frame landing__compare-frame--governance">
-              <div className="landing__compare-proposal">
-                <span className="landing__compare-source mono">Proposed correcting entry</span>
-                <p className="landing__compare-entry mono">Dr Fee receivable 1,500.00 · Cr Fee revenue 1,500.00</p>
-              </div>
-              <div className="landing__compare-gap">
-                <span className="landing__gap-status">
-                  <LockIcon size={12} /> Correction proposed · awaiting approval
-                </span>
-              </div>
-            </div>
-
-            <div className="landing__compare-frame landing__compare-frame--audit">
-              <div className="landing__compare-proposal">
-                <span className="landing__compare-source mono">Posted to the ledger</span>
-                <p className="landing__compare-entry mono">Trace a51f9c2e · GL export SHA-256 verified</p>
-              </div>
-              <div className="landing__compare-gap">
-                <span className="landing__gap-status">
-                  <CheckIcon size={12} className="landing__check" /> Approved · posted once
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="landing__compare-dots">
-            <span className="landing__compare-dot landing__compare-dot--ops" />
-            <span className="landing__compare-dot landing__compare-dot--governance" />
-            <span className="landing__compare-dot landing__compare-dot--audit" />
-          </div>
-        </figure>
+        <HeroFlow />
       </section>
 
       <section className="landing__section" id="how-it-works">
