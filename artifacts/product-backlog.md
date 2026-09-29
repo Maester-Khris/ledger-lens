@@ -364,7 +364,7 @@ renaming them would move the prompt version and the golden set):**
       refreshed per turn, from `tool_invocations` + `chat_turns` (live stream is D6).
 - [x] **N14** Per-document ledger timeline: ingestion → extraction run → fields → reviews → proposed
       correction → decision → posting ("how a document becomes a financial record").
-- [ ] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
+- [x] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
       to end: contract → gap → proposal → approve → post).
 - [x] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
 
