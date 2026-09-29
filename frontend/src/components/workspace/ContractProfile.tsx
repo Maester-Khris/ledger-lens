@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type TermFieldDto, type TermsDto, documentPageUrl, getTerms } from '../../api';
+import { LockIcon } from '../Icons';
 
 const GROUPS: { id: string; label: string }[] = [
   { id: 'parties', label: 'Parties' },
@@ -77,7 +78,7 @@ export function ContractProfile({ documentId }: ContractProfileProps) {
         <h3>Coming soon</h3>
         <ul>
           {terms.coming_soon.map((id) => (
-            <li key={id}>{COMING_SOON_LABEL[id] ?? id} <span className="ws-badge">Coming soon</span></li>
+            <li key={id}><LockIcon size={12} /> {COMING_SOON_LABEL[id] ?? id}</li>
           ))}
         </ul>
       </section>

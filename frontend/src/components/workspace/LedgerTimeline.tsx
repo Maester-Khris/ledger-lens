@@ -41,7 +41,7 @@ export function LedgerTimeline({ documentId, refreshKey }: LedgerTimelineProps) 
       <ol className="ws-timeline">
         {items?.map((item, index) => (
           <li key={`${item.at}-${index}`} className={`ws-timeline__item ws-timeline__item--${item.kind}`}>
-            <div><span className="ws-badge">{KIND_LABEL[item.kind]}</span> {item.title}</div>
+            <div><span className={`ws-badge ws-badge--${item.kind}`}>{KIND_LABEL[item.kind]}</span> {item.title}</div>
             <div className="ws-reason">{new Date(item.at).toLocaleString()}</div>
             {item.detail.entries && (
               <details>
