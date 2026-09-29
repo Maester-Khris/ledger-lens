@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { BrandMark } from '../components/BrandMark';
-import { CheckIcon, SparkleIcon } from '../components/Icons';
+import { CheckIcon, LockIcon, RefreshIcon, SparkleIcon } from '../components/Icons';
 import { HeroFlow } from '../components/HeroFlow';
 import './Landing.css';
 
@@ -61,16 +61,19 @@ export function Landing() {
 
         <ul className="landing__layers" aria-label="What this demonstrates at three levels">
           <li>
-            <strong>Ops.</strong> Billing reconciliation: the gap between contract and billing, computed in
-            code, never by the model.
+            <RefreshIcon size={16} className="landing__layer-icon" />
+            <strong>Ops</strong>
+            <p>Billing reconciliation: the gap between contract and billing, computed in code, never by the model.</p>
           </li>
           <li>
-            <strong>Governance.</strong> Every AI tool call is logged with its model, inputs and decision,
-            before anything reaches the ledger.
+            <LockIcon size={16} className="landing__layer-icon" />
+            <strong>Governance</strong>
+            <p>Every AI tool call is logged with its model, inputs and decision, before anything reaches the ledger.</p>
           </li>
           <li>
-            <strong>Audit.</strong> The GL export is byte-identical on regeneration and verified by its
-            SHA-256 hash.
+            <CheckIcon size={16} className="landing__layer-icon" />
+            <strong>Audit</strong>
+            <p>The GL export is byte-identical on regeneration and verified by its SHA-256 hash.</p>
           </li>
         </ul>
 
