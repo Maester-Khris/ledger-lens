@@ -85,7 +85,7 @@ export function Landing() {
                 <div className="landing__compare-col">
                   <span className="landing__compare-source mono">Agreement · §3 Fees · p.2</span>
                   <p className="landing__compare-quote">
-                    "1.00% per annum on the first $1,000,000 of assets under management"
+                    “1.00% per annum on the first $1,000,000 of assets under management”
                   </p>
                 </div>
                 <div className="landing__compare-col">
