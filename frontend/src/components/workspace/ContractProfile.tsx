@@ -19,6 +19,7 @@ const COMING_SOON_LABEL: Record<string, string> = {
 
 interface ContractProfileProps {
   documentId: string;
+  onOpenPage?: (documentId: string, version: number, page: number) => void;
 }
 
 function display(value: unknown): string {
@@ -31,7 +32,7 @@ function display(value: unknown): string {
   return String(value);
 }
 
-export function ContractProfile({ documentId }: ContractProfileProps) {
+export function ContractProfile({ documentId, onOpenPage }: ContractProfileProps) {
   const [terms, setTerms] = useState<TermsDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,9 +63,16 @@ export function ContractProfile({ documentId }: ContractProfileProps) {
                     <span className="ws-field__value-text">{display(f.value)}</span>
                     {f.reason && <p className="ws-field__reason">{f.reason}</p>}
                     {f.page !== null && (
-                      <a className="ws-field__page" href={documentPageUrl(terms.document_id, terms.version, f.page)} target="_blank" rel="noreferrer">
-                        Page {f.page} →
-                      </a>
+                      onOpenPage ? (
+                        <button type="button" className="ws-field__page ws-field__page--button"
+                                onClick={() => onOpenPage(terms.document_id, terms.version, f.page as number)}>
+                          Page {f.page} →
+                        </button>
+                      ) : (
+                        <a className="ws-field__page" href={documentPageUrl(terms.document_id, terms.version, f.page)} target="_blank" rel="noreferrer">
+                          Page {f.page} →
+                        </a>
+                      )
                     )}
                   </dd>
                 </div>

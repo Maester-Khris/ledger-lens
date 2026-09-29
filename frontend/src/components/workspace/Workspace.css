@@ -51,6 +51,7 @@
 .ws-field__value-text { display: block; font-size: 0.95em; color: var(--color-text-primary); }
 .ws-field__reason { margin: 4px 0 0; font-size: 0.82em; color: var(--color-text-secondary); font-style: italic; }
 .ws-field__page { display: inline-block; margin-top: 6px; font-size: 0.82em; font-weight: 600; color: var(--color-accent); }
+.ws-field__page--button { background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-align: left; }
 
 .ws-badge--accepted, .ws-badge--confirmed { color: var(--color-success); border-color: var(--color-success); }
 .ws-badge--needs_review, .ws-badge--rejected { color: var(--color-warning); border-color: var(--color-warning); }

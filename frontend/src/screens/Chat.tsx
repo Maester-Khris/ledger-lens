@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
@@ -13,6 +13,7 @@ import { BillingReconciliation } from '../components/workspace/BillingReconcilia
 import { AuditLog } from '../components/workspace/AuditLog';
 import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
+import { DocumentViewer } from '../components/DocumentViewer';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
 
@@ -109,10 +110,20 @@ export function Chat() {
   const [ledgerKey, setLedgerKey] = useState(0);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
+  const [viewer, setViewer] = useState<{ documentId: string; version: number; page: number; title: string } | null>(null);
 
   const tabs: PanelTab[] = [
     ...(scopeId ? [
-      { id: 'profile', label: 'Profile', content: <ContractProfile documentId={scopeId} /> },
+      {
+        id: 'profile',
+        label: 'Profile',
+        content: (
+          <ContractProfile
+            documentId={scopeId}
+            onOpenPage={(id, version, page) => setViewer({ documentId: id, version, page, title: scoped?.title ?? 'Document' })}
+          />
+        ),
+      },
       { id: 'billing', label: 'Billing reconciliation', content: <BillingReconciliation documentId={scopeId} /> },
       { id: 'ledger', label: 'Ledger', content: <LedgerTimeline documentId={scopeId} refreshKey={ledgerKey} /> },
     ] : []),
@@ -306,6 +317,19 @@ export function Chat() {
         </div>
         {(panelOpen || window.matchMedia('(min-width: 1100px)').matches) && <DocumentPanel tabs={tabs} />}
       </div>
+      {viewer && (
+        <div className="viewer-sheet" role="dialog" aria-modal="false" aria-label={`${viewer.title} viewer`}>
+          <Suspense fallback={<p className="viewer-sheet__loading">Loading viewer…</p>}>
+            <DocumentViewer
+              documentId={viewer.documentId}
+              version={viewer.version}
+              page={viewer.page}
+              title={viewer.title}
+              onClose={() => setViewer(null)}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }
