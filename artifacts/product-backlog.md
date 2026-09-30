@@ -417,6 +417,93 @@ renaming them would move the prompt version and the golden set):**
 **Icebox:** **I1** MCP server for the ledger (Questrade pattern — market signal only). **I2**
 reconciliation against an external statement is already Epic 2.2.
 
+### Pre-launch sprint — name TBD (logged 2026-09-29)
+
+Source: `artifacts/pre-demo-launch-candidates.md`, triaged 2026-09-29. Goal: publish the demo and be
+able to show real usage and real feedback. It is a proof artifact, so the sprint covers safety and
+evidence, not new features. IDs: P = this sprint (blocks launch), X = next (after the first real
+sessions), C = cut.
+
+**Hosting (decided 2026-09-29):** frontend on **Vercel**, backend on **Railway** with Postgres as a
+service in the same Railway project. This replaces "Aurora for the demo" (Epic 1.5 stays open for a
+non-demo deploy). CLAUDE.md's stack row and Current Scope are updated when the sprint lands. Verify
+Railway's Postgres supports PG 18 during P1 (else pin the version the migrations were tested on).
+
+> **⚠ OPEN DECISION — guest approvals (settle at the start of the NEXT sprint, before public launch).**
+> Approvals are permanent and global today: `field_reviews` and `tool_invocation_decisions` are
+> append-only (triggers, SELECT/INSERT only, one decision per field or invocation), and everything is
+> scoped to the single `DEMO_TENANT_ID`. One guest's approval changes the answers and citations every
+> other guest gets, empties the review queue for them, and (for tool invocations) writes a permanent
+> ledger posting. A revert at session end is not viable (needs the triggers off, no reliable
+> session-end signal, overlapping guests break each other, a reversed posting leaves a pair behind).
+> **Leading option:** a disposable per-guest overlay table (TTL, not append-only; precedent:
+> `element_search` DELETE grant), reads = baseline reviews + this guest's overlay through
+> `served_fields` / `pending_reviews` / `count_pending` / dashboard stats; in demo mode an approved
+> invocation runs `create_posting` in a rolled-back transaction so the guest sees the exact entries
+> and balance check while the real ledger stays untouched; UI labels it "demo decision, expires".
+> Alternatives weighed: per-guest sandbox tenant (clones documents and vectors, too heavy), dry-run
+> only (loses N13/N14), nightly reseed (fallback, doesn't fix concurrent guests). Before the spec,
+> check whether retrieval or citation chips read reviews directly and how the dashboard cache is keyed.
+> **Interim rule until settled:** the deployed build does not accept public approvals (keep it private,
+> or disable Approve and field review); do not announce the demo publicly.
+
+**Now — blocks launch:**
+- [ ] **P1** **Deploy skeleton first (tracer bullet).** Railway API + Postgres, Vercel frontend,
+      migrations run as `ledger_owner` (release command), API runs as `ledger_app`; the SEC documents
+      pre-ingested locally then loaded into Railway (dump/restore or one-off script). Vercel → Railway
+      by direct calls with `VITE_API_BASE` + CORS (chosen over a Vercel rewrite, which may buffer SSE).
+      Secrets in Infisical. Do this before P2–P7 so everything is tested where it will run.
+- [ ] **P2** **Demo mode is physically unable to ingest.** `DEMO_MODE=1` does not mount the ingestion or
+      upload routes, and the demo API's DB role has no INSERT on document/extraction tables (it writes
+      only what chat needs: chat turns, guests, tool invocations, decisions, feedback, events). Test: in
+      demo mode every ingestion route returns 404, and a direct insert as the demo role is rejected.
+- [ ] **P3** **Per-guest rate limit + hard spend caps.** Rate limit per `X-Guest-Id` and per IP on the
+      chat/agent endpoints; provider-side caps on OpenAI and Pinecone; a Railway usage limit.
+      (The guest-approval design is split out into the open decision above.)
+- [ ] **P4** **Retrieval edge cases.** Send disabled on an empty message; when retrieval scores fall
+      below threshold, or the query is vague, nonsense or unrelated, show an explicit "no supporting
+      passage found" answer (system-credited like N11) instead of a weak or empty answer. Tune the
+      threshold on ~20 real queries including junk so good questions aren't rejected; add cases to the
+      golden set.
+- [ ] **P5** **User feedback.** Thumbs up/down plus an optional comment on each answer, stored in
+      Postgres against guest, chat turn and prompt version. An end-of-chat one-line prompt is optional.
+- [ ] **P6** **Sentry on backend and frontend** (errors and exceptions). Langfuse (N16) stays the LLM
+      trace tool; don't merge them. Scrub PII from events (same boundary as the redaction review).
+      Once P6 + P7 land, tick the release-readiness item "Instrumentation and tracing is key" as covered.
+- [ ] **P7** **Minimal usage event log.** One row per query: guest, chat turn, client-measured
+      end-to-end latency, outcome (cited / no-support / refused), feedback. Source for the one metric
+      that matters (share of guest sessions that reach a cited answer) and for the latency figure.
+- [ ] **P8** **Document context for guests.** A list of the demo documents with a one-line description
+      each (from `documents` metadata), plus 3–4 clickable starter questions on the chat screen. Reuses
+      N12 (chat scoped to a document) and the selected-document context.
+
+**Order:** P1 → P2 → P3 → P4 → (P5, P6, P7 together, one migration) → P8. Then a smoke run on the
+deployed environment: ingestion 404s, the rate limit trips, Sentry receives a forced error.
+
+**Line in the sand (set before launch, adjust the numbers):** in the first 10 real guest sessions, at
+least 60% reach a cited answer and at least 5 submit feedback. Under 30% reaching a cited answer: fix
+the starter questions and onboarding before anything else. Counter-metric: thumbs-down and no-support
+rate, so the number can't be raised by weakening answers.
+
+**Assumptions that need evidence, not opinion:**
+- Who the guests are (reviewers vs finance users) is a guess. Ask 3–5 people to describe how they last
+  checked a contract against a bill, without pitching the demo.
+- "First-time users are confused" is a hypothesis. Watch 5 people use it unassisted before building a tour.
+- Guests will submit feedback: assume single-digit response. Ask 3–5 people directly for a quote or a call.
+- People want to read the source documents: nothing supports the viewer yet.
+
+**Next — after the first sessions:**
+- [ ] **X1** Guided first-load tutorial, only if starters + the document list fail the 5-person watch.
+- [ ] **X2** Two-pane document viewer (left rail of documents, selected document fills the rest), only
+      if feedback or watched sessions show demand. Builds on the D18 citation-highlight work.
+- [ ] **X3** Latency and usage view: p50/p95, cohorts by day (feeds D8).
+- [ ] **X4** Small load test (~15 min) against the demo config with P3 on. Record the ceiling and check
+      that pools and timeouts fail cleanly. The likely limit is LLM rate limits, not Railway workers.
+
+**Cut:** **C1** A/B testing (no traffic for significance; revisit at hundreds of sessions per week).
+**C2** Node-vs-Python throughput comparison (not the workload's bottleneck). **C3** A separate deployable
+for the agent (P2's unmounted routes + restricted role give the same guarantee).
+
 ---
 
 ## Week 1 — MVP: Ledger Core, hardened (Days 1–5, hard cap)
