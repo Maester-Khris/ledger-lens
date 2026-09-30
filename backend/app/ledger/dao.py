@@ -386,3 +386,8 @@ def account_labels(session: Session, account_ids: Iterable[uuid.UUID]) -> dict[u
         return {}
     rows = session.execute(select(Account.id, Account.name, Account.currency).where(Account.id.in_(ids)))
     return {row.id: AccountLabel(row.name, row.currency) for row in rows}
+
+
+def ping(session: Session) -> None:
+    """Raises if the database cannot answer a trivial query (used by /health)."""
+    session.execute(text("SELECT 1"))
