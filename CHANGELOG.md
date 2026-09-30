@@ -29,7 +29,7 @@ build order.
 - [ ] `api` — P2 demo mode cannot ingest: ingestion routes unmounted and the demo DB role has no insert on document tables → **Not epic-tracked** (pre-launch triage, backlog P2)
 - [ ] `contracts` — P9 phase 1: per-guest field-review overlay merged into every reader of `field_reviews`, gated by `DEMO_MODE` → **Not epic-tracked** (guest-decision overlay, backlog P9)
 - [ ] `governance` — P9 phase 2: per-guest tool-approval overlay, rolled-back posting check, the guest's simulated entries in Ledger and timeline → **Not epic-tracked** (guest-decision overlay, backlog P9)
-- [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway) → **Not epic-tracked** (pre-launch triage, backlog P3)
+- [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway), plus CORS locked to `FRONTEND_URL` (`https://ledgerlens.nknext.dev`) with `X-Guest-Id` allowed; the deployed frontend cannot call the API until it lands → **Not epic-tracked** (pre-launch triage, backlog P3)
 - [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found" → **Not epic-tracked** (pre-launch triage, backlog P4)
 - [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
 - [ ] `ops` — P6 Sentry on backend and frontend → **Epic 2.3** (backlog P6)

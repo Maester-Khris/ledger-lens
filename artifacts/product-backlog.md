@@ -488,6 +488,8 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
       after P2 because it reuses `DEMO_MODE` and the demo role's grants (DELETE on the overlays only).
 - [ ] **P3** **Per-guest rate limit + hard spend caps.** Rate limit per `X-Guest-Id` and per IP on the
       chat/agent endpoints; provider-side caps on OpenAI and Pinecone; a Railway usage limit.
+      Also CORS: `CORSMiddleware` allowing only `FRONTEND_URL` (the Vercel origin, with `https://`, no
+      trailing slash) and the `X-Guest-Id` header. Without it the deployed frontend cannot call the API.
 - [ ] **P4** **Retrieval edge cases.** Send disabled on an empty message; when retrieval scores fall
       below threshold, or the query is vague, nonsense or unrelated, show an explicit "no supporting
       passage found" answer (system-credited like N11) instead of a weak or empty answer. Tune the
