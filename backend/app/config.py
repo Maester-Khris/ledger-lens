@@ -6,8 +6,11 @@ from dotenv import load_dotenv
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 # backend/.env (or the file named by ENV_FILE, e.g. ENV_FILE=.env.demo), wherever the command runs from.
-# Real environment variables win over the file.
-load_dotenv(BACKEND_DIR / os.environ.get("ENV_FILE", ".env"))
+# Real environment variables win over the file. An optional "<file>.local" (e.g. .env.demo.local) is loaded
+# first, so its values win over the file itself.
+_ENV_FILE = os.environ.get("ENV_FILE", ".env")
+load_dotenv(BACKEND_DIR / f"{_ENV_FILE}.local")
+load_dotenv(BACKEND_DIR / _ENV_FILE)
 
 
 def _int(name: str, default: int) -> int:
@@ -92,6 +95,19 @@ CHAT_TURN_TIMEOUT_SECONDS = _float("CHAT_TURN_TIMEOUT_SECONDS", 60)
 PINECONE_CLOUD = os.environ.get("PINECONE_CLOUD", "aws")
 PINECONE_REGION = os.environ.get("PINECONE_REGION", "us-east-1")
 PINECONE_TIMEOUT_SECONDS = _float("PINECONE_TIMEOUT_SECONDS", 10)
+
+
+def parse_frontend_origins(raw: str | None) -> list[str]:
+    """FRONTEND_URL: comma-separated browser origins allowed to call the API. A scheme is required."""
+    origins = [part.strip().rstrip("/") for part in (raw or "").split(",") if part.strip()]
+    for origin in origins:
+        if not origin.startswith(("https://", "http://")):
+            raise ValueError(f"FRONTEND_URL entry {origin!r} needs a scheme, e.g. https://example.com")
+    return origins
+
+
+# Unset (local dev uses the Vite /api proxy, same origin) means no CORS middleware is installed.
+FRONTEND_ORIGINS = parse_frontend_origins(os.environ.get("FRONTEND_URL"))
 
 # Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
