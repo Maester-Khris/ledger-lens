@@ -49,7 +49,7 @@ build order.
   ```
   Then copy the matching originals into the Railway volume, and compare row counts → **Epic 1.5**
 - [x] `chores` — **Split requirements into worker and API.** **Done 2026-09-30:** `requirements.txt` is now the API set (Railway auto-installs it, image about 180 MB) and `requirements-worker.txt` adds Docling, Presidio, pytest and httpx; local work installs the worker file. `backend/requirements.txt` carries Docling and Presidio for ingestion; split into API and worker files and deploy only the API set on Railway (the worker is never hosted). `$PYDEV` locally keeps both → **Epic 1.5**
-- [ ] `ops` — **Separate Langfuse project for the demo.** Keep the current Langfuse project for local work; create a new project `demo-ledglens`, and the Railway deploy uses its keys → **Epic 2.3**
+- [x] `ops` — **Separate Langfuse project for the demo.** **Done 2026-09-30:** the `demo-ledglens` project exists and the Railway service uses its keys, with `LANGFUSE_TRACING_ENVIRONMENT=demo`; the local demo ingest ran with tracing off. Keep the current Langfuse project for local work; create a new project `demo-ledglens`, and the Railway deploy uses its keys → **Epic 2.3**
 
 ### Reference
 
