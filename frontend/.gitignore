@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel env import file (see .env.vercel), local only
+.env.vercel
