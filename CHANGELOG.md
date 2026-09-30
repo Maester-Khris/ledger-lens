@@ -37,6 +37,15 @@ build order.
 - [ ] `frontend` — P8 document list with one-line descriptions and starter questions → **Not epic-tracked** (pre-launch triage, backlog P8)
 - [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
 
+### Infrastructure blockers (inside P1; found 2026-09-29, each would break the public demo silently)
+
+- [ ] `ops` — **Original PDFs on ephemeral disk.** `DOCUMENT_STORE_DIR` defaults to `var/documents` (`originals/<sha>`); a Railway container loses it on redeploy, breaking the viewer and every citation click. Fix: attach a Railway volume and copy the originals into it during P1. Object storage isn't needed at this scale → **Epic 1.5**
+- [ ] `ops` — **Separate demo Pinecone index.** The namespace is the tenant id, the same fixed demo tenant locally and on Railway, and re-indexing deletes old vector ids, so a local re-ingest would change the live demo. Fix: give the demo its own `PINECONE_INDEX`, fill it from the frozen corpus, and never point local ingestion at it. The existing scripts (`backend/scripts/create_pinecone_index.py`, `backend/scripts/ingestion_worker.py`, `scripts/delete_pinecone_namespace.py`) read the index from `PINECONE_INDEX`, so setting it targets the demo index → **Epic 1.5**
+- [ ] `db` — **Roles on Railway Postgres.** With the Railway superuser, create `ledger_owner` and `ledger_app`, then run migrations as `ledger_owner`. Routine, but a step; P2 and P9 add grants on top → **Epic 1.5**
+- [ ] `ops` — **Build the demo locally, then ship the database.** Launch the full infra on local (a demo database + the demo Pinecone index), ingest the frozen corpus into both, then dump the demo database and restore it onto Railway. Vectors and citations reference element UUIDs, and PII tokens are HMAC'd, so Railway must run with the same `PII_HMAC_KEY` / `PII_VAULT_KEY` (Infisical) and must never be re-ingested separately → **Epic 1.5**
+- [ ] `chores` — **Split requirements into worker and API.** `backend/requirements.txt` carries Docling and Presidio for ingestion; split into API and worker files and deploy only the API set on Railway (the worker is never hosted). `$PYDEV` locally keeps both → **Epic 1.5**
+- [ ] `ops` — **Separate Langfuse project for the demo.** Keep the current Langfuse project for local work; create a new project `demo-ledglens`, and the Railway deploy uses its keys → **Epic 2.3**
+
 ### Reference
 
 - `artifacts/product-backlog.md` — "Pre-launch sprint"
