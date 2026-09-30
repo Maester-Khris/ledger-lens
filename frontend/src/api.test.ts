@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig } from './api';
+import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig, normalizeApiBase } from './api';
 
 type Call = { url: string; init?: RequestInit };
 
@@ -51,4 +51,11 @@ it('fetches the deployment config once and retries after a failure', async () =>
   await getConfig();
   await getConfig();
   expect(calls).toHaveLength(1);
+});
+
+it('defaults the API base to /api and strips trailing slashes', () => {
+  expect(normalizeApiBase(undefined)).toBe('/api');
+  expect(normalizeApiBase('https://api.example.com')).toBe('https://api.example.com');
+  expect(normalizeApiBase('https://api.example.com/')).toBe('https://api.example.com');
+  expect(normalizeApiBase('https://api.example.com//')).toBe('https://api.example.com');
 });

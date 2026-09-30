@@ -1,4 +1,8 @@
-export const API_BASE: string = import.meta.env.VITE_API_BASE ?? '/api';
+// VITE_API_BASE is the deployed API origin (set in Vercel, baked in at build time); unset means the local Vite /api proxy.
+export function normalizeApiBase(raw: string | undefined): string {
+  return (raw ?? '/api').replace(/\/+$/, '');
+}
+export const API_BASE: string = normalizeApiBase(import.meta.env.VITE_API_BASE);
 export const LANGFUSE_URL: string | undefined = import.meta.env.VITE_LANGFUSE_URL;
 
 export type DocumentStatus = 'processing' | 'ready' | 'failed';
