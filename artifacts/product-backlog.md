@@ -455,8 +455,10 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
 >   field_path`); the four readers take an optional `guest_id`; the tool context carries it; a guest
 >   can re-decide or reset. `field_status` stays the single status rule.
 > - **Phase 2, tool approvals (carries the governance story):** `guest_tool_decisions`; approve runs
->   `create_posting` inside a rolled-back transaction, so the balance and account checks run for real
->   but nothing is committed or visible to others; the guest's own Ledger and timeline show the
+>   the ledger's own validation read-only (`check_posting`: the same account load and `_validate` that
+>   `create_posting` runs first), so nothing is written or visible to others. *Amended 2026-09-30:* a
+>   rolled-back `create_posting` would need INSERT on the ledger for the demo role, which P2 forbids;
+>   the DB balance trigger stays covered by tests and the N15 local run; the guest's own Ledger and timeline show the
 >   simulated entries (from `tool_invocations.proposed_entries`) labelled "demo posting, not recorded".
 > - **Cleanup:** an inactivity TTL purges both overlays. Timing only reclaims storage, because the rows
 >   are invisible to other guests; it is never what keeps data hidden.

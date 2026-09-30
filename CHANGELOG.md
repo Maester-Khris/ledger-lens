@@ -53,6 +53,23 @@ build order.
 - [x] `chores` — **Split requirements into worker and API.** **Done 2026-09-30:** `requirements.txt` is now the API set (Railway auto-installs it, image about 180 MB) and `requirements-worker.txt` adds Docling, Presidio, pytest and httpx; local work installs the worker file. `backend/requirements.txt` carries Docling and Presidio for ingestion; split into API and worker files and deploy only the API set on Railway (the worker is never hosted). `$PYDEV` locally keeps both → **Epic 1.5**
 - [x] `ops` — **Separate Langfuse project for the demo.** **Done 2026-09-30:** the `demo-ledglens` project exists and the Railway service uses its keys, with `LANGFUSE_TRACING_ENVIRONMENT=demo`; the local demo ingest ran with tracing off. Keep the current Langfuse project for local work; create a new project `demo-ledglens`, and the Railway deploy uses its keys → **Epic 2.3**
 
+### Demo-mode decisions (P2 + P9 spec, decided 2026-09-30)
+
+What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for the guest-facing note on the demo.
+
+- **Uploading documents is off.** The upload route is not mounted and the demo database role cannot insert into
+  document tables. Why: the corpus is shared by every guest, and ingestion spends OpenAI and Pinecone money.
+- **Writing to the ledger is off**: no manual postings, reversals, fee runs or GL exports; the Ledger screen hides the
+  reversal button and says reversals are off in the public demo. Why: the ledger is append-only, so any public write
+  would stay forever and be seen by every guest.
+- **Field reviews and AI-posting approvals still work, but only for you.** Your decisions go to per-guest overlay
+  tables, merged over the real data only for your session; other guests never see them, and they are deleted after a
+  period of inactivity. Why: a decision in the shared tables would change every other guest's answers and ledger.
+- **An approved AI posting is checked, not recorded.** The ledger's own validation (balanced per currency, accounts
+  exist and belong to the tenant, amounts positive) runs on it, and it is shown to you as "demo posting, not
+  recorded". Why: the demo database role has no write access to the ledger at all. This amends the backlog's
+  "rolled-back `create_posting`", which would have needed that write access.
+
 ### Reference
 
 - `artifacts/product-backlog.md` — "Pre-launch sprint"
