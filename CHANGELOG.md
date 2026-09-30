@@ -26,9 +26,9 @@ build order.
 ### Scope
 
 - [x] `ops` — P1 deploy skeleton first: Railway API and Postgres 18, Vercel frontend, `ledger_owner` migrates and `ledger_app` runs the API, direct CORS calls, Infisical secrets, SEC documents loaded → **Epic 1.5** (replaced by Railway for the demo; Aurora stays open for a non-demo deploy) **Done 2026-09-30:** API, Postgres 18 and the demo data on Railway; frontend on Vercel at `https://ledgerlens.nknext.dev`, which is assigned to the `feat/pre-launch-demo` branch (Production still points at the old `main` until the release is promoted); `VITE_API_BASE` set with the Vercel CLI for Preview on that branch; CORS live (`0eba28d`, `c3527b4`); smoke-tested in the browser: documents list, streamed cited chat answer, audit trail and dashboard. Secrets are set as Railway variables; Infisical was not checked here.
-- [ ] `api` — P2 demo mode cannot ingest: ingestion routes unmounted and the demo DB role has no insert on document tables → **Not epic-tracked** (pre-launch triage, backlog P2)
-- [ ] `contracts` — P9 phase 1: per-guest field-review overlay merged into every reader of `field_reviews`, gated by `DEMO_MODE` → **Not epic-tracked** (guest-decision overlay, backlog P9)
-- [ ] `governance` — P9 phase 2: per-guest tool-approval overlay, rolled-back posting check, the guest's simulated entries in Ledger and timeline → **Not epic-tracked** (guest-decision overlay, backlog P9)
+- [ ] `api` — P2 demo mode cannot ingest or write the ledger: upload and the ledger-write routes (`/postings`, reversal, `/fee-runs`, `/gl-exports`) unmounted, and the `ledger_demo` DB role has no insert on document, extraction, ledger or real-decision tables; one spec with P9 (`docs/superpowers/specs/2026-09-30-demo-mode-and-guest-overlay-design.md`) → **Not epic-tracked** (pre-launch triage, backlog P2)
+- [ ] `contracts` — P9 phase 1: per-guest field-review overlay merged into every reader of `field_reviews`, gated by `DEMO_MODE` (same spec as P2) → **Not epic-tracked** (guest-decision overlay, backlog P9)
+- [ ] `governance` — P9 phase 2: per-guest tool-approval overlay, read-only `check_posting` (not a rolled-back posting), guest-scoped proposals, the guest's simulated entries in Ledger and timeline (same spec as P2) → **Not epic-tracked** (guest-decision overlay, backlog P9)
 - [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway), plus CORS locked to `FRONTEND_URL` (CORS itself is done, see P1; rate limit and spend caps still open) → **Not epic-tracked** (pre-launch triage, backlog P3)
 - [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found" → **Not epic-tracked** (pre-launch triage, backlog P4)
 - [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
@@ -80,6 +80,27 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   exist and belong to the tenant, amounts positive) runs on it, and it is shown to you as "demo posting, not
   recorded". Why: the demo database role has no write access to the ledger at all. This amends the backlog's
   "rolled-back `create_posting`", which would have needed that write access.
+
+### P2 + P9 engineering decisions (settled 2026-09-30, one spec)
+
+- **Scope:** P2 and P9 designed once for the final state; no intermediate grant on `field_reviews` that P9 would undo.
+- **Milestones:** M1 code-only (unmount public writes, frontend hides them, decision routes return 403 until their
+  overlay lands, the only throwaway code); M2 one migration (both overlays + `ledger_demo` grants); M3 field-review
+  overlay; M4 approval overlay; M5 purge + switch Railway to `ledger_demo` + deployed smoke test.
+- **Merge approach:** in Python inside each package's `dao.py`; readers take `overlay_guest: UUID | None` (None =
+  today's path). One FastAPI dependency `get_overlay_guest` holds the demo-mode policy (400 without a guest).
+  Rejected: an SQL merge function (logic split across SQL and Python, migrations for every change) and separate demo
+  repositories (every reader and the approval path twice).
+- **Data:** `guest_field_reviews` (PK guest, run, field) and `guest_tool_decisions` (PK guest, invocation), FKs to
+  the real rows, no triggers; `ledger_demo` gets SELECT everywhere, INSERT on `guests`/`chat_turns`/`tool_invocations`,
+  UPDATE (`last_seen_at`) on `guests`, INSERT + DELETE on the overlays, nothing else. Role created by hand on Railway
+  and by `db_up.sh` locally; later tables the demo writes must grant INSERT explicitly.
+- **Approvals:** `ledger.dao.check_posting` runs the account load and `_validate` read-only; decisions carry
+  `recorded: bool`; a guest sees and decides only proposals from their own chat turns.
+- **Frontend:** learns `demo_mode` from `/config`; dashboard aggregates stay cached and real, only the two pending
+  counts are per guest; the Ledger reversal button is hidden.
+- **Purge:** `POST /guests` deletes overlay rows of guests not seen for 24 hours; `guests` rows are kept.
+- **Rollback:** `DEMO_MODE` off or `DATABASE_URL` back to `ledger_app`; the migration only adds.
 
 ### Reference
 
