@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
-# backend/.env, wherever the command runs from. Real environment variables win over the file.
-load_dotenv(BACKEND_DIR / ".env")
+# backend/.env (or the file named by ENV_FILE, e.g. ENV_FILE=.env.demo), wherever the command runs from.
+# Real environment variables win over the file.
+load_dotenv(BACKEND_DIR / os.environ.get("ENV_FILE", ".env"))
 
 
 def _int(name: str, default: int) -> int:
