@@ -88,7 +88,8 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   overlay lands, the only throwaway code); M2 one migration (both overlays + `ledger_demo` grants); M3 field-review
   overlay; M4 approval overlay; M5 purge + switch Railway to `ledger_demo` + deployed smoke test.
 - **Merge approach:** in Python inside each package's `dao.py`; readers take `overlay_guest: UUID | None` (None =
-  today's path). One FastAPI dependency `get_overlay_guest` holds the demo-mode policy (400 without a guest).
+  today's path). Two FastAPI dependencies hold the demo-mode policy: `get_overlay_guest` for reads (no guest = shared data) and
+  `require_overlay_guest` for decision writes (400 without a guest in demo mode).
   Rejected: an SQL merge function (logic split across SQL and Python, migrations for every change) and separate demo
   repositories (every reader and the approval path twice).
 - **Data:** `guest_field_reviews` (PK guest, run, field) and `guest_tool_decisions` (PK guest, invocation), FKs to
