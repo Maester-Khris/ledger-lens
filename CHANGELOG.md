@@ -64,6 +64,10 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   would stay forever and be seen by every guest.
 - **Field reviews and AI-posting approvals still work, but only for you.** Your decisions go to per-guest overlay
   tables, merged over the real data only for your session; other guests never see them. Why: a decision in the shared tables would change every other guest's answers and ledger.
+- **You only see the AI proposals from your own chats.** Pending counts, approvals on the Ledger screen and the
+  document timeline show the proposals your conversations produced, not other guests'. Everything else (documents,
+  extracted terms, real postings) is the same shared data for everyone. Why: other guests' proposals would clutter
+  your view and reveal what they asked.
 - **Your decisions are final.** There is no undo, re-decide or reset for a field review or an approval, the same as
   the real system: a decision is recorded once, and in the real ledger a posting is only ever corrected by a
   compensating reversal, never by editing or deleting it (reversals are off in the demo, see above). Why: an undo
