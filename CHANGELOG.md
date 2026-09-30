@@ -36,6 +36,7 @@ build order.
 - [ ] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7)
 - [ ] `frontend` — P8 document list with one-line descriptions and starter questions → **Not epic-tracked** (pre-launch triage, backlog P8)
 - [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
+- [ ] `chores` — fix the stale frontend test "reverses with a key derived from the posting id": `reversePosting` now awaits `guestHeaders()`, which first POSTs `/guests`, so `calls[0]` is the guest call, not the reversal. The test already failed before this sprint's frontend work; find the reversal call or seed a guest id → **Not epic-tracked** (found in the P1 review 2026-09-30)
 
 ### Infrastructure blockers (inside P1; found 2026-09-29, each would break the public demo silently)
 
