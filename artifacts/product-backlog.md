@@ -505,7 +505,8 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
       that matters (share of guest sessions that reach a cited answer) and for the latency figure.
 - [ ] **P8** **Document context for guests.** A list of the demo documents with a one-line description
       each (from `documents` metadata), plus 3–4 clickable starter questions on the chat screen. Reuses
-      N12 (chat scoped to a document) and the selected-document context.
+      N12 (chat scoped to a document) and the selected-document context. Also: the "Open page →" link on a chat citation opens
+      the PDF in a new browser tab; make it open the in-app `DocumentViewer` the screen already has.
 
 **Order:** P1 → P2 → P9 (Phase 1, then Phase 2) → P3 → P4 → (P5, P6, P7 together, one migration) → P8.
 Then a smoke run on the deployed environment: ingestion 404s, the rate limit trips, Sentry receives a

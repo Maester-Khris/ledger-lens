@@ -34,10 +34,9 @@ build order.
 - [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
 - [ ] `ops` — P6 Sentry on backend and frontend → **Epic 2.3** (backlog P6)
 - [ ] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7)
-- [ ] `frontend` — P8 document list with one-line descriptions and starter questions → **Not epic-tracked** (pre-launch triage, backlog P8)
+- [ ] `frontend` — P8 document list with one-line descriptions and starter questions plus chat answer citations open the in-app viewer: "Open page →" in `Chat.tsx`'s `CitationCard` opens the PDF in a new browser tab today (only the contract profile panel uses the viewer, `91d7bbd`), so reuse the screen's `viewer` state and `DocumentViewer` (found in the deployed smoke test 2026-09-30) → (pre-launch triage, backlog P8)
 - [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
 - [ ] `chores` — fix the stale frontend test "reverses with a key derived from the posting id": `reversePosting` now awaits `guestHeaders()`, which first POSTs `/guests`, so `calls[0]` is the guest call, not the reversal. The test already failed before this sprint's frontend work; find the reversal call or seed a guest id → **Not epic-tracked** (found in the P1 review 2026-09-30)
-- [ ] `frontend` — chat answer citations: "Open page →" in `Chat.tsx`'s `CitationCard` opens the PDF in a new browser tab instead of the in-app viewer (only the contract profile panel uses the viewer, `91d7bbd`); reuse the `viewer` state and `DocumentViewer` the screen already has → **Not epic-tracked** (found in the deployed smoke test 2026-09-30)
 - [ ] `ops` — at `/promote-release`: add `VITE_API_BASE` for the Vercel **Production** environment (no branch), move `ledgerlens.nknext.dev` back to Production, set the Vercel Production Branch and confirm Railway's `FRONTEND_URL` still matches; Deployment Protection was turned off for the branch build → **Not epic-tracked** (deploy note)
 
 ### Infrastructure blockers (inside P1; found 2026-09-29, each would break the public demo silently)
