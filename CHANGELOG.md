@@ -16,15 +16,19 @@ Fintech Ledger + Document Intelligence product.
 (API and Postgres 18 in one project); this replaces Aurora for the demo. Order below is the agreed
 build order.
 
-> **⚠ OPEN DECISION for the next sprint: guest approvals.** Approvals are permanent and global today
-> (append-only tables, one demo tenant), so one guest's approval changes every other guest's answers.
-> Leading option: a disposable per-guest overlay. Full write-up in the backlog. **Interim rule: the deployed
-> build accepts no public approvals and the demo is not announced publicly until this is settled.**
+> **✅ DECIDED 2026-09-29: guest decisions go to a per-guest overlay (P9), built in this sprint right after P2.**
+> Approvals are permanent and global today, so one guest's decision changes every other guest's answers.
+> Revert-at-session-end was rejected (committed data is visible until the revert lands; a reversal pair
+> stays in the append-only ledger). Guest decisions go to disposable overlay tables merged at read time;
+> tool approvals run the posting check in a rolled-back transaction. Rationale in the backlog.
+> **Until P9 lands: the deployed build accepts no public decisions and the demo is not announced publicly.**
 
 ### Scope
 
 - [ ] `ops` — P1 deploy skeleton first: Railway API and Postgres 18, Vercel frontend, `ledger_owner` migrates and `ledger_app` runs the API, direct CORS calls, Infisical secrets, SEC documents loaded → **Epic 1.5** (replaced by Railway for the demo; Aurora stays open for a non-demo deploy)
 - [ ] `api` — P2 demo mode cannot ingest: ingestion routes unmounted and the demo DB role has no insert on document tables → **Not epic-tracked** (pre-launch triage, backlog P2)
+- [ ] `contracts` — P9 phase 1: per-guest field-review overlay merged into every reader of `field_reviews`, gated by `DEMO_MODE` → **Not epic-tracked** (guest-decision overlay, backlog P9)
+- [ ] `governance` — P9 phase 2: per-guest tool-approval overlay, rolled-back posting check, the guest's simulated entries in Ledger and timeline → **Not epic-tracked** (guest-decision overlay, backlog P9)
 - [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway) → **Not epic-tracked** (pre-launch triage, backlog P3)
 - [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found" → **Not epic-tracked** (pre-launch triage, backlog P4)
 - [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
