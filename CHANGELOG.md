@@ -63,8 +63,11 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   reversal button and says reversals are off in the public demo. Why: the ledger is append-only, so any public write
   would stay forever and be seen by every guest.
 - **Field reviews and AI-posting approvals still work, but only for you.** Your decisions go to per-guest overlay
-  tables, merged over the real data only for your session; other guests never see them, and they are deleted after a
-  period of inactivity. Why: a decision in the shared tables would change every other guest's answers and ledger.
+  tables, merged over the real data only for your session; other guests never see them. Why: a decision in the shared tables would change every other guest's answers and ledger.
+- **Your decisions last 24 hours of inactivity.** If you don't use the demo for 24 hours, your field reviews and
+  approvals are deleted and you start from the shared data again; the cleanup runs when a new guest arrives, with no
+  background job. Why: the overlays are disposable demo state, and deleting them only frees space, since nobody else
+  could see them anyway.
 - **An approved AI posting is checked, not recorded.** The ledger's own validation (balanced per currency, accounts
   exist and belong to the tenant, amounts positive) runs on it, and it is shown to you as "demo posting, not
   recorded". Why: the demo database role has no write access to the ledger at all. This amends the backlog's
