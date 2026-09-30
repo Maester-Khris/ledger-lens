@@ -64,6 +64,10 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   would stay forever and be seen by every guest.
 - **Field reviews and AI-posting approvals still work, but only for you.** Your decisions go to per-guest overlay
   tables, merged over the real data only for your session; other guests never see them. Why: a decision in the shared tables would change every other guest's answers and ledger.
+- **Your decisions are final.** There is no undo, re-decide or reset for a field review or an approval, the same as
+  the real system: a decision is recorded once, and in the real ledger a posting is only ever corrected by a
+  compensating reversal, never by editing or deleting it (reversals are off in the demo, see above). Why: an undo
+  button would teach the opposite of how the ledger works.
 - **Your decisions last 24 hours of inactivity.** If you don't use the demo for 24 hours, your field reviews and
   approvals are deleted and you start from the shared data again; the cleanup runs when a new guest arrives, with no
   background job. Why: the overlays are disposable demo state, and deleting them only frees space, since nobody else

@@ -452,8 +452,9 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
 > time through one helper per package, gated by the P2 `DEMO_MODE` flag. Without a guest or with the flag
 > off the code path is today's, so production is unchanged.
 > - **Phase 1, field reviews (carries the demo):** `guest_field_reviews` (PK `guest_id, run_id,
->   field_path`); the four readers take an optional `guest_id`; the tool context carries it; a guest
->   can re-decide or reset. `field_status` stays the single status rule.
+>   field_path`); the four readers take an optional `guest_id`; the tool context carries it. *Amended
+>   2026-09-30:* no re-decide or reset; a guest's decisions are final, as in the real system (a decision is
+>   recorded once; a posting is only corrected by a compensating reversal). `field_status` stays the single status rule.
 > - **Phase 2, tool approvals (carries the governance story):** `guest_tool_decisions`; approve runs
 >   the ledger's own validation read-only (`check_posting`: the same account load and `_validate` that
 >   `create_posting` runs first), so nothing is written or visible to others. *Amended 2026-09-30:* a
