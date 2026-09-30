@@ -10,11 +10,40 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
-## [Sprint — feat/demo-ready] · Release readiness before `/promote-release` — In Progress
+## [Sprint — feat/pre-launch-demo] · Pre-launch demo: safe to publish, and evidence of real use — In Progress
 
-**Started — 2026-09-26 · branch: `feat/demo-ready`.** Scope review on Monday 2026-09-28 decides
-whether the sprint is extended. **Paused 2026-09-26** with the UI rounds done and verified in the browser;
-the fintech-audience features below are next. Commits are local; not yet pushed, not ready for `/end-sprint`.
+**Started — 2026-09-29 · branch: `feat/pre-launch-demo`.** Hosting decided: Vercel (frontend) and Railway
+(API and Postgres 18 in one project); this replaces Aurora for the demo. Order below is the agreed
+build order.
+
+> **⚠ OPEN DECISION for the next sprint: guest approvals.** Approvals are permanent and global today
+> (append-only tables, one demo tenant), so one guest's approval changes every other guest's answers.
+> Leading option: a disposable per-guest overlay. Full write-up in the backlog. **Interim rule: the deployed
+> build accepts no public approvals and the demo is not announced publicly until this is settled.**
+
+### Scope
+
+- [ ] `ops` — P1 deploy skeleton first: Railway API and Postgres 18, Vercel frontend, `ledger_owner` migrates and `ledger_app` runs the API, direct CORS calls, Infisical secrets, SEC documents loaded → **Epic 1.5** (replaced by Railway for the demo; Aurora stays open for a non-demo deploy)
+- [ ] `api` — P2 demo mode cannot ingest: ingestion routes unmounted and the demo DB role has no insert on document tables → **Not epic-tracked** (pre-launch triage, backlog P2)
+- [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway) → **Not epic-tracked** (pre-launch triage, backlog P3)
+- [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found" → **Not epic-tracked** (pre-launch triage, backlog P4)
+- [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
+- [ ] `ops` — P6 Sentry on backend and frontend → **Epic 2.3** (backlog P6)
+- [ ] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7)
+- [ ] `frontend` — P8 document list with one-line descriptions and starter questions → **Not epic-tracked** (pre-launch triage, backlog P8)
+- [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
+
+### Reference
+
+- `artifacts/product-backlog.md` — "Pre-launch sprint"
+- `artifacts/pre-launch-demo-design-sprint.md` — design sprint plan and journey self-check (local file, not tracked)
+- `artifacts/pre-demo-launch-candidates.md` — the raw candidate list (local file, not tracked)
+
+## [Sprint — feat/demo-ready] · Release readiness before `/promote-release` — Closed
+
+**Started — 2026-09-26 · branch: `feat/demo-ready`.**
+**Closed — 2026-09-29.** Merged into `preview` as PR #8 (`9c50726`, 92 commits). The three unchecked scope
+items below moved to Deferred; the next sprint is `feat/pre-launch-demo`.
 
 ### Scope
 
@@ -48,6 +77,12 @@ the fintech-audience features below are next. Commits are local; not yet pushed,
 - Accepted gap: a person's name typed in chat that appears in no ingested document is sent to the model untokenised.
 - Deferred gaps: account numbers (other than IBAN / US bank numbers) and dates of birth are not tokenised.
 - [x] **Live tracing run** (against the re-ingested corpus): confirmed a `chat`-tagged trace (`session_id` matches, 26 observations covering graph steps and model calls) whose Langfuse trace id matches `chat_turns.trace_id` in Postgres exactly, and `extraction`-tagged traces whose `run_id` metadata matches `extraction_runs.id`.
+
+### Deferred
+
+- [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech reframing, backlog D6)
+- [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3**
+- [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
 
 ### Reference
 
