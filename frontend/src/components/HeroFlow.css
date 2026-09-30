@@ -1,0 +1,184 @@
+.hero-flow {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.hero-flow__row {
+  display: grid;
+  grid-template-columns: 1fr auto 1.6fr auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hero-flow__node,
+.hero-flow__hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-flow__label {
+  font-size: 11px;
+  color: var(--color-text-secondary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hero-flow__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2);
+  border: 1px dashed transparent;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-dark);
+  min-width: 120px;
+  transition: border-color 200ms ease;
+}
+
+.hero-flow__card--active {
+  border-color: var(--color-accent);
+}
+
+.hero-flow__card--inner {
+  min-width: 100px;
+  background: var(--color-bg-dark);
+}
+
+.hero-flow__inner-label {
+  font-size: 10px;
+  color: var(--color-text-secondary-dark);
+}
+
+.hero-flow__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary-dark);
+}
+
+.hero-flow__connector {
+  position: relative;
+  height: 2px;
+  min-width: 32px;
+  background: var(--color-border-dark);
+}
+
+.hero-flow__dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translateY(-50%);
+}
+
+.hero-flow__hub-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-accent-tint);
+  border-radius: var(--radius-card);
+}
+
+.hero-flow__exchange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-surface-dark);
+  color: var(--color-text-secondary-dark);
+  flex-shrink: 0;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.hero-flow__exchange--active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.hero-flow__chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary-dark);
+}
+
+.hero-flow__chips li {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radius-pill);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-flow-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .hero-flow {
+    animation: hero-flow-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+  }
+
+  /* Review Focus 3: both dot phases are 1200ms in PHASE_DURATIONS_MS — this duration must match. */
+  .hero-flow__dot {
+    animation: hero-flow-travel 1200ms linear forwards;
+  }
+
+  @keyframes hero-flow-travel {
+    from {
+      left: 0%;
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    to {
+      left: 100%;
+      opacity: 0;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-flow__row {
+    grid-template-columns: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-flow__connector {
+    width: 2px;
+    height: 20px;
+    min-width: 0;
+  }
+
+  .hero-flow__dot {
+    display: none;
+  }
+
+  .hero-flow__hub-inner {
+    flex-direction: column;
+  }
+}

@@ -158,3 +158,11 @@ def test_decision_endpoint_errors(client, db_session, tenant_id, accounts):
     lookup = _record(db_session, tenant_id, accounts, critical=False)
     assert client.post(f"/tool-invocations/{lookup.id}/decision", json={"decision": "approved"}).status_code == 422
     assert client.post(f"/tool-invocations/{uuid.uuid4()}/decision", json={"decision": "approved"}).status_code == 404
+def test_listing_labels_proposed_entries_with_account_names(client, db_session, tenant_id, accounts):
+    _record(db_session, tenant_id, accounts)
+    [row] = client.get("/tool-invocations", params={"pending": "true"}).json()
+    assert [(e["account_name"], e["direction"]) for e in row["proposed_entries"]] == [
+        ("Employment Income Receivable", "debit"),
+        ("Reported Income", "credit"),
+    ]
+    assert {e["currency"] for e in row["proposed_entries"]} == {"CAD"}

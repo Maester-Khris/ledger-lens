@@ -75,6 +75,7 @@
     "expect_document": "calamos-emerging-market-equity",
     "expect_page": null,
     "expect_numbers": [],
-    "expect_refusal": false
+    "expect_refusal": false,
+    "expect_system_notice": true
   }
 ]

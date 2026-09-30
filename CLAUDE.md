@@ -32,6 +32,7 @@ fintech-prod/
 | Parsing / PII | Docling (local) + Presidio analyzer with deterministic HMAC tokens; runs only in `scripts/ingestion_worker.py` |
 | Vector store / search | Pinecone (dense) + Postgres full-text search, merged with reciprocal rank fusion |
 | LLM | OpenAI via LangChain `ChatOpenAI` (structured output) and LangGraph (chat agent) |
+| Agent serving (planned, backlog D4) | Stateless worker pool + LangGraph Postgres checkpointer; Redis for hot session state, Postgres as durable fallback — not built yet |
 | Migrations | Alembic |
 | Testing | pytest; concurrency stress test via `asyncio` + `httpx.AsyncClient` |
 | Transport between ledger/document phases | none — in-process calls, no gRPC/internal API |
@@ -46,6 +47,8 @@ LangGraph chat agent with verified citations, contract-vs-billing leakage tool w
 
 **Not yet built:** Aurora deployment (Epic 1.5), tracing/observability, CI eval gate, `needs_review` review UI,
 the UI/parsing issues deferred from the live run (backlog), Week 2 iteration.
+**In progress (demo-ready sprint):** fintech reframing + document-centred features — backlog section
+"Demo-ready sprint — fintech reframing" (items N1–N18 now, D1–D16 deferred).
 
 Full phased scope, ordering rationale, and Icebox: `artifacts/product-backlog.md`.
 Design specs and implementation plans: `docs/superpowers/specs/`, `docs/superpowers/plans/`.

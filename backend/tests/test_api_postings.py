@@ -156,3 +156,11 @@ def test_invalid_cursor_is_400(client):
 
 def test_get_unknown_posting_is_404(client):
     assert client.get(f"/postings/{uuid.uuid4()}").status_code == 404
+
+def test_entries_carry_account_name_and_currency(client, pair):
+    created = _post(client, _body(pair), key=str(uuid.uuid4())).json()
+    assert {e["account_name"]: e["currency"] for e in created["entries"]} == {"Cash": "CAD", "Revenue": "CAD"}
+    listed = client.get("/postings").json()["items"][0]
+    assert {e["account_name"] for e in listed["entries"]} == {"Cash", "Revenue"}
+    fetched = client.get(f"/postings/{created['id']}").json()
+    assert {e["account_name"] for e in fetched["entries"]} == {"Cash", "Revenue"}

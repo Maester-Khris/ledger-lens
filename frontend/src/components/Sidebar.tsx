@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router';
-import { ChatIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
+import { type ApiHealth, useApiHealth } from '../lib/useApiHealth';
+import { ChatIcon, CheckIcon, DashboardIcon, DocumentsIcon, LedgerIcon } from './Icons';
+import { BrandMark } from './BrandMark';
 import './Sidebar.css';
 
 type NavItem = {
@@ -10,16 +12,24 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
+  { to: '/review', label: 'Review', icon: CheckIcon },
   { to: '/chat', label: 'Chat', icon: ChatIcon },
   { to: '/documents', label: 'Documents', icon: DocumentsIcon },
   { to: '/ledger', label: 'Ledger', icon: LedgerIcon },
 ];
 
+const HEALTH_LABEL: Record<ApiHealth, string> = {
+  checking: 'Checking API…',
+  connected: 'API connected',
+  unreachable: 'API unreachable',
+};
+
 export function Sidebar() {
+  const health = useApiHealth();
   return (
     <nav className="sidebar">
       <div className="sidebar__brand">
-        <span className="sidebar__brand-mark" aria-hidden="true" />
+        <BrandMark size={24} />
         <span className="sidebar__brand-name">Ledger Assistant</span>
         <span className="sidebar__brand-tag mono">Demo</span>
       </div>
@@ -47,8 +57,8 @@ export function Sidebar() {
 
       <div className="sidebar__footer">
         <div className="sidebar__footer-name">Demo workspace</div>
-        <div className="sidebar__footer-role mono">
-          <span className="sidebar__status-dot" aria-hidden="true" /> API connected
+        <div className="sidebar__footer-role mono" role="status">
+          <span className={`sidebar__status-dot sidebar__status-dot--${health}`} aria-hidden="true" /> {HEALTH_LABEL[health]}
         </div>
       </div>
     </nav>

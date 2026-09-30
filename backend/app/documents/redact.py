@@ -6,9 +6,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 # Personal data only. Organisations, locations and dates stay readable: contracts need
-# "Province of Ontario" and "January 1, 2026" as terms. Known gap: a street address is not tokenised.
+# "Province of Ontario" and "January 1, 2026" as terms.
 PII_ENTITIES = (
     "PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "CA_SIN", "US_SSN", "CREDIT_CARD", "IBAN_CODE", "US_BANK_NUMBER",
+    "STREET_ADDRESS", "POSTAL_CODE"
 )
 MIN_PII_SCORE = 0.5
 # md, not presidio's default lg: name detection (NER) is on par; lg's extra word vectors don't help it,
@@ -16,6 +17,36 @@ MIN_PII_SCORE = 0.5
 SPACY_MODEL = "en_core_web_md"
 TOKEN_DIGEST_CHARS = 12
 TOKEN_PATTERN = re.compile(r"<([A-Z_]+)_([0-9a-f]{12})>")
+
+def luhn(digits: str) -> bool:
+    digits = "".join(filter(str.isdigit, digits))
+    if not digits:
+        return False
+    total = sum(int(d) if i % 2 == (len(digits) - 1) % 2 else sum(divmod(int(d) * 2, 10)) for i, d in enumerate(digits))
+    return total % 10 == 0
+
+def validate_sin(text: str) -> bool:
+    digits = "".join(filter(str.isdigit, text))
+    # 8xx is a business number. 0xx is never issued but is the documented sample range: tokenising it is harmless.
+    if len(digits) != 9 or digits[0] == "8":
+        return False
+    return luhn(digits)
+
+def validate_phone(text: str) -> bool:
+    if re.fullmatch(r"\d{10}", text.strip()):
+        return False
+    return True
+
+REGEX_RECOGNIZERS = {
+    "EMAIL_ADDRESS": (re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"), None),
+    "PHONE_NUMBER": (re.compile(r"(?<!\w)(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b"), validate_phone),
+    "CA_SIN": (re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{3}\b"), validate_sin),
+    "US_SSN": (re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), None),
+    "CREDIT_CARD": (re.compile(r"\b(?:\d{4}[-.\s]?){3}\d{4}\b"), luhn),
+    "IBAN_CODE": (re.compile(r"(?i)\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"), None),
+    "STREET_ADDRESS": (re.compile(r"\b\d{1,5}\s+(?:[A-Z][a-z0-9.-]*\s+){1,4}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres|Place|Pl)\.?(?:\s+(?:Unit|Suite|Apt|#)\s*[\w-]+)?\b"), None),
+    "POSTAL_CODE": (re.compile(r"\b(?i:[a-z]\d[a-z][ -]?\d[a-z]\d)\b|\b(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|PR|VI|GU|AS|MP)\s+\d{5}(?:-\d{4})?\b"), None),
+}
 
 
 @dataclass(frozen=True)
@@ -78,6 +109,24 @@ class PiiDetector:
         }).create_engine()
         self._engine = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
         self._add_ca_sin()
+        self._add_custom_recognizers()
+
+    def _add_custom_recognizers(self) -> None:
+        from presidio_analyzer import PatternRecognizer, Pattern
+        
+        class ValidatingPatternRecognizer(PatternRecognizer):
+            def __init__(self, entity_type, pattern_obj, validator):
+                super().__init__(supported_entity=entity_type, patterns=[Pattern(entity_type, pattern_obj.pattern, 0.85)])
+                self.validator = validator
+
+            def validate_result(self, pattern_text: str) -> bool | None:
+                if self.validator and not self.validator(pattern_text):
+                    return False
+                return super().validate_result(pattern_text)
+
+        for entity_type in ("STREET_ADDRESS", "POSTAL_CODE"):
+            pattern, validator = REGEX_RECOGNIZERS[entity_type]
+            self._engine.registry.add_recognizer(ValidatingPatternRecognizer(entity_type, pattern, validator))
 
     def _add_ca_sin(self) -> None:
         try:

@@ -12,12 +12,16 @@ from app.deps import DECIDED_BY, get_session, get_tenant_id
 from app.documents import dao, store
 from app.documents.sniff import MAX_UPLOAD_BYTES, inspect_pdf
 from app.ingestion_pipeline import PIPELINE, version_status
+from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
 PREVIEW_ELEMENTS = 5
 DOCUMENT_KEY_PATTERN = r"^[a-z0-9][a-z0-9-]{1,63}$"
+
+# A version's bytes never change (content-addressed, append-only), so browsers may keep it for good.
+ORIGINAL_FILE_CACHE_CONTROL = "private, max-age=31536000, immutable"
 
 
 class UploadOut(BaseModel):
@@ -93,6 +97,7 @@ def upload_document(
         data=data, facts=inspect_pdf(data), uploaded_by=DECIDED_BY, store_root=config.DOCUMENT_STORE_DIR,
         household_id=household_id,
     )
+    invalidate_dashboard_stats(tenant_id)
     if not result.created:
         response.status_code = 200
     return UploadOut(document_id=result.document.id, version_id=result.version.id, version=result.version.version,
@@ -122,4 +127,8 @@ def get_document(document_id: uuid.UUID, session: SessionDep, tenant_id: TenantD
 def get_original_file(document_id: uuid.UUID, version: int, session: SessionDep, tenant_id: TenantDep) -> FileResponse:
     # ponytail: contains PII; behind the demo-user dependency only until real authorization exists
     row = dao.get_version_by_number(session, tenant_id, document_id, version)
-    return FileResponse(store.original_path(config.DOCUMENT_STORE_DIR, row.file_sha256), media_type="application/pdf")
+    return FileResponse(
+        store.original_path(config.DOCUMENT_STORE_DIR, row.file_sha256),
+        media_type="application/pdf",
+        headers={"Cache-Control": ORIGINAL_FILE_CACHE_CONTROL},
+    )

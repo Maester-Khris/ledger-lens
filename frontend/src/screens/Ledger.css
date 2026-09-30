@@ -43,7 +43,7 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary);
-  background: #f4f4f5;
+  background: var(--color-bg-muted);
   padding: 4px 10px;
   border-radius: var(--radius-pill);
   letter-spacing: 0.01em;
@@ -418,4 +418,22 @@
   .ledger__detail-panel {
     position: static;
   }
+}
+
+.ledger__confirm-row {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.ledger__error {
+  color: var(--color-error);
+  font-size: 13px;
+  margin: var(--space-1) 0;
+}
+
+.ledger__empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--space-4) var(--space-2);
 }

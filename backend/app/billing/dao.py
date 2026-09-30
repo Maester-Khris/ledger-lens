@@ -263,3 +263,7 @@ def latest_valuation_date(session: Session, household_id: uuid.UUID) -> date | N
         .join(Client, Client.id == ClientAccount.client_id)
         .where(Client.household_id == household_id)
     )
+
+def find_household(session: Session, tenant_id: uuid.UUID, household_id: uuid.UUID) -> Household | None:
+    household = session.get(Household, household_id)
+    return household if household is not None and household.tenant_id == tenant_id else None

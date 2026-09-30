@@ -19,7 +19,7 @@ TOOLS = {spec.name: spec for spec in contract_tools()}
 def _ctx(db_session, tenant_id):
     return ToolContext(session=db_session, tenant_id=tenant_id, session_id="s", turn_id=uuid.uuid4(),
                        embeddings=RecordingEmbeddings(), vector_index=InMemoryVectorIndex(),
-                       model=ModelConfig("fake", "scripted", "p", 0), hmac_key=config.PII_HMAC_KEY)
+                       model=ModelConfig("fake", "scripted", "p", 0), hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)
 
 
 def test_compare_tool_is_citable_and_logs_the_amount(db_session, tenant_id):

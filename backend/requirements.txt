@@ -15,3 +15,4 @@ langchain-core==1.6.4
 langchain-openai==1.6.5
 langgraph==1.2.12
 pinecone==10.0.0
+langfuse==3.15.0

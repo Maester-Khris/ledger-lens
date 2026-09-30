@@ -11,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 
+from app import config
 from app.assistant.citations import verify_answer
 from app.assistant.tools import ToolContext, ToolSpec, execute
 
@@ -47,10 +48,17 @@ class TurnState(TypedDict, total=False):
     answer: Answer | None
     violations: list[str]
     answer_attempts: int
+    unvalidated: Annotated[list[str], operator.add]  # document ids with fields the agent may not use
+    system_notices: Annotated[list[str], operator.add]
 
 
 def prompt_version() -> str:
     return hashlib.sha256((AGENT_PROMPT + ANSWER_PROMPT).encode()).hexdigest()[:12]
+
+
+def eval_config_hash() -> str:
+    """Identifies the chat configuration a golden-set report was produced with (see tests/eval/test_golden.py)."""
+    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}".encode()).hexdigest()[:12]
 
 
 def route_tool_choice(question: str, registered: set[str]) -> str | None:
@@ -75,6 +83,7 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
     def run_tools(state: TurnState) -> dict:
         last = state["messages"][-1]
         messages, sources, citations, retrieved = [], {}, {}, []
+        unvalidated, notices = [], []
         for call in last.tool_calls:
             spec = by_name.get(call["name"])
             if spec is None:
@@ -85,7 +94,9 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
             sources |= outcome.sources
             citations |= outcome.citations
             retrieved += [{"tool": spec.name, "id": source_id} for source_id in outcome.sources]
-        return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved}
+            unvalidated += [str(outcome.unvalidated_document_id)] if outcome.unvalidated_document_id else []
+            notices += [outcome.system_notice] if outcome.system_notice else []
+        return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
     def answer(state: TurnState) -> dict:
         if not state.get("sources"):

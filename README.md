@@ -9,26 +9,32 @@ IDs, code does the maths, and a human approves anything that would post.
 Full scope and phased plan: [artifacts/product-backlog.md](artifacts/product-backlog.md).
 What shipped, sprint by sprint: [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Status (2026-09-24):**
+**Status (2026-09-26):**
 - **Ledger: done, merged to `preview`.** Schema and migrations, the balance invariant in Postgres,
   idempotent `POST /postings`, a live concurrency proof, reversals, append-only history, household
   fee billing on versioned schedules, AI tool-invocation governance and a GL-ready export
   (Epics 1.1–1.4, 1.7).
-- **Document Intelligence MVP: done on `feat/doc-intelligence`, verified live** against the real
+- **Document Intelligence MVP: done, merged to `preview`, verified live** against the real
   OpenAI and Pinecone. It covers the ingestion pipeline (Docling, Presidio tokens, versioning),
   cited extraction with per-field routing, hybrid retrieval, a LangGraph agent whose every number
   is checked against its citations, the contract-vs-billing leakage tool with human approval, and
   the React screens. See [Live run results](#live-run-results-2026-09-24-real-openai--pinecone).
-- **268 automated tests.** Not built yet: Aurora deployment (Epic 1.5), tracing and
-  observability, the CI eval gate, and a review UI for `needs_review` fields. The full list is in
-  the backlog.
+- **Demo-readiness sprint: in progress on `feat/demo-ready`** (local, not yet pushed). Every screen now
+  reads real data: a dashboard with the review queue, corpus telemetry and the golden-set score (served
+  by a cached `/stats` and `/config`); a Review screen where a person confirms, corrects or rejects
+  `needs_review` fields and approves proposed fee corrections, next to an in-app pdf.js viewer; the
+  ledger with provenance and reversals; and a landing page that describes the fee-contract product.
+- **282 backend and 46 frontend tests.** Next in this sprint: a real-time audit log, the model's
+  behaviour when an answer depends on a field still awaiting review, and tracing (Langfuse) with
+  per-query token and latency metrics. Not built yet: Aurora deployment (Epic 1.5), the CI eval gate,
+  and a public deployment. The full list is in the backlog.
 
 ## Stack
 
 | Layer | Choice |
 |---|---|
 | Backend | Python 3.12 / FastAPI, SQLAlchemy 2.0, Alembic |
-| Frontend | React 19 + TypeScript (Vite) |
+| Frontend | React 19 + TypeScript (Vite); pdf.js (`pdfjs-dist`) for the in-app document viewer, loaded on demand |
 | DB | PostgreSQL 18 (local Docker): `ledger_owner` migrates, `ledger_app` runs the API with `SELECT`/`INSERT` only |
 | Parsing / PII | Docling + Presidio (spaCy `en_core_web_md`), both local; only redacted text leaves the machine |
 | Search | Postgres full-text + Pinecone serverless (dense), merged with reciprocal rank fusion |
@@ -180,7 +186,8 @@ authentication, reconciliation, fee corrections, advisor compensation, event str
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev        # http://127.0.0.1:5173, proxies /api to the backend on :8000
+npm test           # Vitest: the framework-free view logic in src/lib
 ```
 
-Opens at `http://127.0.0.1:5173`.
+Screens: landing (`/`), dashboard, review, chat, documents, ledger.

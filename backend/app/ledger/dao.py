@@ -1,7 +1,7 @@
 import dataclasses
 import uuid
 from collections import defaultdict
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, date, time, timedelta, timezone
 
@@ -372,3 +372,17 @@ def sum_entries_by_gl_code(
         for gl_code, names, debit_sum, credit_sum, count in rows
     )
     return GlTotals(lines=lines, accounts_missing_gl_code=tuple(sorted(missing, key=str)))
+
+
+@dataclasses.dataclass(frozen=True)
+class AccountLabel:
+    name: str
+    currency: str
+
+
+def account_labels(session: Session, account_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, AccountLabel]:
+    ids = set(account_ids)
+    if not ids:
+        return {}
+    rows = session.execute(select(Account.id, Account.name, Account.currency).where(Account.id.in_(ids)))
+    return {row.id: AccountLabel(row.name, row.currency) for row in rows}

@@ -2,6 +2,7 @@ import re
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
 from app.documents.models import Document, DocumentElement, DocumentVersion, PiiToken, VersionEvent
-from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token
+from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
 
@@ -90,6 +91,14 @@ def append_event(session: Session, version_id: uuid.UUID, stage: VersionStage, d
 
 def version_events(session: Session, version_id: uuid.UUID) -> list[VersionEvent]:
     return list(session.scalars(select(VersionEvent).where(VersionEvent.version_id == version_id).order_by(VersionEvent.id)))
+
+
+def version_events_for_document(session: Session, document_id: uuid.UUID) -> list[tuple[int, VersionEvent]]:
+    rows = session.execute(
+        select(DocumentVersion.version, VersionEvent).join(VersionEvent, VersionEvent.version_id == DocumentVersion.id)
+        .where(DocumentVersion.document_id == document_id).order_by(VersionEvent.id)
+    )
+    return [(version, event) for version, event in rows]
 
 
 def get_version(session: Session, version_id: uuid.UUID) -> DocumentVersion:
@@ -202,9 +211,10 @@ MAX_WINDOW_WORDS = 4
 _WORD = re.compile(r"\S+")
 _TRAILING_PUNCTUATION = ".,;:!?)\"'"
 
-def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hmac_key: str) -> str:
+def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hmac_key: str, vault_key: str) -> str:
     """Tokenise PII in a question without loading spaCy in the API: hash every 1–4 word window and keep
-    the ones the vault already knows. Only values seen in an ingested document can match (by design)."""
+    the ones the vault already knows. Only values seen in an ingested document can match (by design).
+    Then, apply regex recognizers to tokenise standard PII even if it wasn't seen before."""
     words = list(_WORD.finditer(text))
     candidates: dict[str, PiiSpan] = {}
     for i in range(len(words)):
@@ -217,10 +227,43 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
             for entity_type in PII_ENTITIES:
                 candidates[make_token(tenant_id, entity_type, text[start:end], hmac_key)] = PiiSpan(start, end, entity_type, 1.0)
     known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(candidates))))
-    return apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
+    
+    # First apply known values
+    redacted_text = apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
+
+    # Then apply regexes for unknown standard PII
+    new_spans: list[PiiSpan] = []
+    for entity_type, (pattern, validator) in REGEX_RECOGNIZERS.items():
+        for match in pattern.finditer(redacted_text):
+            if validator is None or validator(match.group(0)):
+                new_spans.append(PiiSpan(match.start(), match.end(), entity_type, 1.0))
+            
+    if new_spans:
+        redaction = apply_redaction(redacted_text, new_spans, tenant_id, hmac_key)
+        save_tokens(session, tenant_id, redaction.tokens, vault_key)
+        redacted_text = redaction.text
+
+    return redacted_text
 
 
 
 def find_document(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> Document | None:
     document = session.get(Document, document_id)
     return document if document is not None and document.tenant_id == tenant_id else None
+
+
+def first_page(session: Session, element_ids: Sequence[uuid.UUID]) -> int | None:
+    if not element_ids:
+        return None
+    return session.scalar(select(func.min(DocumentElement.page_start)).where(DocumentElement.id.in_(element_ids)))
+
+def last_event_at(session: Session, tenant_id: uuid.UUID) -> datetime | None:
+    return session.scalar(
+        select(func.max(VersionEvent.created_at))
+        .join(DocumentVersion, DocumentVersion.id == VersionEvent.version_id)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(Document.tenant_id == tenant_id)
+    )
+
+def version_number(session: Session, version_id: uuid.UUID) -> int:
+    return session.get(DocumentVersion, version_id).version

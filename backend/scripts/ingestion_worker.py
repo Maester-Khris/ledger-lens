@@ -20,7 +20,7 @@ from app.retrieval.index import index_version  # noqa: E402
 from app.retrieval.vector_index import PineconeVectorIndex  # noqa: E402
 from langchain_openai import ChatOpenAI  # noqa: E402
 from app.contracts.extract import run_extraction  # noqa: E402
-
+from app.tracing import flush_tracing  # noqa: E402
 
 def build_runners() -> dict[str, StageRunner]:
     return {
@@ -52,6 +52,7 @@ def main() -> None:
     # ponytail: one worker, one stage at a time (RAM budget); the advisory lock makes more workers safe when needed
     while True:
         ran = run_pending(SessionLocal, runners, PIPELINE)
+        flush_tracing()
         if args.once:
             logging.info("ran %d stage(s)", ran)
             return

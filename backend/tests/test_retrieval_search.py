@@ -41,6 +41,6 @@ def test_query_tokenises_known_values(db_session, tenant_id):
     redaction = apply_redaction("Marie Tremblay", [PiiSpan(0, 14, "PERSON", 0.9)], tenant_id, config.PII_HMAC_KEY)
     documents_dao.save_tokens(db_session, tenant_id, redaction.tokens, config.PII_VAULT_KEY)
     db_session.commit()
-    tokenised = documents_dao.tokenize_known_values(db_session, tenant_id, "What does marie  tremblay pay?", config.PII_HMAC_KEY)
+    tokenised = documents_dao.tokenize_known_values(db_session, tenant_id, "What does marie  tremblay pay?", config.PII_HMAC_KEY, config.PII_VAULT_KEY)
     assert tokenised == f"What does {redaction.text} pay?"
-    assert documents_dao.tokenize_known_values(db_session, tenant_id, "What does Luc pay?", config.PII_HMAC_KEY) == "What does Luc pay?"
+    assert documents_dao.tokenize_known_values(db_session, tenant_id, "What does Luc pay?", config.PII_HMAC_KEY, config.PII_VAULT_KEY) == "What does Luc pay?"

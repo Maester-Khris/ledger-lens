@@ -10,6 +10,49 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
+## [Sprint — feat/demo-ready] · Release readiness before `/promote-release` — In Progress
+
+**Started — 2026-09-26 · branch: `feat/demo-ready`.** Scope review on Monday 2026-09-28 decides
+whether the sprint is extended. **Paused 2026-09-26** with the UI rounds done and verified in the browser;
+the fintech-audience features below are next. Commits are local; not yet pushed, not ready for `/end-sprint`.
+
+### Scope
+
+- [x] `assistant` — **key decision first:** the answer for a contract with no billing household (golden case `fund-not-comparable`) → **Not epic-tracked** (live-run finding). Decided option A, built with N11: a fixed message with a `system` citation; the golden case gets `expect_system_notice`
+- [x] `frontend` — human review loop: dashboard "to review" link → the fields awaiting review → decision logged append-only → **Not epic-tracked** (live-run finding)
+- [x] `ops` — tracing with Langfuse (`artifacts/research/2026-09-24-tracing-stack.md`) → **Epic 2.3** (Week 2). Built 2026-09-27 (one trace per chat turn and per extraction run, `chat_turns.trace_id`, tracing off without keys and in tests, PII boundary tested). Live-verified 2026-09-29 against the re-ingested corpus — see below
+- [x] `frontend` — UI fixes: chat message spacing, markdown rendering in answers, general pass → **Not epic-tracked** (live-run findings)
+- [x] `frontend` — landing page copy: replace the tax-slip / Form 941 demo with the fee-contract product → **Not epic-tracked** (live-run finding)
+- [x] `frontend` — ledger and dashboard read real data; approvals from chat and the review screen; keyboard selection, focus styles, live API status → **Not epic-tracked** (UI audit 2026-09-26)
+- [x] `api` — `/reviews` queue and decisions over `field_reviews`; account names on posting and proposed entries → **Not epic-tracked** (UI audit 2026-09-26)
+- [x] `frontend` — ledger logo in the app chrome; dashboard tiles and corpus telemetry on real stats; in-app pdf.js viewer on Documents and a two-pane, paginated Review → **Not epic-tracked** (UI review round 2, 2026-09-26)
+- [x] `api` — cached `/stats` (TTL + invalidation + ETag) and `/config`; immutable caching for original PDFs → **Not epic-tracked** (UI review round 2, 2026-09-26)
+- [ ] `audit` — real-time audit log → **Not epic-tracked** (fintech reframing, backlog D6)
+- [x] `assistant` — behaviour under uncertainty: what the model does when an answer depends on an extracted field still awaiting review → **Not epic-tracked** (fintech reframing, backlog N11)
+- [x] `api` — guests: `X-Guest-Id` attribution on chats, reviews and approvals → **Not epic-tracked** (fintech reframing, backlog N19)
+- [x] `frontend` — chat optionally scoped to one document → **Not epic-tracked** (fintech reframing, backlog N12)
+- [x] `frontend` — contract profile panel (structured client profile) → **Not epic-tracked** (fintech reframing, backlog N17)
+- [x] `frontend` — audit panel in the chat session (rest refreshed) → **Not epic-tracked** (fintech reframing, backlog N13)
+- [x] `frontend` — per-document ledger timeline (ingestion to posting) → **Not epic-tracked** (fintech reframing, backlog N14)
+- [x] `docs` — source URLs added for every competitor claim used in demo copy; two unsourced claims corrected (Ethoca's acquisition price, the "zero-hallucination" guarantee's attribution) → **Not epic-tracked** (fintech reframing, backlog N5)
+- [x] `frontend` — reframed copy for the fintech audience: billing reconciliation, extraction anomaly queue, AI decision audit trail, the citation promise, and a 3-layer (ops/governance/audit) narrative on the landing page → **Not epic-tracked** (fintech reframing, backlog N6-N10)
+- [x] `frontend` — landing hero: animated ops/governance/audit product visual (CSS-only, respects `prefers-reduced-motion`) → **Not epic-tracked** (fintech reframing, backlog N18)
+- [x] `docs` — "Fee Agreement Audit" demo script (the WealthBar/CI Direct BCSC enforcement pattern, reversed): contract → gap → proposal → approve → post, walked end to end live against the re-ingested corpus; no new seed data needed — `seed_demo.py`'s existing Tremblay fee-schedule/contract mismatch (0.85% contract vs 0.80% billing, $400/year) is the gap the script demonstrates → **Not epic-tracked** (fintech reframing, backlog N15)
+- [ ] `ops` — key metrics from the tracing integration: tokens per query and result, response latency → **Epic 2.3** (with the Langfuse tracing item above)
+- [ ] `test` — automated Playwright test: citation click shows the cited section with the quote highlighted (D18) → **Not epic-tracked**
+- [x] `documents` — security review of the redaction boundary; close the street-address gap before anything reaches OpenAI, Pinecone or traces → **Not epic-tracked** (live-run finding). Done 2026-09-27: street addresses and postal codes tokenised in documents; unknown emails, phones, SINs, cards, IBANs, addresses and postal codes tokenised in chat questions (Luhn-checked, amounts and fee terms left readable). Report: `artifacts/research/2026-09-27-redaction-boundary-review.md`
+
+### Required once the demo-ready state is reached — done 2026-09-29
+
+- [x] **Clear the database and re-ingest every document.** `documents` (and everything cascading from it — versions, elements, extraction runs, chat turns, tool invocations, guests) is append-only at the trigger level (`forbid_mutation()`), so this meant dropping and recreating `ledger_dev` itself (`DROP DATABASE ... WITH (FORCE)`; `ledger_test` untouched), re-running all 12 migrations, reseeding billing via `seed_demo.py`, clearing the stale Pinecone namespace (137 orphaned vectors — `scripts/delete_pinecone_namespace.py`, new script, parameterized by namespace) and the on-disk originals cache, then re-uploading the 4-document demo corpus (`nomura-tax-free-colorado-ima`, `aim-global-trends-advisory`, `calamos-emerging-market-equity`, `tremblay-ima`) and re-running the ingestion pipeline. All 4 reached `ready`. Confirmed `STREET_ADDRESS`/`POSTAL_CODE` tokens present in `pii_tokens` and absent from `document_elements.text_redacted`, with one residual NER recall miss noted (a Quebec-format residential address in the synthetic Tremblay agreement wasn't caught, while a US-format business address in the same run was — Presidio recall gap, not a regression). The pre-fix `e2e-okafor-agreement` test upload (not backed by any script/fixture) was not recreated. Then **re-ran the golden set**: first pass surfaced a real (pre-existing, unrelated to re-ingestion) test-harness bug — `tests/eval/test_golden.py` read `PII_HMAC_KEY`/`PII_VAULT_KEY` via `config.require(...)`, which the session-scoped `document_settings` autouse fixture overwrites with random per-run keys for hermetic unit tests; whenever an eval case's cited quote happened to contain a real vault token, decrypting it with the wrong key crashed the turn (`cryptography.fernet.InvalidToken`). The bug was latent before — the pre-reset corpus's citation boundaries never happened to include a tokenised substring — and was only exposed because re-extraction changed the `calamos-top-tier` case's returned quote to include one. Fixed (`tests/eval/test_golden.py`: read the real keys from `os.environ` directly, bypassing the fixture). After the fix: `refusal_ok 1.0, citation_hit 1.0, numbers_ok 1.0` on two consecutive runs — an improvement over the 2026-09-24 baseline (0.875/0.875), correctly reflecting the N11 fix for `fund-not-comparable`. Extraction field accuracy 9/12, unchanged.
+- Accepted gap: a person's name typed in chat that appears in no ingested document is sent to the model untokenised.
+- Deferred gaps: account numbers (other than IBAN / US bank numbers) and dates of birth are not tokenised.
+- [x] **Live tracing run** (against the re-ingested corpus): confirmed a `chat`-tagged trace (`session_id` matches, 26 observations covering graph steps and model calls) whose Langfuse trace id matches `chat_turns.trace_id` in Postgres exactly, and `extraction`-tagged traces whose `run_id` metadata matches `extraction_runs.id`.
+
+### Reference
+
+- `artifacts/product-backlog.md` — "Next sprint — release readiness before `/promote-release`"
+
 ## [Sprint — feat/doc-intelligence] · Document Intelligence MVP on contracts
 
 **Verified live 2026-09-24** against the real OpenAI and Pinecone, plus an end-to-end UI test in

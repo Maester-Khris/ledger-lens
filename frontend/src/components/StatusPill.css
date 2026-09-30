@@ -35,7 +35,7 @@
 }
 
 .status-pill--neutral {
-  background: #f4f4f5;
+  background: var(--color-bg-muted);
   color: var(--color-text-secondary);
 }
 
@@ -46,5 +46,5 @@
 
 .status-pill--purple {
   background: rgba(124, 58, 237, 0.1);
-  color: #7c3aed;
+  color: var(--color-accent);
 }

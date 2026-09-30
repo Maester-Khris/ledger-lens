@@ -211,9 +211,12 @@ approval posts the correction through the existing approve-to-post path
 - [ ] **CI eval gate** (D19): hash the config (model + snapshot, prompt version,
       embedding model, Docling version); a change runs the golden set; the
       workflow triggers only when the config file changes.
-- [ ] **Review UI** for `needs_review` fields: the source page side by side with
-      the extracted value; decisions logged append-only.
-- [ ] **Agent serving upgrade path** (decided 2026-09-23, research:
+- [x] **Review UI** for `needs_review` fields: the source page side by side with
+      the extracted value; decisions logged append-only. **Built** in the demo-ready sprint
+      (two-pane review with pagination and the in-app document viewer, `1efa292`).
+- [ ] **Agent serving upgrade path** — **superseded 2026-09-27 by D4** in "Demo-ready sprint — fintech
+      reframing" below (worker pool + Postgres checkpointer + Redis hot state, with measured results).
+      Original decision kept for the reasoning (decided 2026-09-23, research:
       `artifacts/research/2026-09-23-agent-deployment.md`). Today the chat agent
       runs **in the API process** as an async LangGraph stream over **SSE**: a
       60 s timeout for the whole turn, `recursion_limit`, each step saved to
@@ -228,22 +231,63 @@ approval posts the correction through the existing approve-to-post path
       mode, Vercel resumable streams). Trigger: turns longer than about 60 s,
       more than one API instance, or a need to reconnect after a refresh.
 
+### Next sprint — release readiness before `/promote-release` (logged 2026-09-24)
+
+The Thursday screen has passed. `preview` is not promoted to `main` until the release can publish
+the final demo version with the SEC documents. Priorities for the next sprint:
+
+- [x] **Human review loop is broken.** The dashboard's "3 to review" link lands on an all-green page
+      (see "Review path broken" below); `needs_review` fields can't reach a human. Fix the path end to
+      end: dashboard → the fields awaiting review → decision logged append-only.
+- [ ] **Instrumentation and tracing is key.** Stack settled: **Langfuse** (self-hosted; Langfuse Cloud as
+      the demo fallback, since traces hold tokens only). Reasoning in
+      `artifacts/research/2026-09-24-tracing-stack.md`; scope in the "Observability and tracing" item above.
+- [x] **UI issues:** chat spacing, markdown rendering, and a general UI pass (items below).
+- [x] **Landing page copy:** replace the tax-slip / Form 941 demo with the fee-contract product (item below).
+- [ ] **End-to-end test: citation click → PDF section.** Today a chip opens the right page (checked by
+      hand with Playwright on 2026-09-24). Target: the cited section is visible and the quote highlighted
+      (D18), covered by an automated Playwright test kept in the repo.
+- [ ] **Security review: client addresses reported leaking.** Street addresses are not tokenised (known
+      gap noted in `backend/app/documents/redact.py`), so an address in a document would reach OpenAI,
+      Pinecone and future traces. Review the whole redaction boundary (entity list, score threshold,
+      chat questions, tool arguments, traces) and close the address gap. A quick regex check on
+      2026-09-24 found no street address in the current fixture or `ledger_dev` text; that is not proof,
+      so the review decides.
+
+**Public demo shape (direction agreed 2026-09-24; real deployment infra decided later):**
+- Keep ingesting and grinding **locally**. The public build exposes only the results and the
+  conversational agent; at minimum retrieval over a hosted Postgres with the SEC documents pre-ingested.
+  No public upload, so the Docling/spaCy worker is never hosted.
+- Still open: whether approvals are visible in public (the ledger is append-only, so a public approval
+  is permanent), a chat rate limit and OpenAI spend cap, and how the Vercel frontend reaches the API
+  (`VITE_API_BASE` + CORS vs a Vercel rewrite, which may buffer SSE).
+- Infra constraint from the start: **AWS, Railway (Hobby plan), Infisical** for secret management.
+  This conflicts with CLAUDE.md's locked "Aurora for the demo/deploy run"; settle it when the deployment
+  is designed. Hosted secrets (new `PII_HMAC_KEY` / `PII_VAULT_KEY`, API keys) live in Infisical, never in the repo.
+
 **Found in the 2026-09-24 live run and end-to-end UI test, deferred to the next iteration:**
-- [ ] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
+- [x] **🔑 Key decision to settle first: the "not comparable" answer.** For a contract with no
       billing household (golden case `fund-not-comparable`), `compare_contract_to_billing`
       returns the reason, but with no citable evidence the answer step gives the generic
       "I can't find that in the indexed contracts". Either show the tool's reason as a fixed,
       non-generated message, or keep the generic refusal and change the golden case to
       `expect_refusal: true`. It's the only golden miss (refusals 0.875, citations 0.875).
-- [ ] **Chat: messages have no vertical spacing.** Consecutive question and answer
+      **Decided 2026-09-27: option A.** The tool's reason is shown as a fixed, non-generated message
+      credited to the system ("system: billing records"), so the verifier accepts it without a document
+      citation; `fund-not-comparable` passes when that reason is shown. Unverified fields (case 1) get an
+      explained abstention with an inline marker and a link to the review queue. Built in N11. Research:
+      `artifacts/research/2026-09-27-flagged-items-framing.md` — conclusions only; its sources are
+      unverified (company claims without links, placeholder URLs), so this is a design choice, not a
+      cited industry standard, and nothing from it goes into copy.
+- [x] **Chat: messages have no vertical spacing.** Consecutive question and answer
       blocks sit flush against each other in the chat container.
-- [ ] **Review path broken.** The dashboard shows 3 items to review with a link; the
+- [x] **Review path broken.** The dashboard shows 3 items to review with a link; the
       link opens a page where everything is green, so the items can't be reached.
-- [ ] **Markdown shows as raw text.** Answer lists render as inline dashes and
+- [x] **Markdown shows as raw text.** Answer lists render as inline dashes and
       citation quotes show tables as `|` pipes. Render markdown in both.
 - [ ] **Parser heading nesting.** A section path reads `1. Client Information › 3. Fees`
       (section 3 nested under section 1): Docling heading levels need normalising.
-- [ ] **Landing page copy.** The hero demo still describes tax slips, Form 941 and
+- [x] **Landing page copy.** The hero demo still describes tax slips, Form 941 and
       payroll journals instead of fee contracts; it's the first thing a reviewer reads.
 - [ ] **Sample title mismatch.** The document with key `nomura-tax-free-colorado-ima`
       is titled "Voyageur Mutual Funds II / Delaware Management — IMA (2025)";
@@ -264,6 +308,201 @@ workers), WebSocket transport (nothing sends input during a run; approvals go
 through the DB), S3 storage/retention
 (local disk for now), `rule_versions` table, the three adversarial ingestion
 test categories, and the full 15–20 question golden set.
+
+### Demo-ready sprint — fintech reframing (logged 2026-09-27)
+
+Source: `artifacts/research/2026-09-26-canada-fintech-competitor-research.md`,
+`artifacts/research/2026-09-26-reframing-metrics-regulatory-output.md`,
+`artifacts/2026-09-26-feature-backlog-agentic-fintech.md`, `artifacts/demo-ready-fintech-feature.md`.
+Finding: most of the fintech value (payments, wealth and asset management) is already built but
+described in engineering terms. This sprint reframes it and adds the document-centred features that
+make it visible. IDs (N = now, D = deferred, I = icebox) are kept for cross-reference.
+
+**Now — research doc fixes (no code):**
+- [x] **N1** Fix the metric data sources in the reframing doc: STP from `extracted_fields.routing`;
+      review queue age = extraction run created → `field_reviews.decided_at`; approval latency =
+      invocation created → `tool_invocation_decisions.decided_at`; risk score from `grounded` /
+      `validator_errors` / `page_grade` (there are no reason codes); "invariant score" is a check
+      query, not a counter (violations roll back and are never recorded).
+- [x] **N2** Fix regulator references: IIROC → CIRO (merged 2023); OSFI isn't the fee-disclosure
+      regulator; MiFID II is EU-only; add CSA Staff Notice 11-348 (AI in capital markets).
+- [x] **N3** Correct the GL claim: SHA-256 byte-identical regeneration is true; per-line chain of
+      custody to the PDF page is not built (`reporting/gl_csv.py` aggregates per `gl_code`) — see D13.
+- [x] **N5** Add source URLs to every competitor claim used in demo copy (WealthBar BCSC fine,
+      Questrade MCP, Finn AI, Versapay 90% STP); mark the rest unverified.
+
+**Now — reframed copy (UI text only; internal names like `compare_contract_to_billing` unchanged,
+renaming them would move the prompt version and the golden set):**
+- [x] **N6** "Leakage" → **billing reconciliation / fee validation**.
+- [x] **N7** Approval screen → **AI Decision Audit Trail / Governed AI**.
+- [x] **N8** Review queue → **Extraction Anomaly Queue**, with the reason per field.
+- [x] **N9** Citation promise: "every number traceable to its source page".
+- [x] **N10** Landing and dashboard copy follow the 3-layer narrative: ops → governance → audit.
+- [x] **N18** **Landing hero: animated product visual.** Add a moving visual to the hero section
+      that illustrates the core of the product (document → cited terms → reconciliation → approved
+      posting), in the style of reference product pages where each main product (stablecoin, ledger,
+      payments) has its own animated image. References: moderntreasury.com/products/ledgers,
+      moderntreasury.com/products/payments, moderntreasury.com/products/stablecoins. CSS/SVG
+      animation first; respect `prefers-reduced-motion`.
+
+**Now — document-centred features (share the selected-document context; one brainstorming pass):**
+- [x] **N19** Guests: a `guests` table, `X-Guest-Id` attribution on chats and decisions (`decided_by = guest:<8>`); attribution, not authentication.
+- [x] **N12** Chat optionally scoped to one document: start a chat from a selected document, or a general chat
+      as today (`Chat.tsx` takes no document yet).
+- [x] **N17** **Contract profile panel** (the "structured client profile" in the feature backlog):
+      extracted terms as structured cards (parties, fee bands, fee basis/method, billing frequency
+      and timing, termination notice, governing law), each with a citation chip to its page and a
+      status badge (accepted / confirmed / corrected / needs review + reason); the linked household
+      and the billing schedule version in effect next to the contract's fee bands. Needs one read
+      endpoint (`GET /documents/{id}/terms`) over `contracts_dao.served_fields` + pending fields.
+      **Coming-soon slots shown greyed out** on the final dashboard profile: fee schedule version
+      history (D15), client type, exceptions, referral arrangements, expense allocation (D14).
+- [x] **N11** Unvalidated fields disclosed: a banner on the selected document and in the chat answer
+      naming what the agent couldn't confirm and why. The backend already returns `not_validated`
+      from `get_contract_fields`; nothing shows it. Named as "compliance-scoped refusal".
+- [x] **N13** Audit panel in the chat session: tool, inputs, model, prompt version, decision — REST,
+      refreshed per turn, from `tool_invocations` + `chat_turns` (live stream is D6).
+- [x] **N14** Per-document ledger timeline: ingestion → extraction run → fields → reviews → proposed
+      correction → decision → posting ("how a document becomes a financial record").
+- [x] **N15** "Fee agreement audit" demo script + seed data (the WealthBar enforcement pattern, end
+      to end: contract → gap → proposal → approve → post).
+- [x] **N16** Basic Langfuse tracing (already the release-readiness "key" item above).
+
+**Implementation order (agreed 2026-09-27; copy last so it covers every finished screen):**
+1. **Phase 0 — research doc fixes:** N1–N3 (the later specs quote these docs).
+2. **Phase 1 — foundation:** the address-leak security review (release-readiness item above) *before*
+   N16, since Langfuse Cloud would otherwise receive untokenised addresses; then N16.
+3. **Phase 2 — document features (one brainstorm/spec):** N12 → N17 → N11 → N13 → N14.
+   - N12: the document is **optional** — a chat can be scoped to one document or stay general.
+   - Before N11: settle the "not comparable" key decision above through a separate industry search
+     (run in Gemini) on how agents frame flagged / unverifiable items.
+   - Working labels = the target terms in the reframing doc's "Current → Target" table (the glossary),
+     so Phase 3 polishes wording instead of renaming.
+4. **Phase 3 — copy:** N5 → N6–N10 (with the copywriting skill and related installed skills) → N18
+   (executed by Gemini from a prompt with explicit direction: flow, wording, style references).
+5. **Phase 4 — demo:** N15 script + full live run (seed fixtures may land earlier if Phase 2 needs them).
+
+**Deferred — agentic depth:**
+- [ ] **D1** Context growth tracking, intra-trace (per hop) and inter-trace (per turn). Needs N16.
+- [ ] **D2** Context SNR, per-component token accounting (system / RAG / history / input), bloat
+      alerts + UI notification. Needs D1 data for thresholds.
+- [ ] **D3** Context management: drop retrieved chunks from history after each turn, keep turn
+      summaries, cap by hop or token count. Measure with D1 first.
+- [ ] **D4** **Agent deployment at production scale** (replaces the "Agent serving upgrade path"
+      above): stateless worker pool runs agent turns; LangGraph Postgres checkpointer
+      (`AsyncPostgresSaver`, `thread_id` = session); Redis for hot session state with Postgres as the
+      durable fallback; resume from cursor; explicit stop endpoint; retrieved chunks never stored in
+      graph state; TTL purge of old threads. **Deliverable includes measured results** (turn latency,
+      concurrent sessions, recovery after a worker crash) from the asyncio stress harness, for the
+      resume and public pitch. Adds Redis to the stack.
+- [ ] **D6** Live audit stream: trigger → `NOTIFY` (id only) → FastAPI `LISTEN` → SSE, REST catch-up
+      on reconnect. On the existing append-only tables; an `audit_events` table only once more event
+      types exist. CDC rejected (WAL retention risk without Kafka; Debezium needs a JVM).
+- [ ] **D7** Prompt management beyond surfacing the version.
+
+**Deferred — fintech value (domain metrics wait until the demo is published):**
+- [ ] **D8** Domain metrics dashboard: STP rate, billing reconciliation gap, fee agreement coverage,
+      review queue age P50/P95, AI decision coverage, approval latency, ledger invariant check.
+- [ ] **D9** Extraction risk score per document (severity weighting to define).
+- [ ] **D10** Fee Agreement Compliance Report (per contract: clauses, status, reviewer, date).
+- [ ] **D11** AI Decision Audit Trail export (report form of N13).
+- [ ] **D12** Household Billing Reconciliation Report per period.
+- [ ] **D13** GL chain of custody per line: PDF page → clause → schedule version → calculation → GL line.
+- [ ] **D14** Extract new clause types: client type, exceptions, referral arrangements, expense
+      allocation. Schema change → prompt version and golden set change; check the SEC demo docs
+      actually contain them.
+- [ ] **D15** Fee schedule version history view (the IMA v8.0 pattern) over `fee_schedule_versions`.
+- [ ] **D16** Later metrics: extraction precision@K, reconciliation confidence rollup.
+
+**Icebox:** **I1** MCP server for the ledger (Questrade pattern — market signal only). **I2**
+reconciliation against an external statement is already Epic 2.2.
+
+### Pre-launch sprint — name TBD (logged 2026-09-29)
+
+Source: `artifacts/pre-demo-launch-candidates.md`, triaged 2026-09-29. Goal: publish the demo and be
+able to show real usage and real feedback. It is a proof artifact, so the sprint covers safety and
+evidence, not new features. IDs: P = this sprint (blocks launch), X = next (after the first real
+sessions), C = cut.
+
+**Hosting (decided 2026-09-29):** frontend on **Vercel**, backend on **Railway** with Postgres as a
+service in the same Railway project. This replaces "Aurora for the demo" (Epic 1.5 stays open for a
+non-demo deploy). CLAUDE.md's stack row and Current Scope are updated when the sprint lands.
+Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo versions match.
+
+> **⚠ OPEN DECISION — guest approvals (settle at the start of the NEXT sprint, before public launch).**
+> Approvals are permanent and global today: `field_reviews` and `tool_invocation_decisions` are
+> append-only (triggers, SELECT/INSERT only, one decision per field or invocation), and everything is
+> scoped to the single `DEMO_TENANT_ID`. One guest's approval changes the answers and citations every
+> other guest gets, empties the review queue for them, and (for tool invocations) writes a permanent
+> ledger posting. A revert at session end is not viable (needs the triggers off, no reliable
+> session-end signal, overlapping guests break each other, a reversed posting leaves a pair behind).
+> **Leading option:** a disposable per-guest overlay table (TTL, not append-only; precedent:
+> `element_search` DELETE grant), reads = baseline reviews + this guest's overlay through
+> `served_fields` / `pending_reviews` / `count_pending` / dashboard stats; in demo mode an approved
+> invocation runs `create_posting` in a rolled-back transaction so the guest sees the exact entries
+> and balance check while the real ledger stays untouched; UI labels it "demo decision, expires".
+> Alternatives weighed: per-guest sandbox tenant (clones documents and vectors, too heavy), dry-run
+> only (loses N13/N14), nightly reseed (fallback, doesn't fix concurrent guests). Before the spec,
+> check whether retrieval or citation chips read reviews directly and how the dashboard cache is keyed.
+> **Interim rule until settled:** the deployed build does not accept public approvals (keep it private,
+> or disable Approve and field review); do not announce the demo publicly.
+
+**Now — blocks launch:**
+- [ ] **P1** **Deploy skeleton first (tracer bullet).** Railway API + Postgres, Vercel frontend,
+      migrations run as `ledger_owner` (release command), API runs as `ledger_app`; the SEC documents
+      pre-ingested locally then loaded into Railway (dump/restore or one-off script). Vercel → Railway
+      by direct calls with `VITE_API_BASE` + CORS (chosen over a Vercel rewrite, which may buffer SSE).
+      Secrets in Infisical. Do this before P2–P7 so everything is tested where it will run.
+- [ ] **P2** **Demo mode is physically unable to ingest.** `DEMO_MODE=1` does not mount the ingestion or
+      upload routes, and the demo API's DB role has no INSERT on document/extraction tables (it writes
+      only what chat needs: chat turns, guests, tool invocations, decisions, feedback, events). Test: in
+      demo mode every ingestion route returns 404, and a direct insert as the demo role is rejected.
+- [ ] **P3** **Per-guest rate limit + hard spend caps.** Rate limit per `X-Guest-Id` and per IP on the
+      chat/agent endpoints; provider-side caps on OpenAI and Pinecone; a Railway usage limit.
+      (The guest-approval design is split out into the open decision above.)
+- [ ] **P4** **Retrieval edge cases.** Send disabled on an empty message; when retrieval scores fall
+      below threshold, or the query is vague, nonsense or unrelated, show an explicit "no supporting
+      passage found" answer (system-credited like N11) instead of a weak or empty answer. Tune the
+      threshold on ~20 real queries including junk so good questions aren't rejected; add cases to the
+      golden set.
+- [ ] **P5** **User feedback.** Thumbs up/down plus an optional comment on each answer, stored in
+      Postgres against guest, chat turn and prompt version. An end-of-chat one-line prompt is optional.
+- [ ] **P6** **Sentry on backend and frontend** (errors and exceptions). Langfuse (N16) stays the LLM
+      trace tool; don't merge them. Scrub PII from events (same boundary as the redaction review).
+      Once P6 + P7 land, tick the release-readiness item "Instrumentation and tracing is key" as covered.
+- [ ] **P7** **Minimal usage event log.** One row per query: guest, chat turn, client-measured
+      end-to-end latency, outcome (cited / no-support / refused), feedback. Source for the one metric
+      that matters (share of guest sessions that reach a cited answer) and for the latency figure.
+- [ ] **P8** **Document context for guests.** A list of the demo documents with a one-line description
+      each (from `documents` metadata), plus 3–4 clickable starter questions on the chat screen. Reuses
+      N12 (chat scoped to a document) and the selected-document context.
+
+**Order:** P1 → P2 → P3 → P4 → (P5, P6, P7 together, one migration) → P8. Then a smoke run on the
+deployed environment: ingestion 404s, the rate limit trips, Sentry receives a forced error.
+
+**Line in the sand (set before launch, adjust the numbers):** in the first 10 real guest sessions, at
+least 60% reach a cited answer and at least 5 submit feedback. Under 30% reaching a cited answer: fix
+the starter questions and onboarding before anything else. Counter-metric: thumbs-down and no-support
+rate, so the number can't be raised by weakening answers.
+
+**Assumptions that need evidence, not opinion:**
+- Who the guests are (reviewers vs finance users) is a guess. Ask 3–5 people to describe how they last
+  checked a contract against a bill, without pitching the demo.
+- "First-time users are confused" is a hypothesis. Watch 5 people use it unassisted before building a tour.
+- Guests will submit feedback: assume single-digit response. Ask 3–5 people directly for a quote or a call.
+- People want to read the source documents: nothing supports the viewer yet.
+
+**Next — after the first sessions:**
+- [ ] **X1** Guided first-load tutorial, only if starters + the document list fail the 5-person watch.
+- [ ] **X2** Two-pane document viewer (left rail of documents, selected document fills the rest), only
+      if feedback or watched sessions show demand. Builds on the D18 citation-highlight work.
+- [ ] **X3** Latency and usage view: p50/p95, cohorts by day (feeds D8).
+- [ ] **X4** Small load test (~15 min) against the demo config with P3 on. Record the ceiling and check
+      that pools and timeouts fail cleanly. The likely limit is LLM rate limits, not Railway workers.
+
+**Cut:** **C1** A/B testing (no traffic for significance; revisit at hundreds of sessions per week).
+**C2** Node-vs-Python throughput comparison (not the workload's bottleneck). **C3** A separate deployable
+for the agent (P2's unmounted routes + restricted role give the same guarantee).
 
 ---
 
