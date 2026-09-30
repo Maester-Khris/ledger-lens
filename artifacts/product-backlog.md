@@ -426,8 +426,8 @@ sessions), C = cut.
 
 **Hosting (decided 2026-09-29):** frontend on **Vercel**, backend on **Railway** with Postgres as a
 service in the same Railway project. This replaces "Aurora for the demo" (Epic 1.5 stays open for a
-non-demo deploy). CLAUDE.md's stack row and Current Scope are updated when the sprint lands. Verify
-Railway's Postgres supports PG 18 during P1 (else pin the version the migrations were tested on).
+non-demo deploy). CLAUDE.md's stack row and Current Scope are updated when the sprint lands.
+Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo versions match.
 
 > **⚠ OPEN DECISION — guest approvals (settle at the start of the NEXT sprint, before public launch).**
 > Approvals are permanent and global today: `field_reviews` and `tool_invocation_decisions` are
