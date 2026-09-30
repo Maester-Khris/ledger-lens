@@ -1,0 +1,16 @@
+# API image (Railway). The ingestion worker is never hosted, so Docling and Presidio are left out.
+# Add a package here only if the API imports it; requirements.txt stays the full local set.
+fastapi
+uvicorn[standard]
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1
+python-dotenv
+python-multipart==0.0.32
+pypdf==6.19.0
+cryptography==50.0.1
+langchain-core==1.6.4
+langchain-openai==1.6.5
+langgraph==1.2.12
+pinecone==10.0.0
+langfuse==3.15.0
