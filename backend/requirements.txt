@@ -1,15 +1,14 @@
+# API set. Railway auto-installs this file, and the ingestion worker is never hosted, so Docling and
+# Presidio are left out. Add a package here only if the API imports it; local work installs
+# requirements-worker.txt (this file plus the worker and test packages).
 fastapi
 uvicorn[standard]
 sqlalchemy>=2.0
 alembic>=1.13
 psycopg[binary]>=3.1
 python-dotenv
-pytest
-httpx
 python-multipart==0.0.32
 pypdf==6.19.0
-docling==2.130.0
-presidio-analyzer==2.2.364
 cryptography==50.0.1
 langchain-core==1.6.4
 langchain-openai==1.6.5

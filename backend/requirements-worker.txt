@@ -1,0 +1,6 @@
+# Local dev and the ingestion worker: the API set plus parsing, PII and test packages. Not deployed.
+-r requirements.txt
+docling==2.130.0
+presidio-analyzer==2.2.364
+pytest
+httpx

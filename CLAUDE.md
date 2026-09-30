@@ -74,7 +74,7 @@ an approved plan — don't re-litigate scope that's already decided there.
   (`ledger/fingerprint.py`, `billing/fee_math.py`, `reporting/gl_csv.py`).
   Postings are written only through `ledger.dao.create_posting` inside
   `ledger.dao.ledger_transaction`.
-- No new Python dependency without adding it to `backend/requirements.txt`.
+- No new Python dependency without adding it to `backend/requirements.txt` (API) or `backend/requirements-worker.txt` (worker, tests).
   No new npm package without noting it in the task/PR summary.
 
 ## Running Locally
@@ -85,7 +85,7 @@ never-committed config (`CLAUDE.local.md`, `backend/.env`); never create a repo-
 Call its binaries by path (each shell is fresh, activation doesn't persist):
 ```bash
 cd backend
-$PYDEV/bin/pip install -r requirements.txt   # shared env: run $PYDEV/bin/pip check afterwards
+$PYDEV/bin/pip install -r requirements-worker.txt   # shared env: run $PYDEV/bin/pip check afterwards
 $PYDEV/bin/uvicorn app.main:app --reload
 $PYDEV/bin/pytest
 $PYDEV/bin/pytest -m stress

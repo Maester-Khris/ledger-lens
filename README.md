@@ -49,7 +49,7 @@ Set it once per shell (or as `PYDEV=` in `backend/.env`); every command below us
 ```bash
 export PYDEV=/path/to/your/python-env
 cd backend
-$PYDEV/bin/pip install -r requirements.txt
+$PYDEV/bin/pip install -r requirements-worker.txt
 $PYDEV/bin/pip check   # shared env: confirm the pins didn't break another project's packages
 $PYDEV/bin/uvicorn app.main:app --reload
 ```
@@ -62,7 +62,7 @@ Document parsing and PII detection run **locally**. Document content never
 leaves the machine; only redacted text reaches the LLM. Both libraries need
 model files that pip does not install, so fetch them once after
 `pip install`. They arrive with the ingestion phase (`docling`,
-`presidio-analyzer` and `presidio-anonymizer` in `requirements.txt`):
+`presidio-analyzer` and `presidio-anonymizer` in `requirements-worker.txt`):
 
 ```bash
 cd backend
