@@ -87,6 +87,8 @@ Each milestone is one or more commits with its own tests and can ship alone.
   available in the public demo yet"); off, it does nothing. Only `POST /reviews` and
   `POST /tool-invocations/{id}/decision` depend on it; read routes are untouched. This is the only throwaway code in
   the plan: M3 replaces it on `POST /reviews` with `require_overlay_guest`, M4 on the decision route, and M4 deletes it.
+- Frontend: the reads the overlay changes (review queue, terms, timeline, proposals, stats) send `X-Guest-Id`, which
+  today only POSTs do (*amended 2026-09-30, plan*).
 - Frontend: `api.ts` exposes `demo_mode` from `getConfig()`. In demo mode the Documents screen hides the upload control
   (`Documents.tsx`), and the Ledger screen hides the reversal button and shows "Reversals are off in the public demo."
 - Rollout: after deploy, set `DEMO_MODE=1` on Railway.
@@ -136,6 +138,8 @@ GRANT INSERT, DELETE ON guest_field_reviews, guest_tool_decisions TO ledger_demo
 - The primary keys lead with `guest_id`, so every guest read is an index lookup; the purge touches few rows. No
   extra index.
 - Every key is a `uuid`, so there are no sequences to grant.
+- `ledger_app` also gets `DELETE` on both overlays: the purge (M5) runs in every mode, and outside the demo the API
+  runs as `ledger_app` (*amended 2026-09-30, plan*).
 - The migration only grants to `ledger_demo`; it does not create it (`ledger_owner` cannot create roles, and a
   migration cannot carry a password). A missing role makes the `GRANT` fail loudly, which is intended.
   - Local: `scripts/db_up.sh` creates `ledger_demo` with the dev password next to `ledger_owner`/`ledger_app`.
@@ -182,8 +186,10 @@ Read routes and the chat route use `get_overlay_guest`; `POST /reviews` switches
 `app/governance/dao.py`:
 
 - `list_invocations`, `count_pending`, `invocations_for_document` gain `overlay_guest`. With a guest they keep only
-  invocations whose `input->>'turn_id'` is a `chat_turns` row of that guest, and read the decision from
-  `guest_tool_decisions` (left join on guest and invocation) instead of `tool_invocation_decisions`.
+  invocations whose `input->>'guest_id'` is that guest, and read the decision from `guest_tool_decisions` (left join
+  on guest and invocation) instead of `tool_invocation_decisions`. *Amended 2026-09-30 (plan):* in demo mode the tool
+  runner records `"guest_id"` in the proposal's `input`; the earlier join through `chat_turns` would have made
+  `governance` import `assistant` (an import cycle) and raced the chat turn, which is saved after the answer streams.
 - `decide` gains `overlay_guest`. With a guest: the invocation must belong to the guest (else `InvocationNotFound`, so
   its existence is not revealed); `NotCritical` and `AlreadyDecided` as today; on approve, build the posting request
   with the same helper today's path uses (extracted as `_posting_request(invocation, tenant_id)`) and call
