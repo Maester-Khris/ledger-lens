@@ -1,0 +1,11 @@
+{
+  "tremblay-ima": {"fee_method": "graduated", "currency": "CAD",
+    "tiers": [[100000000, "100"], [250000000, "85"], [null, "65"]]},
+  "nomura-tax-free-colorado-ima": {"fee_method": "graduated", "currency": "USD",
+    "tiers": [[50000000000, "55"], [100000000000, "50"], [250000000000, "45"], [null, "42.5"]]},
+  "calamos-emerging-market-equity": {"fee_method": "graduated", "currency": "USD",
+    "tiers": [[50000000000, "110"], [100000000000, "105"], [600000000000, "100"], [1100000000000, "98"],
+              [1600000000000, "96"], [2100000000000, "94"], [2600000000000, "92"], [null, "90"]]},
+  "aim-global-trends-advisory": {"fee_method": "graduated", "currency": "USD",
+    "tiers": [[50000000000, "97.5"], [100000000000, "95"], [150000000000, "92.5"], [null, "90"]]}
+}

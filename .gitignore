@@ -128,5 +128,22 @@ pnpm-debug.log*
 .env.*.local
 
 
-# 
+#
 .artifacts
+
+# ----------------------
+# graphify
+# ----------------------
+graphify-out/
+
+# ----------------------
+# artifacts — only product-backlog.md is tracked for now; everything else
+# (design specs, UI research, mockups) stays local until we decide, artifact
+# by artifact, what's worth versioning.
+# ----------------------
+artifacts/*
+!artifacts/product-backlog.md
+backend/var/
+
+# playwright-cli page snapshots from UI test runs
+.playwright-cli/

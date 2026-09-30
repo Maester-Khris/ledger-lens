@@ -1,0 +1,147 @@
+{
+  "config_hash": "7112ef3432ef",
+  "chat_model": "gpt-4.1-2025-04-14",
+  "metrics": {
+    "refusal_ok": 0.875,
+    "citation_hit": 0.625,
+    "numbers_ok": 0.75
+  },
+  "results": [
+    {
+      "id": "fee-schedule",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule in the Tremblay agreement is:\n- 1.00% on the first $1,000,000\n- 0.85% on the next $1,500,000\n- 0.65% on assets in excess of $2,500,000\n\nFees are billed quarterly in arrears, based on the combined household market value of the client's accounts, and denominated in CAD.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "Schedule A - Fee Schedule",
+          "quote": "| Household market value            | Annual rate   |\n|-----------------------------------|---------------|\n| On the first $1,000,000           | 1.00%         |\n| On the next $1,500,000            | 0.85%         |\n| On assets in excess of $2,500,000 | 0.65%         |",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=2",
+          "id": "2964389a-6ca8-467e-901f-74f80a72f1e4"
+        },
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "595811a6-fd1d-47fa-8892-dd38602f66b9"
+        }
+      ]
+    },
+    {
+      "id": "termination",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement requires 30 days of notice to terminate.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "Either party may terminate this Agreement upon thirty (30) days' written notice to the other party.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "3d6d3f4c-f4cf-4e1e-94eb-6c517c36f710"
+        }
+      ]
+    },
+    {
+      "id": "governing-law",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement is governed by the laws of the Province of Ontario.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "5a66edbc-6179-4e67-bdaa-aaaf36ae109a",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement",
+          "quote": "This Agreement shall be governed by the laws of the Province of Ontario.",
+          "file_url": "/documents/5a66edbc-6179-4e67-bdaa-aaaf36ae109a/versions/1/file#page=1",
+          "id": "d9967375-c4d4-48db-9e1a-1945ce3325e3"
+        }
+      ]
+    },
+    {
+      "id": "calamos-top-tier",
+      "event": "refused",
+      "refusal_ok": false,
+      "citation_hit": false,
+      "numbers_ok": false,
+      "answer": "I couldn't settle on an answer within my step limit.",
+      "citations": []
+    },
+    {
+      "id": "aim-first-tier",
+      "event": "answer",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The annual rate that applies to the first $500 million for AIM Global Trends Fund is 0.975%.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "74a06519-e422-473a-95c3-b0c981f6cf50",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/74a06519-e422-473a-95c3-b0c981f6cf50/versions/1/file#page=7",
+          "id": "4bfd8a00-af88-4b0b-b3b5-6789dbb1302b"
+        }
+      ]
+    },
+    {
+      "id": "not-in-corpus",
+      "event": "refused",
+      "refusal_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": []
+    },
+    {
+      "id": "leakage",
+      "event": "error",
+      "refusal_ok": true,
+      "citation_hit": false,
+      "numbers_ok": false,
+      "answer": "Something went wrong answering that question.",
+      "citations": []
+    },
+    {
+      "id": "fund-not-comparable",
+      "event": "error",
+      "refusal_ok": true,
+      "citation_hit": false,
+      "numbers_ok": true,
+      "answer": "Something went wrong answering that question.",
+      "citations": []
+    }
+  ]
+}
