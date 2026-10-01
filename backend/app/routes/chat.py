@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from sqlalchemy.orm import sessionmaker
 
 from app import config
@@ -30,7 +30,7 @@ def get_session_factory() -> sessionmaker:
 class ChatIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     session_id: str = Field(min_length=1, max_length=100)
-    message: str = Field(min_length=1, max_length=2000)
+    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
     document_id: uuid.UUID | None = None
 
 

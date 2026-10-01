@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import config
 from app.assistant import dao
-from app.assistant.graph import GRAPH_VERSION, RECURSION_LIMIT, build_graph, prompt_version
+from app.assistant.graph import (FAILED_VERIFICATION_MESSAGE, GRAPH_VERSION, NO_EVIDENCE_MESSAGE, RECURSION_LIMIT, build_graph, prompt_version)
 from app.assistant.models import ChatOutcome, ChatTurn
 from app.assistant.tools import ToolContext, ToolSpec
 from app.contracts import dao as contracts_dao
@@ -30,11 +30,12 @@ HISTORY_TURNS = 4
 PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "verify": "checking citations"}
 SYSTEM_CITATION_ID = "system"
 NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
+NO_SUPPORT_DETAIL = "No passage in the indexed contracts supports an answer to this question."
 
 
 @dataclass(frozen=True)
 class TurnEvent:
-    type: Literal["progress", "answer", "refused", "error", "unvalidated"]
+    type: Literal["progress", "answer", "refused", "clarify", "error", "unvalidated"]
     data: dict
 
 
@@ -126,13 +127,29 @@ async def run_turn(
                 outcome = ChatOutcome.refused
                 yield TurnEvent("refused", {"text": NOT_COMPARABLE_TEXT.format(reason=notices[-1]), "citations": [citation]})
                 return
-            cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
-            record.update(answer_redacted=answer.text, citations=cited, retrieved=state.get("retrieved", []))
+            record["retrieved"] = state.get("retrieved", [])
             record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
-            outcome = ChatOutcome.refused if answer.refused else ChatOutcome.answered
+            if answer.refused:
+                # P4: every refusal but N11 is fixed text plus a system reason; the model's own wording is never shown.
+                text = FAILED_VERIFICATION_MESSAGE if answer.text == FAILED_VERIFICATION_MESSAGE else NO_EVIDENCE_MESSAGE
+                citation = {"id": SYSTEM_CITATION_ID, "kind": "system", "source": "indexed contracts",
+                            "detail": NO_SUPPORT_DETAIL}
+                record.update(answer_redacted=text, citations=[citation])
+                outcome = ChatOutcome.refused
+                yield TurnEvent("refused", {"text": text, "citations": [citation]})
+                return
+            if answer.clarification:
+                record.update(answer_redacted=answer.text, citations=[])
+                outcome = ChatOutcome.clarified
+                [text] = documents_dao.reveal(session, tenant_id, [answer.text], vault_key)
+                yield TurnEvent("clarify", {"text": text, "citations": []})
+                return
+            cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
+            record.update(answer_redacted=answer.text, citations=cited)
+            outcome = ChatOutcome.answered
             [text, *quotes] = documents_dao.reveal(session, tenant_id, [answer.text, *(c.get("quote", "") for c in cited)], vault_key)
             shown = [c | ({"quote": q} if "quote" in c else {}) for c, q in zip(cited, quotes)]
-            yield TurnEvent("refused" if answer.refused else "answer", {"text": text, "citations": shown})
+            yield TurnEvent("answer", {"text": text, "citations": shown})
         except TimeoutError:
             outcome = ChatOutcome.timed_out
             yield TurnEvent("refused", {"text": "That took too long; please try a narrower question.", "citations": []})

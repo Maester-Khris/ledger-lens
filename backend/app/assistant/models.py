@@ -13,6 +13,7 @@ from app.ledger.models import Base
 class ChatOutcome(str, enum.Enum):
     answered = "answered"
     refused = "refused"
+    clarified = "clarified"
     timed_out = "timed_out"
     cancelled = "cancelled"
     error = "error"

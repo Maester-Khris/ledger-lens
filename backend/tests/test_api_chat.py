@@ -3,7 +3,7 @@ import json
 from langchain_core.messages import AIMessage
 from sqlalchemy import select
 
-from app.assistant.graph import Answer
+from app.assistant.graph import Answer, FAILED_VERIFICATION_MESSAGE, NO_EVIDENCE_MESSAGE
 from app.assistant.models import ChatOutcome, ChatTurn
 from app.assistant.service import AssistantRuntime
 from app.assistant.tools import default_tools
@@ -56,15 +56,17 @@ def test_stream_has_progress_then_one_verified_answer(client, session_factory, d
     assert turn.outcome is ChatOutcome.answered and turn.retrieved[0]["id"] == element_id
 
 
-def test_refusal_is_its_own_event(client, session_factory, tenant_id):
+def test_refusal_is_its_own_event_with_fixed_text_and_a_system_reason(client, session_factory, tenant_id):
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "donations"}, "id": "c1"}]),
         AIMessage(content="done"),
         Answer(text="Nothing about donations here, sorry!", citations=[], refused=True),
     ])
     _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
-    events = _events(client.post("/chat", json={"session_id": "s-2", "message": "Donations?"}))
-    assert events[-1][0] == "refused"
+    kind, data = _events(client.post("/chat", json={"session_id": "s-2", "message": "Donations?"}))[-1]
+    assert kind == "refused" and data["text"] == NO_EVIDENCE_MESSAGE
+    assert data["citations"] == [{"id": "system", "kind": "system", "source": "indexed contracts",
+                                  "detail": "No passage in the indexed contracts supports an answer to this question."}]
 
 
 def test_model_failure_is_an_error_event_and_recorded(client, session_factory, db_session, tenant_id):
@@ -192,3 +194,43 @@ def test_tracing_enabled_and_no_pii_leakage(client, session_factory, db_session,
         for inp in handler.captured:
             assert "bob@example.com" not in inp
             assert "123 Main Street" not in inp
+
+
+def test_a_model_refusal_is_shown_as_the_fixed_text_with_a_system_reason(client, session_factory, db_session, tenant_id):
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    version = parsed_version(db_session, tenant_id, texts=("Fees are billed quarterly in arrears.",))
+    index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "quarterly"}, "id": "c1"}]),
+        AIMessage(content="done"),
+        Answer(text="I'd rather not say.", citations=[], refused=True),
+    ])
+    _override(client, _runtime(model, embeddings, index), session_factory)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-r", "message": "Is there a fee waiver?"}))[-1]
+    assert kind == "refused" and data["text"] == NO_EVIDENCE_MESSAGE and data["citations"][0]["kind"] == "system"
+    turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-r")).one()
+    assert turn.answer_redacted == NO_EVIDENCE_MESSAGE  # the model's own wording is never stored as the answer
+
+
+def test_a_clarifying_question_streams_clarify_and_is_stored_as_clarified(client, session_factory, db_session, tenant_id):
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="no tool needed"),
+        Answer(text="Which contract do you mean: Tremblay or Calamos?", citations=[], refused=False, clarification=True),
+    ])
+    _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-c", "message": "Is it allowed?"}))[-1]
+    assert (kind, data) == ("clarify", {"text": "Which contract do you mean: Tremblay or Calamos?", "citations": []})
+    turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-c")).one()
+    assert turn.outcome is ChatOutcome.clarified
+
+
+def test_a_clarification_with_figures_is_refused(client, session_factory, tenant_id):
+    figure = Answer(text="Do you mean the 30-day notice?", citations=[], refused=False, clarification=True)
+    model = ScriptedChatModel(replies=[AIMessage(content="no tool needed"), figure, figure])  # both attempts fail the check
+    _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-f", "message": "Is it allowed?"}))[-1]
+    assert kind == "refused" and data["text"] == NO_EVIDENCE_MESSAGE  # nothing was retrieved
+
+
+def test_a_blank_message_is_rejected(client):
+    assert client.post("/chat", json={"session_id": "s-b", "message": "   "}).status_code == 422
