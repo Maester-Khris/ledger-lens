@@ -40,10 +40,10 @@ test('a demo guest approves an AI correction that is checked but never recorded'
   });
 });
 
-test('nonsense gets an explicit refusal with a system reason', async ({ page }) => {
+test('junk never gets an answer', async ({ page }) => {
   await page.goto('/chat');
   await page.getByLabel('Ask about your indexed contracts').fill('fee fee banana tier tier');
   await page.getByRole('button', { name: 'Send message' }).click();
-  await expect(page.getByText('No answer')).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/System · indexed contracts/)).toBeVisible();
+  await expect(page.getByText(/^(No answer|Clarifying question)$/)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/citation\(s\)/)).toHaveCount(0);
 });

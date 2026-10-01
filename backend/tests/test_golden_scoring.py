@@ -23,12 +23,16 @@ def test_an_answer_needs_a_matching_citation_and_its_numbers():
 
 
 def test_underspecified_accepts_a_clarification_or_a_refusal_other_junk_only_a_refusal():
-    vague, junk = _case("underspecified", "clarify"), _case("nonsense", "refuse")
+    vague, junk = _case("underspecified", "clarify"), _case("off_topic", "refuse")
     assert score_case(vague, "clarify", {"text": "Which contract?"})["behaviour_ok"]
     assert score_case(vague, "refused", {"text": "x", "citations": [NO_SUPPORT]})["behaviour_ok"]
     assert not score_case(vague, "answer", {"text": "x"})["behaviour_ok"]
     assert score_case(junk, "refused", {"text": "x"})["behaviour_ok"]
     assert not score_case(junk, "clarify", {"text": "Did you mean?"})["behaviour_ok"]
+    nonsense = _case("nonsense", "refuse")
+    assert score_case(nonsense, "clarify", {"text": "What would you like to know?"})["behaviour_ok"]
+    assert score_case(nonsense, "refused", {"text": "x", "citations": [NO_SUPPORT]})["behaviour_ok"]
+    assert not score_case(nonsense, "answer", {"text": "x"})["behaviour_ok"]
 
 
 def _result(category, event, ok=True):

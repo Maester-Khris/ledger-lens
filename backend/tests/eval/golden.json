@@ -47,7 +47,7 @@
   {"id": "under-other-one", "category": "underspecified", "expect": "clarify", "question": "What does the other one say?"},
   {"id": "nonsense-keys", "category": "nonsense", "expect": "refuse", "question": "asdjkl123"},
   {"id": "nonsense-purple", "category": "nonsense", "expect": "refuse", "question": "How do I turn purple into time?"},
-  {"id": "nonsense-keywords", "category": "nonsense", "expect": "refuse", "question": "fee fee fee"},
+  {"id": "nonsense-keywords", "category": "nonsense", "expect": "refuse", "question": "Fee the banana tier of seven moons"},
   {"id": "nonsense-marks", "category": "nonsense", "expect": "refuse", "question": "?????"},
   {"id": "off-weather", "category": "off_topic", "expect": "refuse", "question": "What's the weather in Montreal today?"},
   {"id": "off-poem", "category": "off_topic", "expect": "refuse", "question": "Write me a poem about the ocean."},

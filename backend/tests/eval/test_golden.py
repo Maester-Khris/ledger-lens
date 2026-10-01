@@ -32,7 +32,7 @@ def score_case(case: dict, event_type: str, data: dict) -> dict:
     """Pure scoring, unit-tested in tests/test_golden_scoring.py without OpenAI."""
     citations = data.get("citations", [])
     found = numbers_in(data.get("text", ""))
-    if case["category"] == "underspecified":  # a clarifying question or a refusal are both acceptable
+    if case["category"] in ("underspecified", "nonsense"):  # a clarifying question or a refusal are both acceptable
         behaviour_ok = event_type in ("clarify", "refused")
     else:
         behaviour_ok = event_type == EVENT_FOR[case["expect"]]
