@@ -137,7 +137,8 @@ Each case gains:
   `element` passages is marked (conservative: the floor leans to recall).
 
 Existing cases: the six answerables become `answerable` / `answer`; `not-in-corpus` becomes `out_of_corpus` / `refuse`;
-`fund-not-comparable` becomes `explained` / `refuse` and keeps `expect_system_notice`.
+`fund-not-comparable` becomes `explained` / `refuse` and keeps `expect_system_notice`, now checked as a `system`
+citation with `source == "billing records"` (*amended 2026-10-01, plan*: every refusal carries a system citation after P4).
 
 ### 7.2 New cases (for review)
 New answerable case (option A):
