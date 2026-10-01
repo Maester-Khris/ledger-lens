@@ -5,7 +5,9 @@ from typing import Annotated
 from fastapi import Depends, Header
 from sqlalchemy.orm import Session
 
+from app import config
 from app.assistant import dao as assistant_dao
+from app.errors import DecisionsClosed
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 
@@ -44,3 +46,9 @@ def get_guest_id(
 
 def decided_by(guest_id: uuid.UUID | None) -> str:
     return f"guest:{str(guest_id)[:8]}" if guest_id is not None else DECIDED_BY
+
+
+def decisions_closed_in_demo() -> None:
+    """Temporary (spec M1): replaced by require_overlay_guest in Task 5 (reviews) and Task 7 (tool decisions)."""
+    if config.DEMO_MODE:
+        raise DecisionsClosed("Decisions are not available in the public demo yet.")

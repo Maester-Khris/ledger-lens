@@ -71,6 +71,7 @@ class ConfigOut(BaseModel):
     vector_store: str
     retrieval: RetrievalConfigOut
     eval_config_hash: str
+    demo_mode: bool = False
 
 
 def _etag(body: BaseModel, exclude: set[str] | None = None) -> str:
@@ -122,7 +123,7 @@ def _config_out() -> ConfigOut:
 
 @router.get("/config", response_model=ConfigOut)
 def get_config(response: Response, if_none_match: IfNoneMatch = None):
-    body = _config_out()
+    body = _config_out().model_copy(update={"demo_mode": config.DEMO_MODE})  # outside the lru_cache: read per request
     etag = _etag(body)
     if if_none_match == etag:
         return _not_modified(etag, CONFIG_CACHE_CONTROL)

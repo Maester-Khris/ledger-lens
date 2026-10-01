@@ -109,6 +109,10 @@ def parse_frontend_origins(raw: str | None) -> list[str]:
 # Unset (local dev uses the Vite /api proxy, same origin) means no CORS middleware is installed.
 FRONTEND_ORIGINS = parse_frontend_origins(os.environ.get("FRONTEND_URL"))
 
+# Public demo (docs/superpowers/specs/2026-09-30-demo-mode-and-guest-overlay-design.md): the write routes that change
+# shared state are not mounted, and guest decisions go to per-guest overlays. Off unless set to 1, true or yes.
+DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
+
 # Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
 MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.43)

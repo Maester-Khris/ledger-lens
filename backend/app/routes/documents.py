@@ -15,6 +15,7 @@ from app.ingestion_pipeline import PIPELINE, version_status
 from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+write_router = APIRouter(prefix="/documents", tags=["documents"])  # not mounted in the public demo (DEMO_MODE)
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
 PREVIEW_ELEMENTS = 5
@@ -80,7 +81,7 @@ def _out(row: dao.DocumentRow) -> dict:
     )
 
 
-@router.post("", status_code=202, response_model=UploadOut)
+@write_router.post("", status_code=202, response_model=UploadOut)
 def upload_document(
     response: Response,
     session: SessionDep,
