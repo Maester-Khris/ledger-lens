@@ -48,7 +48,3 @@ def test_config_reports_demo_mode(client, monkeypatch):
     assert client.get("/config").json()["demo_mode"] is True
 
 
-def test_decisions_are_closed_in_demo_mode_until_their_overlay_exists(client, monkeypatch):
-    monkeypatch.setattr(config, "DEMO_MODE", True)
-    decision = client.post(f"/tool-invocations/{uuid.uuid4()}/decision", json={"decision": "approved"})
-    assert decision.status_code == 403

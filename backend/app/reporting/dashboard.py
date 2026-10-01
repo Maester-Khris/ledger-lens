@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import time
 import uuid
@@ -108,3 +109,15 @@ def cached_dashboard_stats(
 
 def invalidate_dashboard_stats(tenant_id: uuid.UUID) -> None:
     _cache.pop(tenant_id, None)
+
+
+def with_guest_queues(stats: DashboardStats, session: Session, tenant_id: uuid.UUID,
+                      overlay_guest: uuid.UUID | None) -> DashboardStats:
+    """Public demo: the cached aggregates stay shared; the two work queues are this guest's own."""
+    if overlay_guest is None:
+        return stats
+    return dataclasses.replace(
+        stats,
+        reviews_pending=len(contracts_dao.pending_reviews(session, tenant_id, overlay_guest)),
+        approvals_pending=governance_dao.count_pending(session, tenant_id, overlay_guest),
+    )

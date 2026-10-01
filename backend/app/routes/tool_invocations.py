@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.deps import decided_by, decisions_closed_in_demo, get_guest_id, get_session, get_tenant_id
-from app.governance.dao import decide, list_invocations
-from app.governance.models import ToolInvocation, ToolInvocationDecision
+from app.deps import decided_by, get_guest_id, get_overlay_guest, get_session, get_tenant_id, require_overlay_guest
+from app.governance.dao import Decision, decide, list_invocations
+from app.governance.models import ToolInvocation
 from app.governance.types import ToolDecision
 from app.ledger.dao import account_labels
 from app.assistant import dao as assistant_dao
@@ -34,6 +34,7 @@ class DecisionOut(BaseModel):
     reason: str | None
     decided_at: datetime
     posting_id: uuid.UUID | None
+    recorded: bool
 
 
 class InvocationOut(BaseModel):
@@ -66,14 +67,15 @@ def _labelled(session: Session, entries: list | None) -> list | None:
     ]
 
 
-def _decision_out(decision: ToolInvocationDecision) -> DecisionOut:
+def _decision_out(decision: Decision) -> DecisionOut:
     return DecisionOut(
         invocation_id=decision.invocation_id, decision=decision.decision, decided_by=decision.decided_by,
         reason=decision.reason, decided_at=decision.decided_at, posting_id=decision.posting_id,
+        recorded=decision.recorded,
     )
 
 
-def _invocation_out(session: Session, invocation: ToolInvocation, decision: ToolInvocationDecision | None) -> InvocationOut:
+def _invocation_out(session: Session, invocation: ToolInvocation, decision: Decision | None) -> InvocationOut:
     return InvocationOut(
         id=invocation.id, session_id=invocation.session_id, created_at=invocation.created_at,
         tool_name=invocation.tool_name, tool_version=invocation.tool_version,
@@ -90,12 +92,13 @@ def _invocation_out(session: Session, invocation: ToolInvocation, decision: Tool
 def list_tool_invocations(
     session: SessionDep,
     tenant_id: TenantDep,
+    overlay_guest: Annotated[uuid.UUID | None, Depends(get_overlay_guest)],
     posting_id: uuid.UUID | None = None,
     pending: bool | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     session_id: str | None = None,
 ) -> list[InvocationOut]:
-    rows = list_invocations(session, tenant_id=tenant_id, posting_id=posting_id, pending=pending, limit=limit, session_id=session_id)
+    rows = list_invocations(session, tenant_id=tenant_id, posting_id=posting_id, pending=pending, limit=limit, session_id=session_id, overlay_guest=overlay_guest)
     turn_ids = {uuid.UUID(i.input["turn_id"]) for i, _ in rows if i.input.get("turn_id")}
     traces = assistant_dao.trace_ids(session, tenant_id, turn_ids)
     return [
@@ -106,13 +109,15 @@ def list_tool_invocations(
     ]
 
 
-@router.post("/{invocation_id}/decision", status_code=201, response_model=DecisionOut, dependencies=[Depends(decisions_closed_in_demo)])
+@router.post("/{invocation_id}/decision", status_code=201, response_model=DecisionOut)
 def decide_tool_invocation(
-    invocation_id: uuid.UUID, body: DecisionIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]
+    invocation_id: uuid.UUID, body: DecisionIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
+    overlay_guest: Annotated[uuid.UUID | None, Depends(require_overlay_guest)],
 ) -> DecisionOut:
     decision = decide(
         session, tenant_id=tenant_id, invocation_id=invocation_id,
         decision=body.decision, decided_by=decided_by(guest_id), reason=body.reason,
+        overlay_guest=overlay_guest
     )
     invalidate_dashboard_stats(tenant_id)
     return _decision_out(decision)

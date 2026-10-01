@@ -37,7 +37,7 @@ def document_timeline(session: Session, tenant_id: uuid.UUID, document_id: uuid.
         items.append(TimelineItem(run.created_at, "extracted", "Terms extracted", {"run_id": str(run.id), "accepted": accepted}))
         items += [TimelineItem(r.decided_at, "reviewed", f"{field_label(r.field_path)} {r.decision.value}",
                                {"field_path": r.field_path, "decided_by": r.decided_by}) for r in reviews]
-    for invocation, decision in governance_dao.invocations_for_document(session, tenant_id, document_id):
+    for invocation, decision in governance_dao.invocations_for_document(session, tenant_id, document_id, overlay_guest):
         if not invocation.approval_required:  # reads (field lookups) belong in the audit trail, not the path to the ledger
             continue
         items.append(TimelineItem(invocation.created_at, "ai_proposed", invocation.tool_name, {
@@ -46,7 +46,7 @@ def document_timeline(session: Session, tenant_id: uuid.UUID, document_id: uuid.
         if decision is None:
             continue
         items.append(TimelineItem(decision.decided_at, "decided", f"{decision.decision.value} by {decision.decided_by}",
-                                  {"reason": decision.reason}))
+                                  {"reason": decision.reason, "recorded": decision.recorded}))
         if decision.posting_id is not None:
             posting = ledger_dao.get_posting(session, tenant_id=tenant_id, posting_id=decision.posting_id)
             labels = ledger_dao.account_labels(session, (e.account_id for e in posting.entries))

@@ -14,12 +14,6 @@ class DomainError(Exception):
         return {}
 
 
-class DecisionsClosed(DomainError):
-    """Temporary (spec M1): demo-mode decisions stay closed until their per-guest overlay exists. Deleted in Task 7."""
-
-    status = 403
-    type_slug = "decisions-closed-in-demo"
-    title = "Decisions are not available in the public demo yet"
 
 
 class GuestRequired(DomainError):
