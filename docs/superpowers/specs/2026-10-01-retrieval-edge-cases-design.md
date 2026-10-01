@@ -9,8 +9,9 @@
 Guests will type things the corpus can't answer: blank input, gibberish, off-topic chat, questions about terms the four
 contracts don't contain, and questions too vague to search. Today some of these get a weak or improvised answer:
 
-- The relevance gate (`retrieval/search.py`) only fires when full-text search finds **nothing**. Any shared keyword
-  ("fee") opens it, and then even low-similarity passages are fused into the model's context.
+- The relevance gate (`retrieval/search.py`) only fires when full-text search finds **nothing**. A query whose words all
+  appear in one passage (e.g. "fees", "fee fee fee") opens it, and then even low-similarity passages are fused into the
+  model's context.
 - The output check (`assistant/citations.py`) blocks uncited answers and unsupported **numbers**, but not a claim the
   cited passage doesn't actually make ("relevant but insufficient"), which the research identifies as the main RAG
   failure.
@@ -23,7 +24,7 @@ P4 makes every one of these an explicit, measured behaviour, without adding a mo
 
 ## 2. Success criteria
 
-1. A question whose only link to the corpus is a shared keyword (e.g. "fee fee banana tier tier") gets the explicit
+1. A question whose only link to the corpus is a shared keyword (e.g. "fee fee fee") gets the explicit
    no-evidence refusal, not an answer.
 2. Every refusal shows fixed text and a `system` citation card; the model's own refusal wording is never shown.
 3. A question too vague to search gets exactly one clarifying question naming the indexed contracts; it is stored as
@@ -163,7 +164,7 @@ arbitration, minimum account, increase, cryptocurrency, rebate, soft dollar, Mar
 | under-other-one | underspecified | clarify | What does the other one say? |
 | nonsense-keys | nonsense | refuse | asdjkl123 |
 | nonsense-purple | nonsense | refuse | How do I turn purple into time? |
-| nonsense-keywords | nonsense | refuse | fee fee banana tier tier |
+| nonsense-keywords | nonsense | refuse | fee fee fee |
 | nonsense-marks | nonsense | refuse | ????? |
 | off-weather | off_topic | refuse | What's the weather in Montreal today? |
 | off-poem | off_topic | refuse | Write me a poem about the ocean. |

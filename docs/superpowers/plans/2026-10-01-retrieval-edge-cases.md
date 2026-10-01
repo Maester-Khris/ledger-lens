@@ -17,6 +17,7 @@
 1. **The answer model also runs when nothing was retrieved.** Today `graph.py`'s `answer` node returns the no-evidence refusal without calling the model when there are no sources. A vague question ("Is it allowed?") usually retrieves nothing, so it could never become a clarifying question (spec criterion 3). Task 2 removes that short-circuit; with no sources, `verify_answer` only lets a refusal or a figure-free clarification through, and the `refuse` node returns `NO_EVIDENCE_MESSAGE` when there were no sources. Cost: one extra model call on turns that retrieved nothing (junk), which the P3 rate limit already bounds.
 2. **`retrieval: true` marks every answerable case that cites `element` passages.** The latest eval report shows field-tool answers also cite element ids, so search-only cases can't be told apart. Marking all element-citing answerables is conservative (more cases constrain the floor, so the threshold leans to recall).
 3. **The explained-refusal check (N11) now requires `source == "billing records"`**, because after P4 every refusal carries a `system` citation.
+4. **Full-text search requires every query word to match one passage** (`websearch_to_tsquery`), so a keyword hit opens today's gate only for queries whose words all appear in one passage: short keyword queries ("fees", "fee fee fee") and some vague ones ("Can they change it?" matches on "change"). D2 is unchanged.
 
 ## Global Constraints
 
@@ -35,7 +36,7 @@
 1. **A real answerable question must still be answered after the gate change** (the dense floor now always applies). Unit tests use meaningless fake embeddings, so the floor is switched off by an autouse fixture except in the gate tests and the eval. The real check is Task 6's eval: over-refusal must be 0. Test: Task 6 (gate).
 2. **A clarifying question must never smuggle a figure** past the output check. Test: Task 2, `test_a_clarifying_question_passes_without_citations_but_not_with_figures`; Task 3, `test_a_clarification_with_figures_is_refused`.
 3. **The model's own refusal wording must never reach the user or the stored answer.** Test: Task 3, `test_a_model_refusal_is_shown_as_the_fixed_text_with_a_system_reason`.
-4. **A keyword-only junk question** ("fee fee banana tier tier") must not get evidence. Test: Task 1, `test_a_keyword_match_alone_does_not_open_the_gate`; Task 4 golden case `nonsense-keywords`.
+4. **A keyword-only junk question** ("fee fee fee") must not get evidence. Test: Task 1, `test_a_keyword_match_alone_does_not_open_the_gate`; Task 4 golden case `nonsense-keywords`.
 5. **A whitespace-only message** must be refused by the API, not reach the agent. Test: Task 3, `test_a_blank_message_is_rejected`.
 
 ---
@@ -73,7 +74,7 @@ def _scores(index, tenant_id, embeddings, query):
 
 def test_a_keyword_match_alone_does_not_open_the_gate(db_session, tenant_id, monkeypatch):
     _, embeddings, index = _indexed(db_session, tenant_id, ("Fees are billed quarterly in arrears.",))
-    query = "fee fee banana quarterly"  # shares "quarterly" with the clause: a full-text hit
+    query = "fee quarterly"  # both words match the clause: a full-text hit
     monkeypatch.setattr(config, "MIN_DENSE_SIMILARITY", _scores(index, tenant_id, embeddings, query)[0] + 0.01)
     assert search(db_session, tenant_id=tenant_id, query=query, embeddings=embeddings, vector_index=index) == []
 
@@ -457,7 +458,7 @@ def downgrade() -> None:
   {"id": "under-other-one", "category": "underspecified", "expect": "clarify", "question": "What does the other one say?"},
   {"id": "nonsense-keys", "category": "nonsense", "expect": "refuse", "question": "asdjkl123"},
   {"id": "nonsense-purple", "category": "nonsense", "expect": "refuse", "question": "How do I turn purple into time?"},
-  {"id": "nonsense-keywords", "category": "nonsense", "expect": "refuse", "question": "fee fee banana tier tier"},
+  {"id": "nonsense-keywords", "category": "nonsense", "expect": "refuse", "question": "fee fee fee"},
   {"id": "nonsense-marks", "category": "nonsense", "expect": "refuse", "question": "?????"},
   {"id": "off-weather", "category": "off_topic", "expect": "refuse", "question": "What's the weather in Montreal today?"},
   {"id": "off-poem", "category": "off_topic", "expect": "refuse", "question": "Write me a poem about the ocean."},
