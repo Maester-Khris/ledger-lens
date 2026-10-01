@@ -513,7 +513,7 @@ def test_the_gate_fails_on_any_over_refusal_a_weak_category_or_a_low_overall_rat
     assert gate_failures(summarise(good)) == []
     over_refused = [_result("answerable", "refused", ok=False)] + good[1:]
     assert any("over-refusal" in f for f in gate_failures(summarise(over_refused)))
-    weak = good[:1] + [_result("nonsense", "answer", ok=False)] * 2 + good[3:]
+    weak = good[:1] + [_result("nonsense", "answer", ok=False)] * 3 + good[4:]
     failures = gate_failures(summarise(weak))
     assert any(f.startswith("nonsense") for f in failures) and any("overall" in f for f in failures)
 ```
