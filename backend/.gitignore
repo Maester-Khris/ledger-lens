@@ -3,3 +3,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+# Local operator script for the Railway demo (holds no secrets itself, reads .env.demo)
+script.demo.sh
+script.demo.md
