@@ -96,6 +96,13 @@ Add three rules (wording finalised in the plan; changing the file changes `promp
 3. If the question is too vague to search or answer, ask exactly one clarifying question that names the indexed
    contracts, set `clarification` to true, cite nothing, and include no figures.
 
+### 6.2a The answer model also runs when nothing was retrieved (*amended 2026-10-01, plan*)
+Today the graph's `answer` node returns the no-evidence refusal without calling the model when there are no sources, so
+a vague question could never become a clarifying question. The shortcut is removed: with no sources, `verify_answer`
+only lets a refusal or a figure-free clarification through, and the `refuse` node returns `NO_EVIDENCE_MESSAGE` when the
+turn retrieved nothing (else `FAILED_VERIFICATION_MESSAGE`). Cost: one model call on turns that retrieved nothing,
+bounded by the P3 rate limit.
+
 ### 6.3 Output check (`app/assistant/citations.py`, `verify_answer`)
 Signature gains `clarification: bool`. A clarification with no numbers passes with no citations; a clarification that
 contains any number fails with "a clarifying question must not state figures". Everything else is unchanged.
@@ -125,9 +132,9 @@ contains any number fails with "a clarifying question must not state figures". E
 Each case gains:
 - `category`: `answerable`, `explained`, `out_of_corpus`, `false_premise`, `underspecified`, `nonsense`, `off_topic`;
 - `expect`: `answer`, `refuse` or `clarify` (replaces `expect_refusal`);
-- optional `retrieval: true` for answerable cases answered from free-text search (§5). For existing cases it is set
-  from the latest eval report: true where the answer cited a search passage (`kind: element` from `search_contracts`),
-  not only validated fields or a tool result.
+- optional `retrieval: true`, which lets the case set the calibration floor (§5). *Amended 2026-10-01 (plan):* field-tool
+  answers also cite element ids, so search-only cases can't be told apart in the reports; every answerable case that cites
+  `element` passages is marked (conservative: the floor leans to recall).
 
 Existing cases: the six answerables become `answerable` / `answer`; `not-in-corpus` becomes `out_of_corpus` / `refuse`;
 `fund-not-comparable` becomes `explained` / `refuse` and keeps `expect_system_notice`.
