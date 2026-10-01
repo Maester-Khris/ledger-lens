@@ -33,6 +33,7 @@ class Answer(BaseModel):
     text: str
     citations: list[str]
     refused: bool
+    clarification: bool = False
 
 
 def _merge(left: dict, right: dict) -> dict:
@@ -99,8 +100,6 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
         return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
     def answer(state: TurnState) -> dict:
-        if not state.get("sources"):
-            return {"answer": Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True), "violations": []}
         feedback = []
         if state.get("violations"):
             feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
@@ -112,10 +111,11 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]
-        return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused)}
+        return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused, reply.clarification)}
 
-    def refuse(_state: TurnState) -> dict:
-        return {"answer": Answer(text=FAILED_VERIFICATION_MESSAGE, citations=[], refused=True)}
+    def refuse(state: TurnState) -> dict:
+        text = FAILED_VERIFICATION_MESSAGE if state.get("sources") else NO_EVIDENCE_MESSAGE
+        return {"answer": Answer(text=text, citations=[], refused=True)}
 
     def after_agent(state: TurnState) -> str:
         last = state["messages"][-1]

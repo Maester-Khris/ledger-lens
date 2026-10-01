@@ -60,6 +60,7 @@ def test_refusal_is_its_own_event(client, session_factory, tenant_id):
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "donations"}, "id": "c1"}]),
         AIMessage(content="done"),
+        Answer(text="Nothing about donations here, sorry!", citations=[], refused=True),
     ])
     _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
     events = _events(client.post("/chat", json={"session_id": "s-2", "message": "Donations?"}))

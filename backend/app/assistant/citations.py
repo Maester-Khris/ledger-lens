@@ -27,10 +27,14 @@ def numbers_in(text: str) -> set[str]:
     return found
 
 
-def verify_answer(text: str, cited_ids: Sequence[str], sources: Mapping[str, str], refused: bool) -> list[str]:
-    """Deterministic gate: every number in the answer must appear in something it cites from this turn."""
+def verify_answer(text: str, cited_ids: Sequence[str], sources: Mapping[str, str], refused: bool,
+                  clarification: bool = False) -> list[str]:
+    """Deterministic gate: every number in the answer must appear in something it cites from this turn.
+    A clarifying question cites nothing and may not state any figure (P4)."""
     if refused:
         return []
+    if clarification:
+        return ["a clarifying question must not state figures"] if numbers_in(text) else []
     if not cited_ids:
         return ["the answer cites nothing"]
     unknown = [c for c in cited_ids if c not in sources]

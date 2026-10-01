@@ -69,11 +69,11 @@ def test_uncited_number_is_retried_then_refused(db_session, tenant_id, indexed):
     assert "0.9" in model.prompts[-1]  # the retry was told which number failed
 
 
-def test_no_evidence_refuses_without_answer_call(db_session, tenant_id):
-    model = ScriptedChatModel(replies=[_search_call("charitable donations"), AIMessage(content="done")])
+def test_with_no_evidence_only_a_refusal_or_a_clarification_gets_through(db_session, tenant_id):
+    stated = Answer(text="It is 30 days.", citations=[], refused=False)
+    model = ScriptedChatModel(replies=[_search_call("charitable donations"), AIMessage(content="done"), stated, stated])
     state = _run(model, _ctx(db_session, tenant_id, RecordingEmbeddings(), InMemoryVectorIndex()), "Donations?")
-    assert state["answer"] == Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True)
-    assert model.replies == []  # no structured answer was requested
+    assert state["answer"] == Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True)  # both attempts failed the check
 
 
 def test_calculation_question_forces_the_tool_when_registered(db_session, tenant_id, indexed):
@@ -89,6 +89,7 @@ def test_calculation_question_looks_up_the_id_before_the_forced_tool(db_session,
     compare = AIMessage(content="", tool_calls=[{"name": FORCED_TOOL, "args": {"document_id": "tremblay-household"}, "id": "c2"}])
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": LOOKUP_TOOL, "args": {}, "id": "c1"}]), compare, AIMessage(content="done"),
+        Answer(text="I can't find that contract.", citations=[], refused=True),
     ])
     graph = build_graph(model, default_tools() + contract_tools(), _ctx(db_session, tenant_id, *indexed))
     state = graph.invoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
