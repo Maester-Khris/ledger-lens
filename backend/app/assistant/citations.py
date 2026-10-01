@@ -11,6 +11,18 @@ REFERENCE_WORD = re.compile(
     r"\b(?:tier|section|clause|paragraph|article|schedule|exhibit|appendix|item|page|p\.)\s*$|§\s*$", re.I
 )
 
+# An answer may not assert that something is absent ("does not charge a performance fee"): a source not mentioning
+# a thing is not evidence about it (P4 D10). ponytail: a pattern list, so a rephrasing can slip through; the
+# upgrade path is the LLM sufficiency check in spec §8.
+ABSENCE_CLAIM = re.compile(
+    r"\b(?:does|do|did)\s+not\s+(?:charge|specify|mention|include|provide|contain|state|have|apply|address|set|impose)\b"
+    r"|\bthere\s+(?:is|are)\s+no\b"
+    r"|\bno\s+[\w\s-]{1,40}?\b(?:is|are)\s+(?:specified|mentioned|stated|provided|charged|addressed|defined|set)\b"
+    r"|\bno\s+[\w\s-]{1,40}?\bappl(?:y|ies)\b"
+    r"|\b(?:is|are)\s+not\s+(?:specified|mentioned|stated|provided|addressed|defined|charged)\b",
+    re.I,
+)
+
 
 def numbers_in(text: str) -> set[str]:
     """Figures only: a number right after a reference word ("Tier 2", "Section 4", "p. 3") names a part of
@@ -40,5 +52,8 @@ def verify_answer(text: str, cited_ids: Sequence[str], sources: Mapping[str, str
     unknown = [c for c in cited_ids if c not in sources]
     if unknown:
         return [f"citation {c} was not retrieved in this turn" for c in unknown]
+    cited_text = " ".join(sources[c] for c in cited_ids).lower()
+    absent = [m.group(0) for m in ABSENCE_CLAIM.finditer(text) if m.group(0).lower() not in cited_text]
     allowed = set().union(*(numbers_in(sources[c]) for c in cited_ids))
-    return [f"number {n} does not appear in any cited source" for n in sorted(numbers_in(text) - allowed)]
+    return ([f"number {n} does not appear in any cited source" for n in sorted(numbers_in(text) - allowed)]
+            + [f'"{phrase}" says something is absent, which no cited source states; refuse instead' for phrase in absent])

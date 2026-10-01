@@ -40,3 +40,17 @@ def test_a_clarification_is_not_checked_because_its_text_is_discarded():
     assert verify_answer("Do you mean the 30-day notice?", [], {}, refused=False, clarification=True) == []
     assert verify_answer("It is 30 days.", [], {}, refused=False) == ["the answer cites nothing"]
 
+
+
+def test_an_answer_may_not_assert_that_something_is_absent():
+    sources = {"e1": "The annual rate is 1.00% on the first $1,000,000."}
+    for claim in ("The Tremblay agreement does not charge a performance fee.",
+                  "There is no hurdle rate specified for the fund.", "No hurdle rate applies."):
+        assert any("absent" in v for v in verify_answer(claim, ["e1"], sources, refused=False)), claim
+    assert verify_answer("The annual rate is 1.00% on the first $1,000,000.", ["e1"], sources, refused=False) == []
+    assert verify_answer("The Adviser shall not be liable for losses.", ["e1"], sources, refused=False) == []
+
+
+def test_a_negative_the_source_states_itself_is_allowed():
+    sources = {"e1": "There is no performance fee under this Agreement."}
+    assert verify_answer("There is no performance fee under this Agreement.", ["e1"], sources, refused=False) == []
