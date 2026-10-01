@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
 from app.contracts.fields import FieldResult
@@ -278,3 +278,8 @@ def terms_view(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, o
             page=documents_dao.first_page(session, f.element_ids), quote=f.quote,
         ))
     return TermsView(document_id, document.title, version_no, run.id, run.created_at, fields, household, schedule)
+
+
+def purge_guest_reviews(session: Session, guest_ids: Sequence[uuid.UUID]) -> None:
+    """Delete these guests' overlay reviews (the 24-hour purge). The caller commits."""
+    session.execute(delete(GuestFieldReview).where(GuestFieldReview.guest_id.in_(guest_ids)))

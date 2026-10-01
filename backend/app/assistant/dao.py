@@ -64,3 +64,8 @@ def register_guest(session: Session, tenant_id: uuid.UUID, known_id: uuid.UUID |
     session.add(guest)
     session.commit()
     return guest.id
+
+
+def stale_guest_ids(session: Session, tenant_id: uuid.UUID, *, before: datetime) -> list[uuid.UUID]:
+    """Guests not seen since `before`. Their overlay decisions are purged; the guest rows stay (chat turns reference them)."""
+    return list(session.scalars(select(Guest.id).where(Guest.tenant_id == tenant_id, Guest.last_seen_at < before)))
