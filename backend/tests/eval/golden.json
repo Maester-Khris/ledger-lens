@@ -1,81 +1,56 @@
 [
-  {
-    "id": "fee-schedule",
-    "question": "What is the fee schedule in the Tremblay agreement?",
-    "expect_document": "tremblay-ima",
-    "expect_page": 2,
-    "expect_numbers": [
-      "1.00",
-      "0.85",
-      "0.65"
-    ],
-    "expect_refusal": false
-  },
-  {
-    "id": "termination",
-    "question": "How many days of notice are needed to terminate the Tremblay agreement?",
-    "expect_document": "tremblay-ima",
-    "expect_page": 1,
-    "expect_numbers": [
-      "30"
-    ],
-    "expect_refusal": false
-  },
-  {
-    "id": "governing-law",
-    "question": "Which law governs the Tremblay agreement?",
-    "expect_document": "tremblay-ima",
-    "expect_page": 1,
-    "expect_numbers": [],
-    "expect_refusal": false
-  },
-  {
-    "id": "calamos-top-tier",
-    "question": "What is the Calamos Emerging Market Equity Fund's rate in excess of $26 billion?",
-    "expect_document": "calamos-emerging-market-equity",
-    "expect_page": 1,
-    "expect_numbers": [
-      "0.90",
-      "26"
-    ],
-    "expect_refusal": false
-  },
-  {
-    "id": "aim-first-tier",
-    "question": "What annual rate applies to the first $500 million for AIM Global Trends Fund?",
-    "expect_document": "aim-global-trends-advisory",
-    "expect_page": null,
-    "expect_numbers": [
-      "0.975",
-      "500"
-    ],
-    "expect_refusal": false
-  },
-  {
-    "id": "not-in-corpus",
-    "question": "What was the client's charitable donation amount in 2024?",
-    "expect_document": null,
-    "expect_page": null,
-    "expect_numbers": [],
-    "expect_refusal": true
-  },
-  {
-    "id": "leakage",
-    "question": "How much would the Tremblay household pay under its contract compared with what billing charges?",
-    "expect_document": "tremblay-ima",
-    "expect_page": null,
-    "expect_numbers": [
-      "400.00"
-    ],
-    "expect_refusal": false
-  },
-  {
-    "id": "fund-not-comparable",
-    "question": "Compare the Calamos fund agreement with billing.",
-    "expect_document": "calamos-emerging-market-equity",
-    "expect_page": null,
-    "expect_numbers": [],
-    "expect_refusal": false,
-    "expect_system_notice": true
-  }
+  {"id": "fee-schedule", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "What is the fee schedule in the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 2, "expect_numbers": ["1.00", "0.85", "0.65"]},
+  {"id": "termination", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "How many days of notice are needed to terminate the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 1, "expect_numbers": ["30"]},
+  {"id": "governing-law", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "Which law governs the Tremblay agreement?",
+   "expect_document": "tremblay-ima", "expect_page": 1, "expect_numbers": []},
+  {"id": "calamos-top-tier", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "What is the Calamos Emerging Market Equity Fund's rate in excess of $26 billion?",
+   "expect_document": "calamos-emerging-market-equity", "expect_page": 1, "expect_numbers": ["0.90", "26"]},
+  {"id": "aim-first-tier", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "What annual rate applies to the first $500 million for AIM Global Trends Fund?",
+   "expect_document": "aim-global-trends-advisory", "expect_page": null, "expect_numbers": ["0.975", "500"]},
+  {"id": "management-fee-unscoped", "category": "answerable", "expect": "answer", "retrieval": true,
+   "question": "What is the management fee?",
+   "expect_document": null, "expect_page": null, "expect_numbers": []},
+  {"id": "leakage", "category": "answerable", "expect": "answer",
+   "question": "How much would the Tremblay household pay under its contract compared with what billing charges?",
+   "expect_document": "tremblay-ima", "expect_page": null, "expect_numbers": ["400.00"]},
+  {"id": "fund-not-comparable", "category": "explained", "expect": "refuse", "expect_system_notice": true,
+   "question": "Compare the Calamos fund agreement with billing.",
+   "expect_document": "calamos-emerging-market-equity", "expect_page": null, "expect_numbers": []},
+  {"id": "not-in-corpus", "category": "out_of_corpus", "expect": "refuse",
+   "question": "What was the client's charitable donation amount in 2024?"},
+  {"id": "ooc-performance-fee", "category": "out_of_corpus", "expect": "refuse",
+   "question": "What performance fee does the Tremblay agreement charge?"},
+  {"id": "ooc-hurdle-rate", "category": "out_of_corpus", "expect": "refuse",
+   "question": "What hurdle rate applies to the AIM Global Trends Fund's advisory fee?"},
+  {"id": "ooc-arbitration", "category": "out_of_corpus", "expect": "refuse",
+   "question": "Which arbitration body handles disputes under the Calamos agreement?"},
+  {"id": "ooc-minimum-account", "category": "out_of_corpus", "expect": "refuse",
+   "question": "What is the minimum account size required under the Tremblay agreement?"},
+  {"id": "fp-calamos-increase", "category": "false_premise", "expect": "refuse",
+   "question": "Why did the Calamos agreement increase its management fee in 2025?"},
+  {"id": "fp-crypto-surcharge", "category": "false_premise", "expect": "refuse",
+   "question": "How much is the cryptocurrency custody surcharge in the Voyageur agreement?"},
+  {"id": "fp-soft-dollar-rebate", "category": "false_premise", "expect": "refuse",
+   "question": "What rebate does the Tremblay household receive on soft-dollar commissions?"},
+  {"id": "fp-maryland-office", "category": "false_premise", "expect": "refuse",
+   "question": "Which Maryland office signed the AIM Global Trends Fund agreement?"},
+  {"id": "under-allowed", "category": "underspecified", "expect": "clarify", "question": "Is it allowed?"},
+  {"id": "under-how-much", "category": "underspecified", "expect": "clarify", "question": "How much is it?"},
+  {"id": "under-change-it", "category": "underspecified", "expect": "clarify", "question": "Can they change it?"},
+  {"id": "under-other-one", "category": "underspecified", "expect": "clarify", "question": "What does the other one say?"},
+  {"id": "nonsense-keys", "category": "nonsense", "expect": "refuse", "question": "asdjkl123"},
+  {"id": "nonsense-purple", "category": "nonsense", "expect": "refuse", "question": "How do I turn purple into time?"},
+  {"id": "nonsense-keywords", "category": "nonsense", "expect": "refuse", "question": "fee fee fee"},
+  {"id": "nonsense-marks", "category": "nonsense", "expect": "refuse", "question": "?????"},
+  {"id": "off-weather", "category": "off_topic", "expect": "refuse", "question": "What's the weather in Montreal today?"},
+  {"id": "off-poem", "category": "off_topic", "expect": "refuse", "question": "Write me a poem about the ocean."},
+  {"id": "off-world-cup", "category": "off_topic", "expect": "refuse", "question": "Who won the 2022 World Cup?"},
+  {"id": "off-capital", "category": "off_topic", "expect": "refuse", "question": "What is the capital of Japan?"}
 ]

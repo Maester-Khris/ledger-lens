@@ -1,5 +1,5 @@
-"""Manual golden-set run against real OpenAI + Pinecone on ledger_dev (samples ingested).
-Run: $PYDEV/bin/pytest -m eval tests/eval -s"""
+"""Manual golden-set run against real OpenAI + Pinecone on the live demo configuration (P4 spec §9).
+Run (from backend/): ENV_FILE=.env.demo $PYDEV/bin/pytest -m eval tests/eval -s"""
 import asyncio
 import json
 import os
@@ -24,18 +24,55 @@ def _normal(number: str) -> str:
     return format(Decimal(number).normalize(), "f")
 
 
+JUNK = ("out_of_corpus", "false_premise", "underspecified", "nonsense", "off_topic")
+EVENT_FOR = {"answer": "answer", "refuse": "refused", "clarify": "clarify"}
+
+
 def score_case(case: dict, event_type: str, data: dict) -> dict:
     """Pure scoring, unit-tested in tests/test_golden_scoring.py without OpenAI."""
     citations = data.get("citations", [])
     found = numbers_in(data.get("text", ""))
-    refusal_ok = (event_type == "refused") == case["expect_refusal"]
-    citation_hit = case["expect_refusal"] or any(
+    if case["category"] == "underspecified":  # a clarifying question or a refusal are both acceptable
+        behaviour_ok = event_type in ("clarify", "refused")
+    else:
+        behaviour_ok = event_type == EVENT_FOR[case["expect"]]
+    citation_hit = case["expect"] != "answer" or any(
         case["expect_page"] is None or c.get("page") == case["expect_page"] for c in citations
     )
-    if case.get("expect_system_notice"):  # explained abstention: only a system citation counts
-        refusal_ok = citation_hit = any(c.get("kind") == "system" for c in citations)
-    return {"id": case["id"], "event": event_type, "refusal_ok": refusal_ok, "citation_hit": citation_hit,
-            "numbers_ok": {_normal(n) for n in case["expect_numbers"]} <= found}
+    if case.get("expect_system_notice"):  # explained abstention (N11): only the billing-records reason counts
+        behaviour_ok = citation_hit = any(c.get("kind") == "system" and c.get("source") == "billing records"
+                                          for c in citations)
+    return {"id": case["id"], "category": case["category"], "event": event_type, "behaviour_ok": behaviour_ok,
+            "citation_hit": citation_hit,
+            "numbers_ok": {_normal(n) for n in case.get("expect_numbers", [])} <= found}
+
+
+def _rate(results: list[dict], key: str) -> float:
+    return sum(r[key] for r in results) / len(results) if results else 1.0
+
+
+def summarise(results: list[dict]) -> dict:
+    graded = [r for r in results if r["category"] in ("answerable", "explained")]
+    answerable = [r for r in results if r["category"] == "answerable"]
+    junk = [r for r in results if r["category"] in JUNK]
+    return {
+        "answerable": {key: _rate(graded, key) for key in ("behaviour_ok", "citation_hit", "numbers_ok")},
+        "over_refusal": sum(r["event"] != "answer" for r in answerable) / len(answerable) if answerable else 0.0,
+        "junk_acceptable": _rate(junk, "behaviour_ok"),
+        "junk_by_category": {c: _rate([r for r in junk if r["category"] == c], "behaviour_ok")
+                             for c in JUNK if any(r["category"] == c for r in junk)},
+    }
+
+
+def gate_failures(summary: dict) -> list[str]:
+    """P4 go/no-go (spec §7.4): no answerable refused, junk >= 90% overall and >= 75% in every category."""
+    failures = []
+    if summary["over_refusal"] > 0:
+        failures.append(f"over-refusal {summary['over_refusal']:.0%} > 0%")
+    if summary["junk_acceptable"] < 0.90:
+        failures.append(f"junk overall {summary['junk_acceptable']:.0%} < 90%")
+    failures += [f"{category} {rate:.0%} < 75%" for category, rate in summary["junk_by_category"].items() if rate < 0.75]
+    return failures
 
 
 def _run(case: dict) -> dict:
@@ -56,11 +93,14 @@ def _run(case: dict) -> dict:
 def test_golden_set():
     results = [_run(case) for case in CASES]
     config_hash = eval_config_hash()
-    metrics = {key: sum(r[key] for r in results) / len(results) for key in ("refusal_ok", "citation_hit", "numbers_ok")}
+    summary = summarise(results)
     REPORTS.mkdir(exist_ok=True)
+    relevance = sorted(REPORTS.glob("relevance-*.json"), key=lambda p: p.stat().st_mtime)
     report = REPORTS / f"eval-{config_hash}.json"
-    report.write_text(json.dumps({"config_hash": config_hash, "chat_model": config.CHAT_MODEL,
-                                  "metrics": metrics, "results": results}, indent=2))
-    print(json.dumps(metrics, indent=2), f"\nreport: {report}")
-    # Capture the real result as-is (backlog rule); the test fails only if the pipeline is broken outright.
-    assert metrics["refusal_ok"] >= 0.5
+    report.write_text(json.dumps({
+        "config_hash": config_hash, "chat_model": config.CHAT_MODEL, "min_dense_similarity": config.MIN_DENSE_SIMILARITY,
+        "relevance_report": relevance[-1].name if relevance else None, "summary": summary, "results": results,
+    }, indent=2))
+    print(json.dumps(summary, indent=2), f"\nreport: {report}")
+    failures = gate_failures(summary)
+    assert not failures, "P4 gate failed: " + "; ".join(failures)

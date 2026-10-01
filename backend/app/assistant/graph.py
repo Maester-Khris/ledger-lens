@@ -59,7 +59,7 @@ def prompt_version() -> str:
 
 def eval_config_hash() -> str:
     """Identifies the chat configuration a golden-set report was produced with (see tests/eval/test_golden.py)."""
-    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}".encode()).hexdigest()[:12]
+    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}|{config.MIN_DENSE_SIMILARITY}".encode()).hexdigest()[:12]
 
 
 def route_tool_choice(question: str, registered: set[str]) -> str | None:

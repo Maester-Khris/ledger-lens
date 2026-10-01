@@ -1,17 +1,46 @@
-from tests.eval.test_golden import score_case
+from tests.eval.test_golden import gate_failures, score_case, summarise
 
-CASE = {"id": "fund-not-comparable", "expect_page": None, "expect_numbers": [], "expect_refusal": False,
-        "expect_system_notice": True}
-
-
-def test_system_notice_case_passes_only_with_a_system_citation():
-    with_notice = score_case(CASE, "refused", {"text": "x", "citations": [{"kind": "system", "detail": "d"}]})
-    assert with_notice["refusal_ok"] and with_notice["citation_hit"]
-    generic = score_case(CASE, "refused", {"text": "I can't find that", "citations": []})
-    assert not generic["refusal_ok"] and not generic["citation_hit"]
+NOTICE = {"kind": "system", "source": "billing records", "detail": "d"}
+NO_SUPPORT = {"kind": "system", "source": "indexed contracts", "detail": "d"}
 
 
-def test_ordinary_cases_are_scored_as_before():
-    case = {"id": "c", "expect_page": 2, "expect_numbers": ["0.85"], "expect_refusal": False}
+def _case(category, expect, **extra):
+    return {"id": f"{category}-{expect}", "category": category, "expect": expect, "expect_page": None,
+            "expect_numbers": [], **extra}
+
+
+def test_an_explained_refusal_needs_the_billing_records_reason():
+    case = _case("explained", "refuse", expect_system_notice=True)
+    assert score_case(case, "refused", {"text": "x", "citations": [NOTICE]})["behaviour_ok"]
+    assert not score_case(case, "refused", {"text": "x", "citations": [NO_SUPPORT]})["behaviour_ok"]
+
+
+def test_an_answer_needs_a_matching_citation_and_its_numbers():
+    case = _case("answerable", "answer", expect_page=2, expect_numbers=["0.85"])
     result = score_case(case, "answer", {"text": "0.85%", "citations": [{"kind": "element", "page": 2}]})
-    assert result["refusal_ok"] and result["citation_hit"] and result["numbers_ok"]
+    assert result["behaviour_ok"] and result["citation_hit"] and result["numbers_ok"]
+    assert not score_case(case, "answer", {"text": "0.85%", "citations": []})["citation_hit"]
+
+
+def test_underspecified_accepts_a_clarification_or_a_refusal_other_junk_only_a_refusal():
+    vague, junk = _case("underspecified", "clarify"), _case("nonsense", "refuse")
+    assert score_case(vague, "clarify", {"text": "Which contract?"})["behaviour_ok"]
+    assert score_case(vague, "refused", {"text": "x", "citations": [NO_SUPPORT]})["behaviour_ok"]
+    assert not score_case(vague, "answer", {"text": "x"})["behaviour_ok"]
+    assert score_case(junk, "refused", {"text": "x"})["behaviour_ok"]
+    assert not score_case(junk, "clarify", {"text": "Did you mean?"})["behaviour_ok"]
+
+
+def _result(category, event, ok=True):
+    return {"id": "x", "category": category, "event": event, "behaviour_ok": ok, "citation_hit": ok, "numbers_ok": ok}
+
+
+def test_the_gate_fails_on_any_over_refusal_a_weak_category_or_a_low_overall_rate():
+    good = [_result("answerable", "answer")] + [_result(c, "refused") for c in
+            ("out_of_corpus", "false_premise", "underspecified", "nonsense", "off_topic") for _ in range(4)]
+    assert gate_failures(summarise(good)) == []
+    over_refused = [_result("answerable", "refused", ok=False)] + good[1:]
+    assert any("over-refusal" in f for f in gate_failures(summarise(over_refused)))
+    weak = good[:1] + [_result("nonsense", "answer", ok=False)] * 3 + good[4:]
+    failures = gate_failures(summarise(weak))
+    assert any(f.startswith("nonsense") for f in failures) and any("overall" in f for f in failures)
