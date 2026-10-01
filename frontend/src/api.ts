@@ -65,7 +65,7 @@ export interface UnvalidatedDto {
 
 export type ChatEvent =
   | { type: 'progress'; data: { step: string } }
-  | { type: 'answer' | 'refused'; data: { text: string; citations: Citation[] } }
+  | { type: 'answer' | 'refused' | 'clarify'; data: { text: string; citations: Citation[] } }
   | { type: 'error'; data: { text: string } }
   | { type: 'unvalidated'; data: UnvalidatedDto };
 

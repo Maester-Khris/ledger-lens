@@ -39,3 +39,11 @@ test('a demo guest approves an AI correction that is checked but never recorded'
     await other.close();
   });
 });
+
+test('nonsense gets an explicit refusal with a system reason', async ({ page }) => {
+  await page.goto('/chat');
+  await page.getByLabel('Ask about your indexed contracts').fill('fee fee banana tier tier');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page.getByText('No answer')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/System · indexed contracts/)).toBeVisible();
+});

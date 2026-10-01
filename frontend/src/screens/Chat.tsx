@@ -43,7 +43,7 @@ function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
 type Turn = {
   question: string;
   step: string | null;
-  outcome: 'pending' | 'answer' | 'refused' | 'error';
+  outcome: 'pending' | 'answer' | 'refused' | 'clarify' | 'error';
   text: string;
   citations: Citation[];
   unvalidated: UnvalidatedDto[];
@@ -252,6 +252,12 @@ export function Chat() {
                             ))}
                           </div>
                         )}
+                      </>
+                    )}
+                    {turn.outcome === 'clarify' && (
+                      <>
+                        <AssistantHead label="Clarifying question" variant="neutral" />
+                        <Markdown className="chat__prose" text={turn.text} />
                       </>
                     )}
                     {(turn.outcome === 'refused' || turn.outcome === 'error') && (
