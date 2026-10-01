@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import logging
 import time
 import uuid
 from collections.abc import Callable
@@ -22,6 +23,8 @@ from app.retrieval import dao as retrieval_dao
 REPORTS_DIR = config.BACKEND_DIR / "reports"
 LATENCY_WINDOW = timedelta(days=7)
 STATS_TTL_SECONDS = 15.0
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -54,17 +57,24 @@ class DashboardStats:
 @lru_cache(maxsize=8)
 def _read_eval(path: Path, mtime_ns: int) -> EvalSummary:  # mtime is in the key, so a new golden-set run is picked up
     data = json.loads(path.read_text())
-    metrics = data["metrics"]
+    summary = data["summary"]  # written by tests/eval/test_golden.py (P4 format)
+    answerable = summary["answerable"]
+    # "refusals" on the dashboard = the share of junk and unanswerable questions handled acceptably
     return EvalSummary(data["config_hash"], data["chat_model"], len(data["results"]),
-                       metrics["numbers_ok"], metrics["refusal_ok"], metrics["citation_hit"])
+                       answerable["numbers_ok"], summary["junk_acceptable"], answerable["citation_hit"])
 
 
 def eval_summary(reports_dir: Path, config_hash: str) -> EvalSummary | None:
-    """The golden-set report for exactly this configuration; a report for another model or prompt doesn't count."""
+    """The golden-set report for exactly this configuration; a report for another model or prompt doesn't count.
+    A report that can't be read (an older format, a damaged file) counts as no report: it must never break /stats."""
     path = reports_dir / f"eval-{config_hash}.json"
     if not path.is_file():
         return None
-    return _read_eval(path, path.stat().st_mtime_ns)
+    try:
+        return _read_eval(path, path.stat().st_mtime_ns)
+    except (KeyError, TypeError, ValueError):
+        logger.warning("eval report %s is unreadable; the dashboard shows no eval figures", path.name)
+        return None
 
 
 def dashboard_stats(session: Session, tenant_id: uuid.UUID, *, now: datetime) -> DashboardStats:
