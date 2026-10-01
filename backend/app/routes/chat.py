@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app import config
 from app.assistant.service import AssistantRuntime, run_turn
-from app.deps import get_guest_id, get_overlay_guest, get_tenant_id
+from app.deps import get_guest_id, get_overlay_guest, get_tenant_id, limit_chat
 from app.documents import dao as documents_dao
 from app.documents.errors import DocumentNotFound
 from app.ledger.db import SessionLocal
@@ -34,7 +34,7 @@ class ChatIn(BaseModel):
     document_id: uuid.UUID | None = None
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(limit_chat)])
 async def chat(
     body: ChatIn,
     tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],

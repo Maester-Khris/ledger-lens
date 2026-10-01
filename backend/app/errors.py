@@ -22,3 +22,18 @@ class GuestRequired(DomainError):
     status = 400
     type_slug = "guest-required"
     title = "A known guest is required"
+
+
+class RateLimited(DomainError):
+    """Public demo: a guest or an IP asked too many questions within the window (P3)."""
+
+    status = 429
+    type_slug = "rate-limited"
+    title = "Too many questions"
+
+    def __init__(self, retry_after: int) -> None:
+        super().__init__(f"Too many questions for now; try again in {retry_after} seconds.", retry_after=retry_after)
+        self.retry_after = retry_after
+
+    def headers(self) -> dict[str, str]:
+        return {"Retry-After": str(self.retry_after)}

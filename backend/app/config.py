@@ -119,6 +119,12 @@ FRONTEND_ORIGINS = parse_frontend_origins(os.environ.get("FRONTEND_URL"))
 # shared state are not mounted, and guest decisions go to per-guest overlays. Off unless set to 1, true or yes.
 DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
 
+# Public demo chat rate limits (P3), each a sliding window: per guest, and per client IP so a script that registers
+# a new guest for every request is still capped. Each chat turn is an LLM call, so these bound the spend.
+CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
+CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
+CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
+
 # Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
 MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.43)

@@ -140,7 +140,11 @@ export async function streamChat(
     headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
     body: JSON.stringify({ session_id: sessionId, message, ...(options.documentId ? { document_id: options.documentId } : {}) }),
   });
-  if (!response.ok || !response.body) throw new Error(`Chat failed (${response.status})`);
+  if (!response.ok || !response.body) {
+    // problem+json detail when the API sends one (e.g. the public demo's 429 "try again in N seconds")
+    const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(problem?.detail ?? `Chat failed (${response.status})`);
+  }
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
   for (;;) {

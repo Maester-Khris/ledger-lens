@@ -1,15 +1,17 @@
+import math
 import uuid
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app import config
 from app.assistant import dao as assistant_dao
-from app.errors import GuestRequired
+from app.errors import GuestRequired, RateLimited
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
+from app.rate_limit import SlidingWindowLimiter, admit
 
 # ponytail: no authentication yet; the acting user is fixed. Replace with the authenticated principal.
 DECIDED_BY = "demo_user"
@@ -61,3 +63,27 @@ def require_overlay_guest(guest_id: Annotated[uuid.UUID | None, Depends(get_gues
     if guest_id is None:
         raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to decide in the public demo.")
     return guest_id
+
+
+# Public demo (P3): one pair of chat windows per process, per guest and per client IP. Tests replace it.
+chat_limits = (
+    SlidingWindowLimiter(config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
+    SlidingWindowLimiter(config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
+)
+
+
+def client_ip(request: Request) -> str:
+    """The caller's IP behind Railway's edge proxy: it appends the address it saw as the rightmost X-Forwarded-For
+    entry. Entries to its left come from the client and can be forged, so they are never used."""
+    forwarded = request.headers.get("x-forwarded-for", "").rsplit(",", 1)[-1].strip()
+    return forwarded or (request.client.host if request.client else "unknown")
+
+
+def limit_chat(request: Request, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]) -> None:
+    """Public demo: cap chat turns (each one an LLM call) per guest and per IP. Off outside the demo."""
+    if not config.DEMO_MODE:
+        return
+    by_guest, by_ip = chat_limits
+    wait = admit([(by_guest, f"guest:{guest_id}"), (by_ip, f"ip:{client_ip(request)}")])
+    if wait > 0:
+        raise RateLimited(math.ceil(wait))
