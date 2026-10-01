@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDemoMode } from '../lib/useDemoMode';
+import { DemoPostings } from '../components/DemoPostings';
 import { Link, useSearchParams } from 'react-router';
 import { type PostingPage, type PostingSourceDto, type ToolInvocationDto, listPostings, listToolInvocations, reversePosting } from '../api';
 import { CheckIcon, LockIcon, SearchIcon } from '../components/Icons';
@@ -190,6 +191,8 @@ export function Ledger() {
             reversal.
           </p>
         </div>
+
+        {demoMode && <DemoPostings />}
 
         <div className="ledger__toolbar">
           <div className="ledger__filter-input">

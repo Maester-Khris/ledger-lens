@@ -43,6 +43,9 @@ export function LedgerTimeline({ documentId, refreshKey }: LedgerTimelineProps) 
           <li key={`${item.at}-${index}`} className={`ws-timeline__item ws-timeline__item--${item.kind}`}>
             <div><span className={`ws-badge ws-badge--${item.kind}`}>{KIND_LABEL[item.kind]}</span> {item.title}</div>
             <div className="ws-reason">{new Date(item.at).toLocaleString()}</div>
+            {item.kind === 'decided' && item.detail.recorded === false && (
+              <div className="ws-reason">Demo decision, not recorded</div>
+            )}
             {item.detail.entries && (
               <details>
                 <summary>Entries</summary>

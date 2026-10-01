@@ -205,6 +205,7 @@ export interface ToolDecisionDto {
   reason: string | null;
   decided_at: string;
   posting_id: string | null;
+  recorded: boolean;
 }
 
 export interface ToolInvocationDto {
@@ -405,7 +406,7 @@ export interface TimelineItemDto {
   at: string;
   kind: 'ingested' | 'extracted' | 'reviewed' | 'ai_proposed' | 'decided' | 'posted';
   title: string;
-  detail: { entries?: { account: string; direction: 'debit' | 'credit'; amount_minor: number; currency: string }[] } & Record<string, unknown>;
+  detail: { entries?: { account: string; direction: 'debit' | 'credit'; amount_minor: number; currency: string }[]; recorded?: boolean } & Record<string, unknown>;
   links: { ledger?: string };
 }
 

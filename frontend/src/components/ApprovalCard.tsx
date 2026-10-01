@@ -4,6 +4,7 @@ import { type ToolDecisionDto, type ToolInvocationDto, decideToolInvocation } fr
 import { toolLabel } from '../lib/toolLabels';
 import { formatMinor } from '../lib/money';
 import { formatUtc } from '../lib/time';
+import { useDemoMode } from '../lib/useDemoMode';
 import { StatusPill } from './StatusPill';
 import './ApprovalCard.css';
 
@@ -13,6 +14,7 @@ interface ApprovalCardProps {
 }
 
 export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
+  const demoMode = useDemoMode();
   const [decision, setDecision] = useState<ToolDecisionDto | null>(invocation.decision);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,17 +94,23 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
         {decision === null ? (
           <>
             <button type="button" className="btn btn-primary" disabled={submitting} onClick={() => void decide('approved')}>
-              Approve and post
+              {demoMode ? 'Approve (demo, not recorded)' : 'Approve and post'}
             </button>
             <button type="button" className="btn btn-secondary" disabled={submitting} onClick={() => void decide('rejected')}>
               Reject
             </button>
-            <span className="tool-card__help">Approving posts exactly these entries to the ledger, once.</span>
+            <span className="tool-card__help">
+              {demoMode
+                ? 'The ledger checks these entries; in the public demo nothing is written.'
+                : 'Approving posts exactly these entries to the ledger, once.'}
+            </span>
           </>
         ) : decision.posting_id ? (
           <span className="tool-card__posted">
             Posted · <Link to={`/ledger?posting=${decision.posting_id}`}>View in ledger →</Link>
           </span>
+        ) : decision.decision === 'approved' && !decision.recorded ? (
+          <span className="tool-card__help">Demo posting, not recorded. The ledger checked these entries; nothing was written.</span>
         ) : (
           <span className="tool-card__help">Rejected by {decision.decided_by}. Nothing was posted.</span>
         )}
