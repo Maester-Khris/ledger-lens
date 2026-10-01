@@ -108,3 +108,13 @@ def test_answer_retry_fits_after_two_tool_rounds(db_session, tenant_id, indexed)
     ])
     state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
     assert state["answer"].refused is False
+
+
+def test_a_refusal_after_three_tool_rounds_fits_in_the_step_budget(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    bad = Answer(text="The second tier is 0.90%.", citations=[element_id], refused=False)
+    model = ScriptedChatModel(replies=[
+        _search_call("rate"), _search_call("annual rate"), _search_call("tier"), AIMessage(content="done"), bad, bad,
+    ])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")  # no GraphRecursionError
+    assert state["answer"].refused is True

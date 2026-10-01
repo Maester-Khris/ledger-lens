@@ -19,8 +19,8 @@ PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
 GRAPH_VERSION = "v2"
-# route + 2 tool rounds + 2 answer attempts, with headroom
-RECURSION_LIMIT = 12
+# route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
+RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
 LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
