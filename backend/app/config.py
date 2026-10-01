@@ -125,9 +125,11 @@ CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
 CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
 CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
 
-# Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
+# Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-10-01 on the demo corpus with scripts/calibrate_relevance.py
+# (reports/relevance-bd36247ba3f7.json); chosen inside the empty band 0.452–0.484 between the highest gateable junk and
+# the lowest answerable.
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
-MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.43)
+MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.46)
 
 # Ingestion
 MAX_UPLOAD_BYTES = _int("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)
