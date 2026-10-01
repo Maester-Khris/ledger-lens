@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app import config
 from app.assistant.service import AssistantRuntime, run_turn
-from app.deps import get_guest_id, get_tenant_id
+from app.deps import get_guest_id, get_overlay_guest, get_tenant_id
 from app.documents import dao as documents_dao
 from app.documents.errors import DocumentNotFound
 from app.ledger.db import SessionLocal
@@ -39,6 +39,7 @@ async def chat(
     body: ChatIn,
     tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
     guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
+    overlay_guest: Annotated[uuid.UUID | None, Depends(get_overlay_guest)],
     runtime: Annotated[AssistantRuntime, Depends(get_assistant_runtime)],
     session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
 ) -> StreamingResponse:
@@ -51,7 +52,7 @@ async def chat(
         async for event in run_turn(session_factory=session_factory, runtime=runtime, tenant_id=tenant_id,
                                     session_id=body.session_id, message=body.message,
                                     hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY"),
-                                    guest_id=guest_id, document_id=body.document_id):
+                                    guest_id=guest_id, document_id=body.document_id, overlay_guest=overlay_guest):
             yield f"event: {event.type}\ndata: {json.dumps(event.data)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})

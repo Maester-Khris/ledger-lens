@@ -25,14 +25,14 @@ def build_timeline(items: list[TimelineItem]) -> list[TimelineItem]:
     return sorted(items, key=lambda item: item.at)
 
 
-def document_timeline(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> list[TimelineItem] | None:
+def document_timeline(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, overlay_guest: uuid.UUID | None = None) -> list[TimelineItem] | None:
     if documents_dao.find_document(session, tenant_id, document_id) is None:
         return None
     items = [
         TimelineItem(event.created_at, "ingested", f"v{version} · {event.stage.value}", {"stage": event.stage.value})
         for version, event in documents_dao.version_events_for_document(session, document_id)
     ]
-    for run, reviews in contracts_dao.runs_with_reviews(session, document_id):
+    for run, reviews in contracts_dao.runs_with_reviews(session, document_id, overlay_guest):
         accepted = contracts_dao.accepted_count(session, run.id)
         items.append(TimelineItem(run.created_at, "extracted", "Terms extracted", {"run_id": str(run.id), "accepted": accepted}))
         items += [TimelineItem(r.decided_at, "reviewed", f"{field_label(r.field_path)} {r.decision.value}",

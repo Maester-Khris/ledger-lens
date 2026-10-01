@@ -10,13 +10,14 @@ from sqlalchemy.orm import Session
 from app import config
 from app.contracts import dao as contracts_dao
 from app.contracts.types import ReviewDecision
-from app.deps import decided_by, decisions_closed_in_demo, get_guest_id, get_session, get_tenant_id
+from app.deps import decided_by, get_guest_id, get_overlay_guest, get_session, get_tenant_id, require_overlay_guest
 from app.documents import dao as documents_dao
 from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/reviews", tags=["contracts"])
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
+OverlayGuest = Annotated[uuid.UUID | None, Depends(get_overlay_guest)]
 
 
 class ReviewItemOut(BaseModel):
@@ -53,8 +54,8 @@ class ReviewOut(BaseModel):
 
 
 @router.get("", response_model=list[ReviewItemOut])
-def list_pending_reviews(session: SessionDep, tenant_id: TenantDep) -> list[ReviewItemOut]:
-    items = contracts_dao.pending_reviews(session, tenant_id)
+def list_pending_reviews(session: SessionDep, tenant_id: TenantDep, overlay_guest: OverlayGuest) -> list[ReviewItemOut]:
+    items = contracts_dao.pending_reviews(session, tenant_id, overlay_guest)
     if not items:
         return []
     # ponytail: detokenises for the single demo user, like the document preview; gate on permissions once auth exists
@@ -62,11 +63,11 @@ def list_pending_reviews(session: SessionDep, tenant_id: TenantDep) -> list[Revi
     return [ReviewItemOut(**(asdict(item) | {"quote": quote})) for item, quote in zip(items, quotes)]
 
 
-@router.post("", status_code=201, response_model=ReviewOut, dependencies=[Depends(decisions_closed_in_demo)])
-def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]) -> ReviewOut:
+@router.post("", status_code=201, response_model=ReviewOut)
+def submit_review(body: ReviewIn, session: SessionDep, tenant_id: TenantDep, guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)], overlay_guest: Annotated[uuid.UUID | None, Depends(require_overlay_guest)]) -> ReviewOut:
     review = contracts_dao.record_review(
         session, tenant_id=tenant_id, run_id=body.run_id, field_path=body.field_path, decision=body.decision,
-        corrected_value=body.corrected_value, reason=body.reason, decided_by=decided_by(guest_id),
+        corrected_value=body.corrected_value, reason=body.reason, decided_by=decided_by(guest_id), overlay_guest=overlay_guest,
     )
     invalidate_dashboard_stats(tenant_id)
     return ReviewOut(run_id=review.run_id, field_path=review.field_path, decision=review.decision,

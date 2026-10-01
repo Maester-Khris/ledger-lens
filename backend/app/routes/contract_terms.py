@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app.contracts import dao as contracts_dao
-from app.deps import get_session, get_tenant_id
+from app.deps import get_overlay_guest, get_session, get_tenant_id
 from app.documents import dao as documents_dao
 from app.documents.errors import DocumentNotFound
 
@@ -57,8 +57,9 @@ class TermsOut(BaseModel):
 
 @router.get("/{document_id}/terms", response_model=TermsOut)
 def get_terms(document_id: uuid.UUID, session: Annotated[Session, Depends(get_session)],
-              tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)]) -> TermsOut:
-    view = contracts_dao.terms_view(session, tenant_id, document_id, date.today())
+              tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
+              overlay_guest: Annotated[uuid.UUID | None, Depends(get_overlay_guest)]) -> TermsOut:
+    view = contracts_dao.terms_view(session, tenant_id, document_id, date.today(), overlay_guest)
     if view is None:
         raise DocumentNotFound(f"Document {document_id} does not exist.")
     # ponytail: detokenises for the single demo user, like the document preview; gate on permissions once auth exists

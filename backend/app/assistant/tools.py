@@ -29,6 +29,7 @@ class ToolContext:
     hmac_key: str
     vault_key: str
     document_id: uuid.UUID | None = None  # set = the chat is scoped to this document
+    overlay_guest: uuid.UUID | None = None  # public demo: this guest's own decisions apply (spec P2+P9)
 
 
 @dataclass(frozen=True)
@@ -121,7 +122,12 @@ def execute(spec: ToolSpec, ctx: ToolContext, args: dict) -> ToolOutcome:
     outcome = spec.run(ctx, parsed)
     invocation = record_invocation(ctx.session, InvocationRecord(
         tenant_id=ctx.tenant_id, session_id=ctx.session_id, tool_name=spec.name, tool_version=spec.version,
-        model=ctx.model, input={"turn_id": str(ctx.turn_id), **parsed.model_dump(mode="json")},
+        model=ctx.model, input={
+            "turn_id": str(ctx.turn_id),
+            # public demo: whose chat produced this proposal (spec P2+P9); absent outside the demo
+            **({"guest_id": str(ctx.overlay_guest)} if ctx.overlay_guest is not None else {}),
+            **parsed.model_dump(mode="json"),
+        },
         result_amount_minor=outcome.result_amount_minor, result_currency=outcome.result_currency,
         citation={"ids": sorted(k for k in outcome.citations if k != RESULT_KEY)} if outcome.citations else None,
         proposed_entries=outcome.proposed_entries,

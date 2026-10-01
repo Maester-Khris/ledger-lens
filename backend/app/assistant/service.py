@@ -51,10 +51,10 @@ def _usage(messages: list) -> tuple[int, int]:
     return sum(u["input_tokens"] for u in usage), sum(u["output_tokens"] for u in usage)
 
 
-def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str]) -> list[TurnEvent]:
+def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str], overlay_guest: uuid.UUID | None) -> list[TurnEvent]:
     events = []
     for document_id in dict.fromkeys(document_ids):  # once per document, in order
-        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today())
+        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today(), overlay_guest)
         if view is None:
             continue
         fields = [{"path": f.path, "label": f.label, "reason": f.reason} for f in view.fields if f.status in ("needs_review", "rejected")]
@@ -66,7 +66,7 @@ def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: li
 async def run_turn(
     *, session_factory: sessionmaker, runtime: AssistantRuntime, tenant_id: uuid.UUID, session_id: str,
     message: str, hmac_key: str, vault_key: str,
-    guest_id: uuid.UUID | None = None, document_id: uuid.UUID | None = None,
+    guest_id: uuid.UUID | None = None, document_id: uuid.UUID | None = None, overlay_guest: uuid.UUID | None = None,
 ) -> AsyncIterator[TurnEvent]:
     started = time.perf_counter()
     model_id = getattr(runtime.chat_model, "model_name", None) or config.CHAT_MODEL
@@ -85,7 +85,7 @@ async def run_turn(
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=turn_id,
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
-                          document_id=document_id)
+                          document_id=document_id, overlay_guest=overlay_guest)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         
@@ -115,7 +115,7 @@ async def run_turn(
                         for node in data:
                             yield TurnEvent("progress", {"step": PROGRESS.get(node, "thinking")})
             answer = state["answer"]
-            for event in _unvalidated_events(session, tenant_id, state.get("unvalidated", [])):
+            for event in _unvalidated_events(session, tenant_id, state.get("unvalidated", []), overlay_guest):
                 yield event
             notices = state.get("system_notices", [])
             if answer.refused and notices:

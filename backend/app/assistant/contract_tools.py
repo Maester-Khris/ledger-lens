@@ -39,7 +39,7 @@ def _get_contract_fields(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, FieldsArgs)
     if (blocked := scope_violation(ctx, args.document_id)) is not None:
         return blocked
-    served = contracts_dao.served_fields(ctx.session, ctx.tenant_id, args.document_id)
+    served = contracts_dao.served_fields(ctx.session, ctx.tenant_id, args.document_id, ctx.overlay_guest)
     if served is None:
         return ToolOutcome(json.dumps({"error": "This contract hasn't been extracted yet."}))
     element_ids = {i for f in served.fields.values() for i in f.element_ids}
@@ -57,7 +57,7 @@ def _compare(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     if (blocked := scope_violation(ctx, args.document_id)) is not None:
         return blocked
     try:
-        comparison = compare_contract_to_billing(ctx.session, tenant_id=ctx.tenant_id, document_id=args.document_id, as_of=args.as_of)
+        comparison = compare_contract_to_billing(ctx.session, tenant_id=ctx.tenant_id, document_id=args.document_id, as_of=args.as_of, overlay_guest=ctx.overlay_guest)
     except ContractNotComparable as exc:
         return ToolOutcome(json.dumps({"error": exc.detail}), system_notice=exc.detail)
     payload = comparison_to_json(comparison) | {"cite_as": RESULT_KEY}
