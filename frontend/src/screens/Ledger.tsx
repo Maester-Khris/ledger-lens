@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useDemoMode } from '../lib/useDemoMode';
 import { Link, useSearchParams } from 'react-router';
 import { type PostingPage, type PostingSourceDto, type ToolInvocationDto, listPostings, listToolInvocations, reversePosting } from '../api';
 import { CheckIcon, LockIcon, SearchIcon } from '../components/Icons';
@@ -118,6 +119,7 @@ function ReverseAction({ posting, onReversed }: ReverseActionProps) {
 }
 
 export function Ledger() {
+  const demoMode = useDemoMode();
   const [searchParams] = useSearchParams();
   const [postings, setPostings] = useState<PostingView[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -400,6 +402,10 @@ export function Ledger() {
                   <Link to={`/ledger?posting=${selected.reverses}`} onClick={() => setSelectedId(selected.reverses)}>
                     Reverses {selected.reverses?.slice(0, 8)} →
                   </Link>
+                ) : demoMode ? (
+                  <p className="ledger__help">
+                    Reversals are off in the public demo: the ledger is append-only, so a public reversal would stay forever.
+                  </p>
                 ) : (
                   <ReverseAction
                     key={selected.id}

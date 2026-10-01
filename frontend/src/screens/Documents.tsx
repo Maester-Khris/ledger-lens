@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { useDemoMode } from '../lib/useDemoMode';
 import { Link } from 'react-router';
 import {
   type DocumentDetail,
@@ -103,6 +104,7 @@ function UsedBy({ invocations }: UsedByProps) {
 }
 
 export function Documents() {
+  const demoMode = useDemoMode();
   const [filter, setFilter] = useState<Filter>('all');
   const [summaries, setSummaries] = useState<DocumentSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -196,24 +198,30 @@ export function Documents() {
               text-embedding-3-small
             </p>
           </div>
-          <div className="documents__upload">
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={(e) => void onUpload(e.target.files?.[0])}
-            />
-            <button type="button" className="btn btn-primary" onClick={() => fileInput.current?.click()}>
-              <UploadIcon size={14} /> Upload document
-            </button>
-            <span className="mono">PDF with a text layer · scanned files are rejected</span>
-            {error && (
-              <span className="mono documents__status-note--error" role="alert">
-                {error}
-              </span>
-            )}
-          </div>
+          {demoMode ? (
+            <div className="documents__upload">
+              <span className="mono">Uploads are off in the public demo.</span>
+            </div>
+          ) : (
+            <div className="documents__upload">
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/pdf"
+                hidden
+                onChange={(e) => void onUpload(e.target.files?.[0])}
+              />
+              <button type="button" className="btn btn-primary" onClick={() => fileInput.current?.click()}>
+                <UploadIcon size={14} /> Upload document
+              </button>
+              <span className="mono">PDF with a text layer · scanned files are rejected</span>
+              {error && (
+                <span className="mono documents__status-note--error" role="alert">
+                  {error}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="documents__filters">

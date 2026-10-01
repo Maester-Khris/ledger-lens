@@ -96,6 +96,11 @@ export async function guestHeaders(): Promise<Record<string, string>> {
   try { return { 'X-Guest-Id': await guestId() }; } catch { return {}; }
 }
 
+/** GET with the guest header: in the public demo the API merges this guest's own decisions into the answer. */
+async function getWithGuest<T>(url: string): Promise<T> {
+  return fetch(url, { headers: await guestHeaders() }).then((r) => json<T>(r));
+}
+
 async function json<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const problem = (await response.json().catch(() => ({}))) as { detail?: string };
@@ -299,7 +304,7 @@ export function listToolInvocations(options: ListInvocationsOptions = {}): Promi
     limit: options.limit,
     session_id: options.sessionId,
   });
-  return fetch(url).then((r) => json<ToolInvocationDto[]>(r));
+  return getWithGuest<ToolInvocationDto[]>(url);
 }
 
 export function decideToolInvocation(
@@ -313,7 +318,7 @@ export function decideToolInvocation(
 }
 
 export function listReviews(): Promise<ReviewItemDto[]> {
-  return fetch(`${API_BASE}/reviews`).then((r) => json<ReviewItemDto[]>(r));
+  return getWithGuest<ReviewItemDto[]>(`${API_BASE}/reviews`);
 }
 
 export function submitReview(input: ReviewSubmission): Promise<void> {
@@ -349,6 +354,7 @@ export type ConfigDto = {
   vector_store: string;
   retrieval: { search_candidates: number; min_dense_similarity: number };
   eval_config_hash: string;
+  demo_mode: boolean;
 };
 export type StatsDto = {
   documents: { total: number; indexed: number; processing: number; failed: number; indexed_chunks: number };
@@ -362,7 +368,7 @@ export type StatsDto = {
 };
 
 export async function getStats(): Promise<StatsDto> {
-  return fetch(`${API_BASE}/stats`).then((r) => json<StatsDto>(r));
+  return getWithGuest<StatsDto>(`${API_BASE}/stats`);
 }
 
 let cachedConfig: Promise<ConfigDto> | null = null;
@@ -392,7 +398,7 @@ export interface TermsDto {
 }
 
 export function getTerms(documentId: string): Promise<TermsDto> {
-  return fetch(`${API_BASE}/documents/${documentId}/terms`).then((r) => json<TermsDto>(r));
+  return getWithGuest<TermsDto>(`${API_BASE}/documents/${documentId}/terms`);
 }
 
 export interface TimelineItemDto {
@@ -404,5 +410,5 @@ export interface TimelineItemDto {
 }
 
 export function getTimeline(documentId: string): Promise<TimelineItemDto[]> {
-  return fetch(`${API_BASE}/documents/${documentId}/timeline`).then((r) => json<TimelineItemDto[]>(r));
+  return getWithGuest<TimelineItemDto[]>(`${API_BASE}/documents/${documentId}/timeline`);
 }
