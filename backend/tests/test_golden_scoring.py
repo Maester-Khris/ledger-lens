@@ -1,4 +1,4 @@
-from tests.eval.test_golden import gate_failures, score_case, summarise
+from tests.eval.test_golden import gate_failures, questions, score_case, session_id, summarise
 
 NOTICE = {"kind": "system", "source": "billing records", "detail": "d"}
 NO_SUPPORT = {"kind": "system", "source": "indexed contracts", "detail": "d"}
@@ -48,3 +48,11 @@ def test_the_gate_fails_on_any_over_refusal_a_weak_category_or_a_low_overall_rat
     weak = good[:1] + [_result("nonsense", "answer", ok=False)] * 3 + good[4:]
     failures = gate_failures(summarise(weak))
     assert any(f.startswith("nonsense") for f in failures) and any("overall" in f for f in failures)
+
+
+def test_a_case_asks_its_setup_questions_first_in_a_session_no_other_run_shares():
+    case = {"id": "repeat", "question": "Remind me?", "setup": ["What is the fee?"]}
+    assert questions(case) == ["What is the fee?", "Remind me?"]
+    assert questions({"id": "plain", "question": "Q?"}) == ["Q?"]
+    assert session_id("ab12cd34", case) == "eval-ab12cd34-repeat"
+    assert session_id("ffff0000", case) != session_id("ab12cd34", case)

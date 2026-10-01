@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import time
+import uuid
 from decimal import Decimal
 from pathlib import Path
 
@@ -19,6 +20,19 @@ from app.ledger.types import DEMO_TENANT_ID
 
 CASES = json.loads((Path(__file__).parent / "golden.json").read_text())
 REPORTS = Path(__file__).resolve().parents[2] / "reports"
+# The service feeds a session's last turns back as history, so session ids must not be reused across runs.
+RUN_ID = uuid.uuid4().hex[:8]
+# The provider's tokens-per-minute limit, not the code, was behind the 56–59 s turns: pace the cases.
+PAUSE_SECONDS = float(os.environ.get("EVAL_PAUSE_SECONDS", "5"))
+
+
+def session_id(run_id: str, case: dict) -> str:
+    return f"eval-{run_id}-{case['id']}"
+
+
+def questions(case: dict) -> list[str]:
+    """Optional "setup" questions are asked first in the same session (results discarded), then the scored question."""
+    return [*case.get("setup", []), case["question"]]
 
 
 def _normal(number: str) -> str:
@@ -80,15 +94,17 @@ def _run(case: dict) -> dict:
     # The session-scoped `document_settings` fixture overwrites config.PII_HMAC_KEY/PII_VAULT_KEY
     # with random per-run keys for hermetic unit tests. This eval decrypts real vault rows written
     # by a real ingestion run, so it needs the real keys from the environment, not the patched ones.
-    async def go(session_id: str):
+    async def go(question: str):
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
-                                          session_id=session_id, message=case["question"],
+                                          session_id=session_id(RUN_ID, case), message=question,
                                           hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"])]
-    final = asyncio.run(go(f"eval-{case['id']}"))[-1]
-    retried = final.type == "error"
-    if retried:  # a provider error (rate limit) says nothing about behaviour: wait out the per-minute window, try once more
-        time.sleep(65)
-        final = asyncio.run(go(f"eval-{case['id']}-retry"))[-1]
+    retried = False
+    for question in questions(case):  # only the last one (the case's own question) is scored
+        final = asyncio.run(go(question))[-1]
+        if final.type == "error":  # a provider error (rate limit) says nothing about behaviour: wait out the
+            retried = True         # per-minute window and ask once more, in the same session
+            time.sleep(65)
+            final = asyncio.run(go(question))[-1]
     return score_case(case, final.type, final.data) | {
         "answer": final.data.get("text"), "citations": final.data.get("citations", []),
     } | ({"retried": True} if retried else {})
@@ -97,15 +113,20 @@ def _run(case: dict) -> dict:
 @pytest.mark.eval
 def test_golden_set():
     print(f"eval target: db={str(config.DATABASE_URL).rsplit('/', 1)[-1]} index={config.PINECONE_INDEX} "
-          f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()}")
-    results = [_run(case) for case in CASES]
+          f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()} run={RUN_ID}")
+    results = []
+    for position, case in enumerate(CASES):
+        if position:
+            time.sleep(PAUSE_SECONDS)
+        results.append(_run(case))
     config_hash = eval_config_hash()
     summary = summarise(results)
     REPORTS.mkdir(exist_ok=True)
     relevance = sorted(REPORTS.glob("relevance-*.json"), key=lambda p: p.stat().st_mtime)
     report = REPORTS / f"eval-{config_hash}.json"
     report.write_text(json.dumps({
-        "config_hash": config_hash, "chat_model": config.CHAT_MODEL, "min_dense_similarity": config.MIN_DENSE_SIMILARITY,
+        "config_hash": config_hash, "run_id": RUN_ID, "chat_model": config.CHAT_MODEL,
+        "min_dense_similarity": config.MIN_DENSE_SIMILARITY,
         "relevance_report": relevance[-1].name if relevance else None, "summary": summary, "results": results,
     }, indent=2))
     print(json.dumps(summary, indent=2), f"\nreport: {report}")
