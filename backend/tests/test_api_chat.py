@@ -219,17 +219,53 @@ def test_a_clarifying_question_streams_clarify_and_is_stored_as_clarified(client
     ])
     _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
     kind, data = _events(client.post("/chat", json={"session_id": "s-c", "message": "Is it allowed?"}))[-1]
-    assert (kind, data) == ("clarify", {"text": "Which contract do you mean: Tremblay or Calamos?", "citations": []})
+    assert kind == "clarify" and data["citations"] == []
+    assert data["text"].startswith("I need a little more to go on.")
+    assert "Which contract do you mean: Tremblay or Calamos?" not in data["text"]  # the wording is the service's
     turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-c")).one()
-    assert turn.outcome is ChatOutcome.clarified
+    assert turn.outcome is ChatOutcome.clarified and turn.answer_redacted == data["text"]
 
 
-def test_a_clarification_with_figures_is_refused(client, session_factory, tenant_id):
-    figure = Answer(text="Do you mean the 30-day notice?", citations=[], refused=False, clarification=True)
-    model = ScriptedChatModel(replies=[AIMessage(content="no tool needed"), figure, figure])  # both attempts fail the check
+def test_the_models_clarification_text_is_never_shown(client, session_factory, tenant_id):
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="no tool needed"),
+        Answer(text="Do you mean the 30-day notice?", citations=[], refused=False, clarification=True),
+    ])
     _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
     kind, data = _events(client.post("/chat", json={"session_id": "s-f", "message": "Is it allowed?"}))[-1]
-    assert kind == "refused" and data["text"] == NO_EVIDENCE_MESSAGE  # nothing was retrieved
+    assert kind == "clarify" and "30" not in data["text"]
+
+
+def test_a_scoped_clarification_names_only_that_contract(client, session_factory, db_session, tenant_id):
+    from app.assistant.service import CLARIFY_SCOPED
+    version = parsed_version(db_session, tenant_id, key="scoped-a")
+    parsed_version(db_session, tenant_id, key="scoped-b")  # a second contract that must not be named
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="no tool needed"),
+        Answer(text="", citations=[], refused=False, clarification=True),
+    ])
+    _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
+    body = {"session_id": "s-sc", "message": "Is it allowed?", "document_id": str(version.document_id)}
+    kind, data = _events(client.post("/chat", json=body))[-1]
+    assert kind == "clarify" and data["text"] == CLARIFY_SCOPED.format(title="Tremblay IMA")
+
+
+SYSTEM_REASON = {"id": "system", "kind": "system", "source": "indexed contracts",
+                 "detail": "No passage in the indexed contracts supports an answer to this question."}
+
+
+def test_step_limit_and_timeout_refusals_carry_the_system_reason(client, session_factory, db_session, tenant_id, monkeypatch):
+    model = ScriptedChatModel(replies=[AIMessage(content="no tool needed")])
+    _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
+    monkeypatch.setattr("app.assistant.service.RECURSION_LIMIT", 1)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-limit", "message": "Anything?"}))[-1]
+    assert kind == "refused" and "step limit" in data["text"] and data["citations"] == [SYSTEM_REASON]
+    assert db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-limit")).one().citations == [SYSTEM_REASON]
+    monkeypatch.setattr(config, "CHAT_TURN_TIMEOUT_SECONDS", 0)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-slow", "message": "Anything?"}))[-1]
+    assert kind == "refused" and "too long" in data["text"] and data["citations"] == [SYSTEM_REASON]
+    turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-slow")).one()
+    assert turn.outcome is ChatOutcome.timed_out and turn.citations == [SYSTEM_REASON]
 
 
 def test_a_blank_message_is_rejected(client):

@@ -35,9 +35,8 @@ def test_a_figure_after_a_reference_is_still_checked():
     assert verify_answer("Tier 2 is 2%.", ["e1"], SOURCES, refused=False) == ["number 2 does not appear in any cited source"]
 
 
-def test_a_clarifying_question_passes_without_citations_but_not_with_figures():
+def test_a_clarification_is_not_checked_because_its_text_is_discarded():
     assert verify_answer("Which contract do you mean, Tremblay or Calamos?", [], {}, refused=False, clarification=True) == []
-    assert verify_answer("Do you mean the 30-day notice?", [], {}, refused=False, clarification=True) == [
-        "a clarifying question must not state figures"]
+    assert verify_answer("Do you mean the 30-day notice?", [], {}, refused=False, clarification=True) == []
     assert verify_answer("It is 30 days.", [], {}, refused=False) == ["the answer cites nothing"]
 

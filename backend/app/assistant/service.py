@@ -31,6 +31,11 @@ PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "ver
 SYSTEM_CITATION_ID = "system"
 NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
 NO_SUPPORT_DETAIL = "No passage in the indexed contracts supports an answer to this question."
+CLARIFY_UNSCOPED = ("I need a little more to go on. Which contract do you mean, and what would you like to know "
+                    "about it? Indexed contracts: {titles}.")
+CLARIFY_SCOPED = "I need a little more to go on. What would you like to know about {title}?"
+CLARIFY_NO_DOCUMENTS = "I need a little more to go on. What would you like to know?"
+MAX_CLARIFY_TITLES = 4
 
 
 @dataclass(frozen=True)
@@ -62,6 +67,21 @@ def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: li
         if fields:
             events.append(TurnEvent("unvalidated", {"document_id": document_id, "title": view.title, "fields": fields}))
     return events
+
+
+def _clarifying_question(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID | None) -> str:
+    """P4: the model only decides to ask; the wording is fixed (it left the text empty 5 times in 6 in the eval)."""
+    titles = sorted(r.document.title for r in documents_dao.list_documents(session, tenant_id)
+                    if document_id is None or r.document.id == document_id)[:MAX_CLARIFY_TITLES]
+    if not titles:
+        return CLARIFY_NO_DOCUMENTS
+    if document_id is not None:
+        return CLARIFY_SCOPED.format(title=titles[0])
+    return CLARIFY_UNSCOPED.format(titles="; ".join(titles))
+
+
+def _no_support_citation() -> dict:
+    return {"id": SYSTEM_CITATION_ID, "kind": "system", "source": "indexed contracts", "detail": NO_SUPPORT_DETAIL}
 
 
 async def run_turn(
@@ -132,16 +152,15 @@ async def run_turn(
             if answer.refused:
                 # P4: every refusal but N11 is fixed text plus a system reason; the model's own wording is never shown.
                 text = FAILED_VERIFICATION_MESSAGE if answer.text == FAILED_VERIFICATION_MESSAGE else NO_EVIDENCE_MESSAGE
-                citation = {"id": SYSTEM_CITATION_ID, "kind": "system", "source": "indexed contracts",
-                            "detail": NO_SUPPORT_DETAIL}
+                citation = _no_support_citation()
                 record.update(answer_redacted=text, citations=[citation])
                 outcome = ChatOutcome.refused
                 yield TurnEvent("refused", {"text": text, "citations": [citation]})
                 return
             if answer.clarification:
-                record.update(answer_redacted=answer.text, citations=[])
+                text = _clarifying_question(session, tenant_id, document_id)
+                record.update(answer_redacted=text, citations=[])
                 outcome = ChatOutcome.clarified
-                [text] = documents_dao.reveal(session, tenant_id, [answer.text], vault_key)
                 yield TurnEvent("clarify", {"text": text, "citations": []})
                 return
             cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
@@ -152,10 +171,14 @@ async def run_turn(
             yield TurnEvent("answer", {"text": text, "citations": shown})
         except TimeoutError:
             outcome = ChatOutcome.timed_out
-            yield TurnEvent("refused", {"text": "That took too long; please try a narrower question.", "citations": []})
+            record["citations"] = [_no_support_citation()]
+            yield TurnEvent("refused", {"text": "That took too long; please try a narrower question.",
+                                        "citations": record["citations"]})
         except GraphRecursionError:
             outcome = ChatOutcome.refused
-            yield TurnEvent("refused", {"text": "I couldn't settle on an answer within my step limit.", "citations": []})
+            record["citations"] = [_no_support_citation()]
+            yield TurnEvent("refused", {"text": "I couldn't settle on an answer within my step limit.",
+                                        "citations": record["citations"]})
         except Exception:  # the client gets a generic error; the details stay in the logs and the audit row
             logger.exception("chat turn failed")
             outcome = ChatOutcome.error
