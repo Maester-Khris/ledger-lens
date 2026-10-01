@@ -48,6 +48,11 @@ P4 makes every one of these an explicit, measured behaviour, without adding a mo
 | D6 | Refusals are explicit and system-credited: fixed text + a `system` citation | Show the model's wording (varies; can't be counted consistently) |
 | D7 | Go/no-go gate (option A): over-refusal = 0; junk acceptable ≥ 90% overall and ≥ 75% per category | Looser 80% with no per-category floor (a whole category can fail unseen); record only (an unenforced threshold is not a control, NIST GV-1.3-002) |
 | D8 | Tighten what exists in place (approach 1) | Pre-retrieval classifier (another call or ruleset per turn; the research treats scope rails as soft); reranker (D1) |
+| D9 | *(amended 2026-10-01, first gate run)* A clarifying question's text is deterministic: the model only sets `clarification`; the service writes the text from the indexed contract titles | Model-written question (it left the text empty in 5 of 6 clarifications in the first gate run; a figure check on free text is then needed) |
+| D10 | *(amended)* Strict answers: never assert that something does not exist, is not charged or does not apply; a question about something no source mentions is refused, not answered with related facts | Allow "the contract does not charge X" (a source not mentioning a thing is not evidence about it; this is how out-of-corpus questions were answered through the fields tool) |
+| D11 | *(amended)* `nonsense` accepts a clarification or a refusal; `nonsense-keywords` is replaced by real nonsense ("Fee the banana tier of seven moons") | Refusal only (asking what the guest means is a reasonable reply to gibberish); keep "fee fee fee" (a fee summary is a defensible reading of it, so it is not nonsense) |
+| D12 | *(amended)* The agent looks contracts up instead of asking which one (topic named, no contract: `list_documents`, then each contract, at most four) and stops calling tools after two empty searches in a row | Clarify when no contract is named (over-refusal of "What is the management fee?"); unbounded searching (step-limit refusals) |
+| D13 | *(amended)* Step-limit and timeout refusals carry the same `system` citation as every other refusal; their texts are unchanged | No citation on those two paths (inconsistent with D6) |
 
 ## 4. Retrieval gate (§ applies to the `search_contracts` tool only)
 
@@ -91,11 +96,17 @@ case gains an optional `"retrieval": true` flag to mark it (§7); the calibratio
 ### 6.2 Prompt (`app/assistant/prompts/answer_v1.md`)
 Add three rules (wording finalised in the plan; changing the file changes `prompt_version()` automatically):
 1. State only what a cited passage or tool result explicitly says. If nothing explicitly supports an answer, set
-   `refused` to true.
+   `refused` to true. *Amended 2026-10-01 (D10):* never say that something does not exist, is not charged or does not
+   apply; if the question asks about a term, fee, party or event that no source mentions, refuse instead of answering
+   with related facts.
 2. If the question names no contract and the chat is not scoped to one, and passages from several contracts answer it,
    answer per contract (at most four), citing each part.
-3. If the question is too vague to search or answer, ask exactly one clarifying question that names the indexed
-   contracts, set `clarification` to true, cite nothing, and include no figures.
+3. If the question is too vague to search or answer, set `clarification` to true and leave `text` empty
+   (*amended 2026-10-01, D9*: the clarifying question is written by the service, §6.5).
+
+The agent prompt (`agent_v1.md`) gains two rules (*amended 2026-10-01, D12*): when the question names a topic but no
+contract, call `list_documents` and look the topic up in each contract (at most four) instead of asking which one; and
+stop calling tools after two searches in a row return nothing.
 
 ### 6.2a The answer model also runs when nothing was retrieved (*amended 2026-10-01, plan*)
 Today the graph's `answer` node returns the no-evidence refusal without calling the model when there are no sources, so
@@ -105,8 +116,8 @@ turn retrieved nothing (else `FAILED_VERIFICATION_MESSAGE`). Cost: one model cal
 bounded by the P3 rate limit.
 
 ### 6.3 Output check (`app/assistant/citations.py`, `verify_answer`)
-Signature gains `clarification: bool`. A clarification with no numbers passes with no citations; a clarification that
-contains any number fails with "a clarifying question must not state figures". Everything else is unchanged.
+Signature gains `clarification: bool`. *Amended 2026-10-01 (D9):* a clarification always passes, because its text is
+written by the service and the model's text is discarded. Everything else is unchanged.
 
 ### 6.4 Explicit, system-credited refusals (`app/assistant/service.py`)
 - The not-comparable path (N11) is unchanged.
@@ -119,6 +130,9 @@ contains any number fails with "a clarifying question must not state figures". E
 
 ### 6.5 Clarifying questions
 - `run_turn` yields `TurnEvent("clarify", {"text": ..., "citations": []})` when `answer.clarification` is true.
+- *Amended 2026-10-01 (D9):* the text is fixed wording written by the service, never the model's: it names the indexed
+  contracts (at most four titles) when the chat is not scoped, only the scoped contract when it is, and neither when
+  nothing is indexed. The same text is stored as the turn's answer.
 - New `ChatOutcome.clarified`. Migration `0014_chat_outcome_clarified`:
   `ALTER TYPE chat_outcome ADD VALUE IF NOT EXISTS 'clarified'`; downgrade is a documented no-op (Postgres cannot drop
   an enum value), which keeps the upgrade/downgrade/upgrade round-trip test green. No new grant: `ledger_demo` already
@@ -164,21 +178,23 @@ arbitration, minimum account, increase, cryptocurrency, rebate, soft dollar, Mar
 | under-other-one | underspecified | clarify | What does the other one say? |
 | nonsense-keys | nonsense | refuse | asdjkl123 |
 | nonsense-purple | nonsense | refuse | How do I turn purple into time? |
-| nonsense-keywords | nonsense | refuse | fee fee fee |
+| nonsense-keywords | nonsense | refuse | Fee the banana tier of seven moons |
 | nonsense-marks | nonsense | refuse | ????? |
 | off-weather | off_topic | refuse | What's the weather in Montreal today? |
 | off-poem | off_topic | refuse | Write me a poem about the ocean. |
 | off-world-cup | off_topic | refuse | Who won the 2022 World Cup? |
 | off-capital | off_topic | refuse | What is the capital of Japan? |
 
-`nonsense-keywords` is the regression case for D2 (keyword-only junk). For `underspecified`, a refusal also counts as
-acceptable (§7.3).
+*Amended 2026-10-01 (D11):* `nonsense-keywords` was "fee fee fee"; the first gate run answered it with a fee summary
+through the fields tool, which is a defensible reading, so it is now real nonsense. The D2 regression (a keyword match
+alone does not open the gate) is covered by the unit test, not by a golden case. For `underspecified` and `nonsense`,
+a clarifying question or a refusal both count as acceptable (§7.3).
 
 ### 7.3 Metrics (`tests/eval/test_golden.py`)
 - Answerable (`answerable`, `explained`): today's `refusal_ok`, `citation_hit`, `numbers_ok`, plus **over-refusal** =
   share of `answerable` cases that were refused or clarified.
-- Junk: **acceptable** per case = refused for every category; refused or clarified for `underspecified`. Reported per
-  category and overall.
+- Junk: **acceptable** per case = refused for every category; refused or clarified for `underspecified` and
+  `nonsense` (*amended 2026-10-01, D11*). Reported per category and overall.
 - The report also records `MIN_DENSE_SIMILARITY` and the path of the latest relevance report.
 
 ### 7.4 Gate (D7)
@@ -195,6 +211,10 @@ threshold change; that is intended.)
 Not built. **Trigger:** the gate (§7.4) fails on `out_of_corpus` or `false_premise` after §6.2 lands. Then: an LLM check
 on (question, retrieved context) on the free-text search path only, with the cheaper model, before the single verified
 answer event (so streaming is not an issue); "insufficient" goes to the no-evidence refusal (§6.4).
+
+*Note, 2026-10-01:* the first gate run did fail on `out_of_corpus`, but both failing cases were answered from the
+validated-fields tool, not from free-text search, so the search-path check described here would not have covered them.
+D10 (strict answer prompt) targets that path first; this check stays deferred unless the gate still fails after D10.
 
 ## 9. Where calibration and eval run
 Against what guests use: `ENV_FILE=.env.demo` plus `backend/.env.demo.local` (local copy of the demo database,

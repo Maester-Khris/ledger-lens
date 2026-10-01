@@ -730,6 +730,32 @@ test('nonsense gets an explicit refusal with a system reason', async ({ page }) 
 5. After Railway and Vercel redeploy: `cd frontend && npm run test:e2e` (both tests).
 6. Tick P4 in `CHANGELOG.md` with the chosen threshold, the gate numbers and the report names; fix the "3 of 4 per category" wording in the P4 decisions block to "75% per category".
 
+## Post-gate amendments (2026-10-01)
+
+**First gate run** (threshold 0.46, hash `a1145be56726`, baseline report `backend/reports/eval-a1145be56726.json`): failed.
+Over-refusal 1/7 (`management-fee-unscoped` got a clarification with no tool call); junk acceptable 17/21;
+`out_of_corpus` 3/5 (`ooc-performance-fee` and `ooc-hurdle-rate` were answered from the fields tool with "does not
+charge / does not specify" plus related fee facts); `nonsense` 2/4 (`nonsense-keywords` "fee fee fee" answered with a
+fee summary from the fields tool; `nonsense-purple` clarified). Five of six clarifications had an empty text. Three
+refusals were step-limit refusals (`ooc-arbitration`, `fp-soft-dollar-rebate`, `fp-maryland-office`), which carried no
+system reason.
+
+**Fixes** (spec decisions D9–D13):
+
+1. `fix(assistant): fixed clarifying question, strict no-negative answers and stricter tool use` — the service writes the
+   clarifying question (`_clarifying_question`: unscoped names up to four indexed titles, scoped names that contract);
+   `verify_answer` no longer checks a clarification; the answer prompt forbids negative claims and tells the model to
+   leave a clarification's text empty; the agent prompt looks contracts up instead of asking and stops after two empty
+   searches; step-limit and timeout refusals carry the system citation (`_no_support_citation`).
+2. `test(eval): accept a clarification for nonsense and use real nonsense for the keyword case` — `nonsense-keywords`
+   becomes "Fee the banana tier of seven moons"; `score_case` accepts a clarification or a refusal for `nonsense`; the
+   end-to-end junk test accepts "No answer" or "Clarifying question" and asserts there are no answer citations.
+3. This amendment, with the pre-fix baseline report.
+
+The prompt changes give a new config hash, so the gate is re-run and reported under it. Tasks 2 and 3 above describe
+the code as first built; where they differ from this section (the figure check on clarifications, the model-written
+clarifying question, the Task 4 `nonsense-keywords` question), this section is current.
+
 ## Definition of done
 
 Tasks 1–5 committed and reviewed; Task 6's calibration report and passing eval gate recorded; migration 0014 applied on Railway; both end-to-end tests green on the deployed demo; P4 ticked.
