@@ -3,6 +3,7 @@ Run (from backend/): ENV_FILE=.env.demo $PYDEV/bin/pytest -m eval tests/eval -s"
 import asyncio
 import json
 import os
+import time
 from decimal import Decimal
 from pathlib import Path
 
@@ -79,14 +80,18 @@ def _run(case: dict) -> dict:
     # The session-scoped `document_settings` fixture overwrites config.PII_HMAC_KEY/PII_VAULT_KEY
     # with random per-run keys for hermetic unit tests. This eval decrypts real vault rows written
     # by a real ingestion run, so it needs the real keys from the environment, not the patched ones.
-    async def go():
+    async def go(session_id: str):
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
-                                          session_id=f"eval-{case['id']}", message=case["question"],
+                                          session_id=session_id, message=case["question"],
                                           hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"])]
-    final = asyncio.run(go())[-1]
+    final = asyncio.run(go(f"eval-{case['id']}"))[-1]
+    retried = final.type == "error"
+    if retried:  # a provider error (rate limit) says nothing about behaviour: wait out the per-minute window, try once more
+        time.sleep(65)
+        final = asyncio.run(go(f"eval-{case['id']}-retry"))[-1]
     return score_case(case, final.type, final.data) | {
         "answer": final.data.get("text"), "citations": final.data.get("citations", []),
-    }
+    } | ({"retried": True} if retried else {})
 
 
 @pytest.mark.eval

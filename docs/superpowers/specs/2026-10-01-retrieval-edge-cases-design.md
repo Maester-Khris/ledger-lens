@@ -24,8 +24,8 @@ P4 makes every one of these an explicit, measured behaviour, without adding a mo
 
 ## 2. Success criteria
 
-1. A question whose only link to the corpus is a shared keyword (e.g. "fee fee fee") gets the explicit
-   no-evidence refusal, not an answer.
+1. A question whose only link to the corpus is that all its words appear in one passage (unit-tested in
+   `tests/test_retrieval_search.py`) gets the explicit no-evidence refusal, not an answer.
 2. Every refusal shows fixed text and a `system` citation card; the model's own refusal wording is never shown.
 3. A question too vague to search gets exactly one clarifying question naming the indexed contracts; it is stored as
    outcome `clarified` and never contains figures.
@@ -53,6 +53,7 @@ P4 makes every one of these an explicit, measured behaviour, without adding a mo
 | D11 | *(amended)* `nonsense` accepts a clarification or a refusal; `nonsense-keywords` is replaced by real nonsense ("Fee the banana tier of seven moons") | Refusal only (asking what the guest means is a reasonable reply to gibberish); keep "fee fee fee" (a fee summary is a defensible reading of it, so it is not nonsense) |
 | D12 | *(amended)* The agent looks contracts up instead of asking which one (topic named, no contract: `list_documents`, then each contract, at most four) and stops calling tools after two empty searches in a row | Clarify when no contract is named (over-refusal of "What is the management fee?"); unbounded searching (step-limit refusals) |
 | D13 | *(amended)* Step-limit and timeout refusals carry the same `system` citation as every other refusal; their texts are unchanged | No citation on those two paths (inconsistent with D6) |
+| D14 | *(amended 2026-10-01, second gate run)* Absence claims ("does not charge X", "there is no X", "no X applies") are rejected by the deterministic output check unless a cited source says the same words; a pattern list in `citations.py` | Prompt rule alone (D10 failed twice in the second gate run); the §8 LLM check now (it remains the upgrade path when a rephrasing slips past the patterns) |
 
 ## 4. Retrieval gate (§ applies to the `search_contracts` tool only)
 
