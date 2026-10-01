@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app.assistant import dao as assistant_dao
-from app.errors import DecisionsClosed
+from app.errors import DecisionsClosed, GuestRequired
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 
@@ -52,3 +52,17 @@ def decisions_closed_in_demo() -> None:
     """Temporary (spec M1): replaced by require_overlay_guest in Task 5 (reviews) and Task 7 (tool decisions)."""
     if config.DEMO_MODE:
         raise DecisionsClosed("Decisions are not available in the public demo yet.")
+
+
+def get_overlay_guest(guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]) -> uuid.UUID | None:
+    """Reads: the guest whose overlay applies in the public demo. None (flag off, or no known guest) = shared view."""
+    return guest_id if config.DEMO_MODE else None
+
+
+def require_overlay_guest(guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)]) -> uuid.UUID | None:
+    """Decision writes: in the public demo a known guest is required. None (flag off) = today's real tables."""
+    if not config.DEMO_MODE:
+        return None
+    if guest_id is None:
+        raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to decide in the public demo.")
+    return guest_id

@@ -20,3 +20,11 @@ class DecisionsClosed(DomainError):
     status = 403
     type_slug = "decisions-closed-in-demo"
     title = "Decisions are not available in the public demo yet"
+
+
+class GuestRequired(DomainError):
+    """Demo mode: a decision needs a known guest, so it can never fall through to the shared tables."""
+
+    status = 400
+    type_slug = "guest-required"
+    title = "A known guest is required"
