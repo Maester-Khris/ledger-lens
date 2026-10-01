@@ -190,6 +190,12 @@ def _replay_or_reject(session: Session, request: PostingRequest, fingerprint: st
     )
 
 
+def check_posting(session: Session, request: PostingRequest) -> None:
+    """Run create_posting's own validation and write nothing: the public demo's approvals (spec D3).
+    Raises PostingInvalid exactly as create_posting would; the database's balance trigger is not exercised."""
+    _validate(request, _accounts_by_id(session, request))
+
+
 def create_posting(session: Session, request: PostingRequest) -> PostingResult:
     """Add a validated posting to the session's current transaction; call inside ledger_transaction.
 
