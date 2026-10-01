@@ -30,7 +30,7 @@ build order.
 - [x] `contracts` — P9 phase 1: per-guest field-review overlay merged into every reader of `field_reviews`, gated by `DEMO_MODE` (same spec as P2) → **Not epic-tracked** (guest-decision overlay, backlog P9) **Done 2026-10-01:** deployed check with two guests on one field: A confirmed, B rejected, the shared view still `needs_review`; a second decision by A answers 409; a decision without a guest answers 400.
 - [x] `governance` — P9 phase 2: per-guest tool-approval overlay, read-only `check_posting` (not a rolled-back posting), guest-scoped proposals, the guest's simulated entries in Ledger and timeline (same spec as P2) → **Not epic-tracked** (guest-decision overlay, backlog P9) **Done 2026-10-01:** `frontend/e2e/demo-approval.e2e.ts` (Playwright, `npm run test:e2e`) passes on `https://ledgerlens.nknext.dev`: upload hidden, the agent proposes a correction, "Approve (demo, not recorded)" ends in "Demo posting, not recorded", the Ledger lists it under "Your demo postings" with no reversal, a second visitor sees none of it; the database then held 1 guest approval, 0 real decisions, 0 AI postings.
 - [ ] `api` — P3 per-guest rate limit and provider spend caps (OpenAI, Pinecone, Railway), plus CORS locked to `FRONTEND_URL` (CORS itself is done, see P1; rate limit and spend caps still open) → **Not epic-tracked** (pre-launch triage, backlog P3) **Rate limit done 2026-10-01:** in demo mode `POST /chat` is capped per guest (10) and per client IP (30) per 10-minute sliding window (`CHAT_LIMIT_*`), 429 with `Retry-After`; the IP is the rightmost `X-Forwarded-For` entry, the one Railway's edge appends (forged entries to its left are ignored); in-process windows, correct for the single Railway instance. **Still open:** OpenAI and Pinecone spend caps and the Railway usage limit (dashboard settings).
-- [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found" → **Not epic-tracked** (pre-launch triage, backlog P4)
+- [ ] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found"  (spec `docs/superpowers/specs/2026-10-01-retrieval-edge-cases-design.md`) → **Not epic-tracked** (pre-launch triage, backlog P4)
 - [ ] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5)
 - [ ] `ops` — P6 Sentry on backend and frontend → **Epic 2.3** (backlog P6)
 - [ ] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7)
@@ -102,6 +102,26 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   counts are per guest; the Ledger reversal button is hidden.
 - **Purge:** `POST /guests` deletes overlay rows of guests not seen for 24 hours; `guests` rows are kept.
 - **Rollback:** `DEMO_MODE` off or `DATABASE_URL` back to `ledger_app`; the migration only adds.
+
+### P4 engineering decisions (settled 2026-10-01, from `artifacts/research/2026-10-01-rag-edge-cases.md`)
+
+- **Threshold:** keep one absolute cosine threshold (`MIN_DENSE_SIMILARITY`); a keyword (full-text) hit can no longer open
+  the gate on its own, and below-threshold dense hits are dropped before fusion. Recalibrated with a retrieval-only script
+  over answerable and junk cases: the highest value that keeps every answerable case, recorded in a report.
+- **No LLM sufficiency check now.** The existing deterministic output check (answer must cite; every number must appear in
+  what it cites) covers the riskiest failure; an extra model call per turn costs latency and spend. Trigger to add one: the
+  eval gate failing on `out_of_corpus` or `false_premise` after the prompt rule lands.
+- **Prompt rule:** state only what a cited passage or tool result explicitly says, otherwise refuse.
+- **Question without a contract named (chat not scoped):** answer per contract when the corpus has the answer (at most
+  four, each cited); ask one clarifying question only when the question is too vague to search (option A). Clarifying
+  questions are a new `clarify` event and a `clarified` chat outcome, and may not contain numbers.
+- **Refusals are explicit and system-credited:** fixed text plus a `system` citation, never the model's own wording.
+- **Evaluation:** golden set gains `category` and `expect` (answer / refuse / clarify) and 20 junk cases (4 each:
+  out-of-corpus, false premise, underspecified, nonsense, off-topic). Go/no-go gate (option A): zero over-refusal of
+  answerables, junk acceptable rate at least 90% overall and at least 3 of 4 per category. `eval_config_hash` gains the
+  threshold. Calibration and eval run against the live demo configuration.
+- **Not adopted:** a pre-retrieval classifier and a reranker (no evidence they are needed at four contracts).
+
 
 ### Reference
 
