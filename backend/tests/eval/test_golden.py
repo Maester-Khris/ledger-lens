@@ -91,6 +91,8 @@ def _run(case: dict) -> dict:
 
 @pytest.mark.eval
 def test_golden_set():
+    print(f"eval target: db={str(config.DATABASE_URL).rsplit('/', 1)[-1]} index={config.PINECONE_INDEX} "
+          f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()}")
     results = [_run(case) for case in CASES]
     config_hash = eval_config_hash()
     summary = summarise(results)
