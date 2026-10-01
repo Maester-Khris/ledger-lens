@@ -7,6 +7,7 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.demo import GUEST_DECIDED_BY
 from app.governance.types import ToolDecision
 from app.ledger.models import Base
 
@@ -45,3 +46,35 @@ class ToolInvocationDecision(Base):
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     posting_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("postings.id"), nullable=True)
+
+    @property
+    def recorded(self) -> bool:
+        """A real decision: an approval wrote a posting."""
+        return True
+
+
+class GuestToolDecision(Base):
+    """A demo guest's decision on a proposal (spec P2+P9): checked by the ledger, never posted, private to that guest."""
+
+    __tablename__ = "guest_tool_decisions"
+    __mapper_args__ = {"eager_defaults": True}
+
+    guest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    invocation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    approval_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    decision: Mapped[ToolDecision] = mapped_column(SAEnum(ToolDecision, name="tool_decision", native_enum=True), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decided_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+    @property
+    def decided_by(self) -> str:
+        return GUEST_DECIDED_BY
+
+    @property
+    def posting_id(self) -> None:
+        """Nothing is ever posted for a demo guest."""
+        return None
+
+    @property
+    def recorded(self) -> bool:
+        return False

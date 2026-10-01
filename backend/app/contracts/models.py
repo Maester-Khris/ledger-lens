@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.contracts.types import FieldRouting, ReviewDecision
+from app.demo import GUEST_DECIDED_BY
 from app.ledger.models import Base
 
 
@@ -49,3 +50,21 @@ class FieldReview(Base):
     decided_by: Mapped[str] = mapped_column(Text, nullable=False)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+
+class GuestFieldReview(Base):
+    """A demo guest's field review (spec P2+P9): private to that guest, purged after 24 hours of inactivity."""
+
+    __tablename__ = "guest_field_reviews"
+    __mapper_args__ = {"eager_defaults": True}
+    guest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    field_path: Mapped[str] = mapped_column(Text, primary_key=True)
+    decision: Mapped[ReviewDecision] = mapped_column(SAEnum(ReviewDecision, name="review_decision", native_enum=True), nullable=False)
+    corrected_value: Mapped[object | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decided_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+    @property
+    def decided_by(self) -> str:
+        return GUEST_DECIDED_BY

@@ -45,6 +45,12 @@ TEST_OWNER_DATABASE_URL = os.environ.get(
     f"postgresql+psycopg://ledger_owner:localdev@{_LOCAL}/ledger_test",
 )
 
+# The public demo's API role (grants in migration 0013), used by tests/test_demo_role.py.
+TEST_DEMO_DATABASE_URL = os.environ.get(
+    "TEST_DEMO_DATABASE_URL",
+    f"postgresql+psycopg://ledger_demo:localdev@{_LOCAL}/ledger_test",
+)
+
 MIGRATION_ROUNDTRIP_DATABASE_URL = os.environ.get(
     "MIGRATION_ROUNDTRIP_DATABASE_URL",
     f"postgresql+psycopg://ledger_owner:localdev@{_LOCAL}/ledger_migration_test",
