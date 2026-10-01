@@ -756,6 +756,24 @@ The prompt changes give a new config hash, so the gate is re-run and reported un
 the code as first built; where they differ from this section (the figure check on clarifications, the model-written
 clarifying question, the Task 4 `nonsense-keywords` question), this section is current.
 
+**Eval contamination (found after gate run 4).** The eval used the session id `eval-<case id>` on every run, and the
+service feeds a session's last four turns back as history. Runs 2–4 therefore each saw earlier runs' questions and
+answers; only run 1 was a clean measurement, and neither run 3's pass nor run 4's failure (over-refusal 2/7) is
+reliable. No report is kept for runs 3 or 4. The same mechanism is a product behaviour: a repeated question in one
+session could be answered from history with nothing valid to cite, and so refused.
+
+**The 56–59 s turns in run 3** were provider rate-limit backoff inside the OpenAI client (tokens-per-minute limit), not
+context size: the slow turn with recorded tokens used 12,831 input tokens, and the context cut was not applied.
+
+**Further fixes** (spec decisions D14–D16):
+
+4. `fix(assistant): refuse answers that assert something is absent, and don't look up pronoun-only questions` — a
+   deterministic absence-claim pattern in the output check; pronoun-only questions call no tool.
+5. `fix(assistant): give the graph enough steps to finish a refusal after a per-contract lookup` — `RECURSION_LIMIT` 16.
+6. `fix(eval): isolate each golden run, pace the turns, and support a setup question` — per-process run id in every
+   session id, a pause between cases, `setup` questions, and the `repeat-in-session` case.
+7. `fix(assistant): earlier turns are context for the question, never a source` — agent and answer prompts.
+
 ## Definition of done
 
 Tasks 1–5 committed and reviewed; Task 6's calibration report and passing eval gate recorded; migration 0014 applied on Railway; both end-to-end tests green on the deployed demo; P4 ticked.
