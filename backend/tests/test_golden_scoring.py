@@ -1,4 +1,4 @@
-from tests.eval.test_golden import gate_failures, questions, score_case, session_id, summarise
+from tests.eval.test_golden import expand, gate_failures, questions, score_case, session_id, summarise
 
 NOTICE = {"kind": "system", "source": "billing records", "detail": "d"}
 NO_SUPPORT = {"kind": "system", "source": "indexed contracts", "detail": "d"}
@@ -56,3 +56,10 @@ def test_a_case_asks_its_setup_questions_first_in_a_session_no_other_run_shares(
     assert questions({"id": "plain", "question": "Q?"}) == ["Q?"]
     assert session_id("ab12cd34", case) == "eval-ab12cd34-repeat"
     assert session_id("ffff0000", case) != session_id("ab12cd34", case)
+
+
+def test_a_scoped_case_is_asked_twice_the_second_time_limited_to_its_document():
+    plain = _case("answerable", "answer")
+    scoped = _case("answerable", "answer", scoped=True, expect_document="tremblay-ima") | {"id": "fee"}
+    assert [(c["id"], c.get("document_key")) for c in expand([plain, scoped])] == [
+        ("answerable-answer", None), ("fee", None), ("fee@scoped", "tremblay-ima")]

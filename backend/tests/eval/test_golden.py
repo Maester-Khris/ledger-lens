@@ -15,6 +15,7 @@ from app.assistant.citations import numbers_in
 from app.assistant.graph import prompt_version, eval_config_hash
 from app.assistant.runtime import get_runtime
 from app.assistant.service import run_turn
+from app.documents import dao as documents_dao
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 
@@ -33,6 +34,17 @@ def session_id(run_id: str, case: dict) -> str:
 def questions(case: dict) -> list[str]:
     """Optional "setup" questions are asked first in the same session (results discarded), then the scored question."""
     return [*case.get("setup", []), case["question"]]
+
+
+def expand(cases: list[dict]) -> list[dict]:
+    """Every case as written, then the ones marked "scoped" again with the chat limited to their document:
+    a guest who picked a document card asks that way, and the unscoped run never exercises it."""
+    return [*cases, *(c | {"id": f"{c['id']}@scoped", "document_key": c["expect_document"]} for c in cases if c.get("scoped"))]
+
+
+def _document_ids() -> dict[str, uuid.UUID]:
+    with SessionLocal() as session:
+        return {row.document.document_key: row.document.id for row in documents_dao.list_documents(session, DEMO_TENANT_ID)}
 
 
 def _normal(number: str) -> str:
@@ -90,14 +102,15 @@ def gate_failures(summary: dict) -> list[str]:
     return failures
 
 
-def _run(case: dict) -> dict:
+def _run(case: dict, document_ids: dict[str, uuid.UUID]) -> dict:
     # The session-scoped `document_settings` fixture overwrites config.PII_HMAC_KEY/PII_VAULT_KEY
     # with random per-run keys for hermetic unit tests. This eval decrypts real vault rows written
     # by a real ingestion run, so it needs the real keys from the environment, not the patched ones.
     async def go(question: str):
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
                                           session_id=session_id(RUN_ID, case), message=question,
-                                          hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"])]
+                                          hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"],
+                                          document_id=document_ids[case["document_key"]] if "document_key" in case else None)]
     retried = False
     for question in questions(case):  # only the last one (the case's own question) is scored
         final = asyncio.run(go(question))[-1]
@@ -115,10 +128,11 @@ def test_golden_set():
     print(f"eval target: db={str(config.DATABASE_URL).rsplit('/', 1)[-1]} index={config.PINECONE_INDEX} "
           f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()} run={RUN_ID}")
     results = []
-    for position, case in enumerate(CASES):
+    document_ids = _document_ids()
+    for position, case in enumerate(expand(CASES)):
         if position:
             time.sleep(PAUSE_SECONDS)
-        results.append(_run(case))
+        results.append(_run(case, document_ids))
     config_hash = eval_config_hash()
     summary = summarise(results)
     REPORTS.mkdir(exist_ok=True)
