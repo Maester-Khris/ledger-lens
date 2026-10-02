@@ -1,7 +1,7 @@
 # Answer Feedback and Document Context (P5 + P8) — Design
 
 **Date:** 2026-10-02 · **Branch:** `feat/pre-launch-demo` · **Backlog:** P5 and P8 (pre-launch sprint) · **Not epic-tracked**
-**Status:** approved in brainstorming 2026-10-02, pending written-spec review.
+**Status:** approved 2026-10-02; amended the same day while writing the plan (marked "Amended").
 **Input:** `artifacts/pre-launch-demo-design-sprint.md` (local, untracked). It is a plan with an empty results grid, so
 it supplies targets, not evidence. Section numbers (§) below refer to this spec.
 
@@ -49,7 +49,9 @@ Journey steps this must pass (design-sprint file): 2 (reads the document list), 
 | D8 | No read endpoint and no dashboard count; the operator reads by SQL. | Nothing guest-written is exposed; P7 joins this table by turn later. |
 | D9 | Descriptions live in `document_descriptions`, insert-only, filled by the migration. | `documents` has an append-only trigger that blocks the UPDATE a new column would need. |
 | D10 | Starters are a frontend constant keyed by `document_key`. | They are UI copy tied to the eval set, not data. |
-| D11 | Element citations carry `document_id`. | The viewer needs it; parsing it out of `file_url` would be fragile. |
+| D11 | Element citations carry `document_id`. **Amended:** the backend already sends it; only the frontend type is new. | The viewer needs it; parsing it out of `file_url` would be fragile. |
+| D14 | **Amended (pre-check finding):** the contract-fields tool sends the chat model only `rate_text` and `band_text` per tier, not the derived `rate_bps` and `up_to_minor`. | The model sometimes repeated "55 basis points"; no cited source contains that number, so the output check ended the turn in a refusal (1 to 3 of 4 attempts on fee-schedule starters). |
+| D15 | **Amended:** golden cases marked `"scoped": true` are also asked with the chat limited to their document. | A guest who picked a card asks that way, and the gate never tested it. |
 | D12 | No end-of-chat feedback prompt. | Optional in the backlog; revisit only if fewer than 2 of 5 testers give feedback. |
 | D13 | Railway steps go in both `backend/script.demo.md` and `backend/script.demo.sh`. | The operator runbook must match the schema (both files are local, never committed). |
 
@@ -64,7 +66,7 @@ CREATE TABLE chat_feedback (
   turn_id uuid NOT NULL REFERENCES chat_turns(id),
   guest_id uuid NOT NULL REFERENCES guests(id),
   rating feedback_rating NOT NULL,
-  comment_redacted text NULL CONSTRAINT ck_chat_feedback_comment_length CHECK (char_length(comment_redacted) <= 1000),
+  comment_redacted text NULL CONSTRAINT ck_chat_feedback_comment_length CHECK (char_length(comment_redacted) <= 4000),  -- Amended: the API accepts 1000; tokenising can lengthen it
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX ix_chat_feedback_turn ON chat_feedback (turn_id, created_at DESC);
@@ -134,8 +136,8 @@ Readers: `DocumentSummary` in `frontend/src/api.ts`, used by Chat, Documents and
 
 ### 5.4 Citations
 
-`assistant/tools.py` and `assistant/contract_tools.py` add `"document_id"` to each citation they build that has a
-`file_url`. Additive: stored citations of older turns lack it and are never reopened in the viewer.
+**Amended:** `assistant/tools.py` and `assistant/contract_tools.py` already put `"document_id"` in each element
+citation, so no backend change is needed.
 
 ## 6. Frontend
 
@@ -150,7 +152,8 @@ Readers: `DocumentSummary` in `frontend/src/api.ts`, used by Chat, Documents and
   `turnId` is set. `CitationCard` takes `onOpen?: () => void` and renders a button "Open page →" when the citation has
   `document_id`, `version` and `page`; the click sets the existing `viewer` state. The `<a target="_blank">` is removed
   (the viewer already has an "open in new tab" link).
-- **`lib/starters.ts` (new):** `STARTERS: Record<string, string[]>` keyed by `document_key`, and
+- **`lib/starters.json` and `lib/starters.ts` (new; Amended: the data is JSON so a backend test can read it):**
+  `STARTERS: Record<string, string[]>` keyed by `document_key`, and
   `startersFor(documents, scopeId)`: the selected document's list, or the first question of each ready document when
   none is selected. Replaces `SUGGESTED_QUESTIONS`. A document without an entry contributes nothing.
 - **`DocumentCards.tsx` and `Documents.tsx`:** show `description` under the title when present.
@@ -173,7 +176,7 @@ golden cases are reused verbatim; "new" ones are added to `golden.json`.
 | Voyageur | What rate applies to the Nomura Tax-Free Colorado Fund's assets in excess of $2.5 billion? | new |
 | Voyageur | How often is the management fee paid for the Nomura Tax-Free Colorado Fund? | new |
 
-Seven new golden cases bring the set to 37. A starter that fails the gate is reworded or replaced before shipping;
+Seven new golden cases bring the set to 37; with the scoped pass (D15) a gate run asks 49 questions. A starter that fails the gate is reworded or replaced before shipping;
 a starter is never shipped outside the golden set.
 
 ## 7. Testing
@@ -183,9 +186,11 @@ a starter is never shipped outside the golden set.
   stored as NULL; body over 1000 characters answers 422. Grants: as `ledger_demo`, INSERT succeeds and UPDATE and
   DELETE fail. Stream: every final event carries `turn_id` equal to the saved turn. Documents: the list returns the
   description, and `null` without one. Citations carry `document_id`.
-- **Frontend (vitest):** `startersFor` (unscoped, scoped, unknown key); `FeedbackControl` (click posts, comment posts
-  the same rating, failure message); `CitationCard` calls `onOpen` and renders no link without a page.
-- **Guard:** a test asserts every string in `STARTERS` appears in `golden.json` as an answerable retrieval case.
+- **Frontend (vitest). Amended:** the frontend has no DOM test setup and no new package is added, so the tests cover
+  pure functions: `startersFor` (unscoped, scoped, unknown key), `citationTarget` (no target without a page) and
+  `sendFeedback`. The control and the citation button are covered by the Playwright test.
+- **Guard:** a backend test asserts every starter in `starters.json` is an answerable, scoped retrieval case in
+  `golden.json`.
 - **End to end (Playwright):** one new test on the deployed site: pick a starter, get a cited answer, open the citation
   in the viewer, give a thumbs-up, add a comment.
 - **Eval gate:** two runs against the demo configuration after `golden.json` changes.
