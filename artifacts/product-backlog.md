@@ -534,6 +534,14 @@ rate, so the number can't be raised by weakening answers.
 - [ ] **X3** Latency and usage view: p50/p95, cohorts by day (feeds D8).
 - [ ] **X4** Small load test (~15 min) against the demo config with P3 on. Record the ceiling and check
       that pools and timeouts fail cleanly. The likely limit is LLM rate limits, not Railway workers.
+- [ ] **X5** Occasional refusal of an answerable question (found 2026-10-02, cause not traced: `calamos-first-tier`
+      with no document selected, 1 refusal in 2 gate runs, 10 of 10 when traced). Record each turn's tool calls and
+      verification result so a refusal can be explained afterwards; act only if guest feedback or the usage log shows
+      it matters.
+- [ ] **X6** A multi-contract answer that drops a section which failed verification does not tell the guest which
+      contract is missing. Add a fixed system line naming it (title from the record, not from the model).
+- [ ] **X7** A retry that ends in a refusal after sources were found says "I can't find that in the indexed
+      contracts". It should say the answer could not be verified.
 
 **Cut:** **C1** A/B testing (no traffic for significance; revisit at hundreds of sessions per week).
 **C2** Node-vs-Python throughput comparison (not the workload's bottleneck). **C3** A separate deployable

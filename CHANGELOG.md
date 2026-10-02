@@ -163,6 +163,37 @@ steps to pass (2, 3, 5, 8) and the "feedback in under 30 seconds" target.
 - **Operator runbook:** the migration's Railway steps go in both `backend/script.demo.md` (raw queries) and
   `backend/script.demo.sh` (subcommands); both stay local.
 
+### Answer-reliability findings from the starter pre-check (2026-10-02, fixed before P5 + P8 was built)
+
+Asking the new starter questions locally against the demo configuration showed that answerable questions were being
+refused some of the time. The P4 gate missed it: it asked each question once and never scoped to a document. Three
+causes were traced with the tool calls and the verification results logged, and fixed:
+
+- **Derived numbers in the tool output** (`d912986`). The contract-fields tool gave the model `rate_bps`; the model
+  sometimes wrote "0.55% (55 basis points)"; no cited source contains "55", so the output check rejected the answer and
+  the retry refused. The tool now sends only `rate_text` and `band_text`. Fee-schedule questions scoped to a document
+  were refused in 1 to 3 of 4 attempts before.
+- **Terse search queries under the relevance floor** (`cd6641b`). The agent rewrites a question into keywords ("fees",
+  "fee calculation"), which score 0.31 to 0.39 against a document whose passages score 0.68 for the full question; the
+  0.46 floor was calibrated on full questions, so the search returned nothing. Search now keeps a passage that is
+  relevant to the model's query or to the guest's own question. Junk questions still score under the floor.
+- **List numbering read as figures** (`f4bfa4f`, `d992d22`). Once every contract returned passages, "What is the
+  management fee?" was answered as a numbered list and the check rejected the markers 2, 3 and 4. Decision: a
+  multi-contract answer is a list of per-contract sections (a schema field), each checked against its own citations
+  only; the service adds each contract's title as the heading. If a section still fails after the retry, the verified
+  sections are answered and the failing one is dropped. Before this, the P4 runs passed that case on an answer covering
+  one contract of four.
+- **Eval harness** (`5b84509`): cases marked `"scoped": true` are asked a second time limited to their document; the
+  12 starter questions are golden cases (37 cases, 49 questions per run).
+- **Result under configuration `5bfdd62942f4`** (the answer prompt changed, so the hash did): run `5683f35b` 48 of 49
+  (one refusal), run `267ae961` 49 of 49 with junk 21 of 21. Reports: `backend/reports/eval-5bfdd62942f4*.json`.
+- **Known and accepted (decided 2026-10-02):** an answerable question is still refused occasionally. In run `5683f35b`
+  it was `calamos-first-tier`, asked with no document selected; the same question was answered 10 of 10 when traced, so
+  the cause is not known. No more tuning before real guests use the demo; P5 feedback and P7's usage log will show how
+  often it happens. The gate's zero-refusal rule therefore fails on some runs.
+- **Also seen:** the OpenAI account ran out of credits during a gate run (every turn then ends in `error`). The spend
+  cap and balance alert in P3 are still open.
+
 
 ### Reference
 

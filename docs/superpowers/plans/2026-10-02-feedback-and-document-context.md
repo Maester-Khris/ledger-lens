@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
+> **Status 2026-10-02:** Part A is done (commits `d912986`, `cd6641b`, `f4bfa4f`, `d992d22`, `5b84509`); see "Part A outcome" below. The executor starts at Task 3.
+>
 > **This project:** Claude runs Tasks 1–2 and Task 11. The executor (Gemini) does Tasks 3–10 in order and stops at each **REVIEW CHECKPOINT** with: the commit hash, the exact test/build/lint output, `git status`, and any deviation from the task. Do not start the next task until the checkpoint is approved.
 
 **Goal:** A demo guest can rate and comment on any reply, sees what each document is, gets starter questions that match the document they picked, and opens a citation inside the app.
@@ -194,6 +196,17 @@ Expected: the "eval target" line says `ledger_demo` / `contract-demo`; the gate 
 git add backend/tests/eval/test_golden.py backend/tests/eval/golden.json backend/tests/test_golden_scoring.py backend/reports
 git commit -m "test(eval): ask the starter questions scoped to their document, and add the new starters"
 ```
+
+---
+
+## Part A outcome (2026-10-02)
+
+Tasks 1 and 2 are committed. The gate runs found two more causes of refused answerables, fixed in Part A as well:
+search now scores passages against the guest's question as well as the model's query (`cd6641b`), and a multi-contract
+answer is a list of per-contract sections, with verified sections kept when one fails (`f4bfa4f`, `d992d22`). Gate
+under configuration `5bfdd62942f4`: 48 of 49, then 49 of 49. Step 7 of Task 2 was not run: the user decided to stop
+tuning; an occasional refusal of an answerable question is known and accepted (changelog, backlog X5). All 12 starters
+stay as written.
 
 ---
 
@@ -1266,7 +1279,7 @@ git commit -m "feat(chat): thumbs up/down and an optional comment on every reply
 - [ ] **Step 2: Local demo database.** Migrate it (`ENV_FILE=.env.demo`, owner URL) and confirm `SELECT count(*) FROM document_descriptions` is 4.
 - [ ] **Step 3: Full local checks.** `pytest -q`; `npm test`, `npm run build`, `npm run lint`; `graphify update .`.
 - [ ] **Step 4: Local browser pass** with `E2E_BASE_URL` pointed at the local dev server: both Playwright files.
-- [ ] **Step 5: Eval gate twice** against the demo configuration (Task 1 changed tool output; nothing after Task 2 changes prompts or retrieval, so this confirms the final code).
+- [ ] **Step 5: Eval gate once** against the demo configuration, to confirm the final code. Nothing after Part A changes prompts or retrieval. One refused answerable is the known behaviour (backlog X5) and does not block the rollout; anything else does.
 - [ ] **Step 6: The user** runs `./script.demo.sh migrate`, then `./script.demo.sh check`, then approves the push; Railway and Vercel deploy.
 - [ ] **Step 7: Deployed verification.** curl the feedback route (201, 400 without a guest, 404 for an unknown turn); `npm run test:e2e` (three tests); `./script.demo.sh feedback` shows the Playwright rows. Report what was and was not checked.
 - [ ] **Step 8: Changelog.** Tick P5, P8 and the stale-test chore with the results; add the backlog item "a retry that ends in a refusal after sources were found should say the answer couldn't be verified".
