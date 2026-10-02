@@ -35,6 +35,15 @@ def _element_sources(ctx: ToolContext, element_ids: set[uuid.UUID]) -> tuple[dic
     return sources, citations
 
 
+# Derived by extraction for calculations. The contract's text never contains them, so the chat model must not see
+# them: an answer that repeats one ("55 basis points") fails the every-number-is-cited check and ends in a refusal.
+DERIVED_KEYS = frozenset({"rate_bps", "up_to_minor"})
+
+
+def _as_written(value: object) -> object:
+    return {k: v for k, v in value.items() if k not in DERIVED_KEYS} if isinstance(value, dict) else value
+
+
 def _get_contract_fields(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, FieldsArgs)
     if (blocked := scope_violation(ctx, args.document_id)) is not None:
@@ -45,7 +54,7 @@ def _get_contract_fields(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     element_ids = {i for f in served.fields.values() for i in f.element_ids}
     sources, citations = _element_sources(ctx, element_ids)
     body = {
-        "fields": {path: f.value for path, f in served.fields.items()},
+        "fields": {path: _as_written(f.value) for path, f in served.fields.items()},
         "cite": {path: [str(i) for i in f.element_ids] for path, f in served.fields.items()},
         "not_validated": served.unserved,
     }

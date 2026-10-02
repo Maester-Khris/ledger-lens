@@ -69,3 +69,12 @@ def test_positive_gap_is_proposed_for_approval_and_posts_once(db_session, tenant
     decision = decide(db_session, tenant_id=tenant_id, invocation_id=invocation.id, decision=ToolDecision.approved,
                       decided_by="test", reason="contract says 0.85%")
     assert decision.posting_id is not None
+
+
+def test_fields_tool_hides_numbers_the_contract_text_does_not_contain(db_session, tenant_id):
+    """rate_bps and up_to_minor are derived by extraction; an answer repeating one fails the citation check."""
+    scenario = build_fee_scenario(db_session, tenant_id)
+    document_id = _contract(db_session, tenant_id, scenario.household_id)
+    outcome = execute(TOOLS["get_contract_fields"], _ctx(db_session, tenant_id), {"document_id": str(document_id)})
+    tier = json.loads(outcome.content)["fields"]["fee_tiers[1]"]
+    assert set(tier) == {"band_text", "rate_text"}
