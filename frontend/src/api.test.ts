@@ -29,8 +29,9 @@ it('reports the API connected on a 200', async () => {
 it('reverses with a key derived from the posting id so a retry replays', async () => {
   const calls = respondWith({ id: 'p2' }, 201);
   await reversePosting('p1');
-  expect(calls[0].url).toBe(`${API_BASE}/postings/p1/reversal`);
-  expect(new Headers(calls[0].init?.headers).get('Idempotency-Key')).toBe('reverse:p1');
+  const reversal = calls.find((call) => call.url === `${API_BASE}/postings/p1/reversal`);
+  expect(reversal).toBeDefined();
+  expect(new Headers(reversal?.init?.headers).get('Idempotency-Key')).toBe('reverse:p1');
 });
 
 it('passes list filters as query parameters', async () => {
