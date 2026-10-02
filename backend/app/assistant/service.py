@@ -106,7 +106,7 @@ async def run_turn(
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=turn_id,
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
-                          document_id=document_id, overlay_guest=overlay_guest)
+                          document_id=document_id, overlay_guest=overlay_guest, question=question)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         

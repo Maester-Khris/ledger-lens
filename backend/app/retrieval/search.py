@@ -53,15 +53,22 @@ def search(
     vector_index: VectorIndex,
     document_ids: Sequence[uuid.UUID] | None = None,
     k: int = 8,
+    question: str | None = None,
 ) -> list[Evidence]:
-    """Hybrid search over current versions. `query` must already be tokenised (documents_dao.tokenize_known_values)."""
+    """Hybrid search over current versions. `query` must already be tokenised (documents_dao.tokenize_known_values).
+    `question` is the guest's own tokenised question, when the query is the chat model's rewrite of it."""
     text_ids = dao.full_text_hits(session, tenant_id=tenant_id, query=query, document_ids=document_ids,
                                   limit=config.SEARCH_CANDIDATES)
     # Relevance gate (P4): the dense score decides and full-text only ranks, so a shared keyword alone ("fee") never
     # opens the gate, and passages below the floor never reach the model's context.
-    dense = [(element_id, score) for element_id, score in dense_matches(
-        session, tenant_id=tenant_id, query=query, embeddings=embeddings, vector_index=vector_index,
-        document_ids=document_ids) if score >= config.MIN_DENSE_SIMILARITY]
+    # A passage passes when it is relevant to the query or to the guest's question: the model's rewrite is often
+    # terse ("fees") and scores far below the full question, which is what the floor was calibrated on.
+    best: dict[uuid.UUID, float] = {}
+    for text in dict.fromkeys(t for t in (query, question) if t):
+        for element_id, score in dense_matches(session, tenant_id=tenant_id, query=text, embeddings=embeddings,
+                                               vector_index=vector_index, document_ids=document_ids):
+            best[element_id] = max(score, best.get(element_id, score))
+    dense = sorted(((i, s) for i, s in best.items() if s >= config.MIN_DENSE_SIMILARITY), key=lambda pair: -pair[1])
     if not dense:
         return []  # say "I don't know" instead of answering from noise
 

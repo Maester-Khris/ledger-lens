@@ -30,6 +30,7 @@ class ToolContext:
     vault_key: str
     document_id: uuid.UUID | None = None  # set = the chat is scoped to this document
     overlay_guest: uuid.UUID | None = None  # public demo: this guest's own decisions apply (spec P2+P9)
+    question: str | None = None  # the guest's tokenised question for this turn; search scores passages against it too
 
 
 @dataclass(frozen=True)
@@ -87,7 +88,8 @@ def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
 def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, SearchArgs)
     hits = search(ctx.session, tenant_id=ctx.tenant_id, query=args.query, embeddings=ctx.embeddings,
-                  vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids)
+                  vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids,
+                  question=ctx.question)
     payload = [
         {"id": str(h.element_id), "document": h.document_title, "page": h.page_start,
          "section": " › ".join(h.section_path), "text": h.text, "context": h.context}

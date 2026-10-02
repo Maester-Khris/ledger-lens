@@ -270,3 +270,22 @@ def test_step_limit_and_timeout_refusals_carry_the_system_reason(client, session
 
 def test_a_blank_message_is_rejected(client):
     assert client.post("/chat", json={"session_id": "s-b", "message": "   "}).status_code == 422
+
+
+def test_search_is_scored_against_the_guests_question_not_only_the_models_query(client, session_factory, db_session, tenant_id, monkeypatch):
+    """The model often searches with a terse rewrite ("fees") that falls under the relevance floor (P5+P8 finding)."""
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    version = parsed_version(db_session, tenant_id, texts=("Fees are calculated on average daily net assets.",))
+    index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
+    score = lambda q: index.query(str(tenant_id), embeddings.embed_query(q), 1, None)[0].score
+    (low, terse), (high, full) = sorted((score(q), q) for q in ("fees", "What are the fees calculated on?"))
+    element_id = str(search(db_session, tenant_id=tenant_id, query=full, embeddings=embeddings, vector_index=index)[0].element_id)
+    monkeypatch.setattr(config, "MIN_DENSE_SIMILARITY", (low + high) / 2)
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": terse}, "id": "c1"}]),
+        AIMessage(content="done"),
+        Answer(text="Fees are calculated on average daily net assets.", citations=[element_id], refused=False),
+    ])
+    _override(client, _runtime(model, embeddings, index), session_factory)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-terse", "message": full}))[-1]
+    assert kind == "answer" and data["citations"][0]["id"] == element_id
