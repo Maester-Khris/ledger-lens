@@ -57,3 +57,14 @@ def test_demo_role_reads_everything_and_writes_only_chat_state_and_the_overlays(
 def test_app_role_may_purge_the_overlays(owner_session):
     for table in OVERLAYS:
         assert _can(owner_session, "ledger_app", table, "DELETE"), table
+
+
+def test_feedback_is_insert_only_and_descriptions_are_read_only_for_the_demo_role(owner_session):
+    assert _can(owner_session, "ledger_demo", "chat_feedback", "SELECT")
+    assert _can(owner_session, "ledger_demo", "chat_feedback", "INSERT")
+    for role in ("ledger_demo", "ledger_app"):
+        for privilege in ("UPDATE", "DELETE"):
+            assert not _can(owner_session, role, "chat_feedback", privilege), (role, privilege)
+    assert _can(owner_session, "ledger_demo", "document_descriptions", "SELECT")
+    for privilege in ("INSERT", "UPDATE", "DELETE"):
+        assert not _can(owner_session, "ledger_demo", "document_descriptions", privilege), privilege
