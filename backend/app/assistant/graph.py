@@ -12,7 +12,7 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 
 from app import config
-from app.assistant.citations import verify_answer
+from app.assistant.citations import compose_sections, verify_answer, verify_sections
 from app.assistant.tools import ToolContext, ToolSpec, execute
 
 PROMPTS = Path(__file__).parent / "prompts"
@@ -29,11 +29,19 @@ NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't gu
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
 
 
+class ContractSection(BaseModel):
+    """What one contract says, citing that contract only."""
+    text: str
+    citations: list[str]
+
+
 class Answer(BaseModel):
     text: str
     citations: list[str]
     refused: bool
     clarification: bool = False
+    # An answer covering several contracts: one entry each, instead of one text. The service adds the headings.
+    sections: list[ContractSection] = []
 
 
 def _merge(left: dict, right: dict) -> dict:
@@ -111,6 +119,14 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]
+        if reply.sections and not reply.refused and not reply.clarification:
+            sections = [(section.text, section.citations) for section in reply.sections]
+            cited = state.get("citations", {})
+            violations = verify_sections(sections, state.get("sources", {}), {k: v.get("document_id") for k, v in cited.items()})
+            if violations:
+                return {"violations": violations}
+            text, ids = compose_sections(sections, {k: v.get("document_title") for k, v in cited.items()})
+            return {"violations": [], "answer": Answer(text=text, citations=ids, refused=False)}
         return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused, reply.clarification)}
 
     def refuse(state: TurnState) -> dict:

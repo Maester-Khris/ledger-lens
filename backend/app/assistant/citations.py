@@ -57,3 +57,26 @@ def verify_answer(text: str, cited_ids: Sequence[str], sources: Mapping[str, str
     allowed = set().union(*(numbers_in(sources[c]) for c in cited_ids))
     return ([f"number {n} does not appear in any cited source" for n in sorted(numbers_in(text) - allowed)]
             + [f'"{phrase}" says something is absent, which no cited source states; refuse instead' for phrase in absent])
+
+
+def verify_sections(sections: Sequence[tuple[str, Sequence[str]]], sources: Mapping[str, str],
+                    contracts: Mapping[str, str | None]) -> list[str]:
+    """A per-contract answer: each section is checked on its own, against its own citations only, so a figure from
+    one contract can't be backed by a passage from another. `contracts` maps a citable id to its document."""
+    violations = []
+    for position, (text, cited) in enumerate(sections, start=1):
+        problems = ["it is empty"] if not text.strip() else verify_answer(text, cited, sources, refused=False)
+        if not problems and len({contracts.get(c) for c in cited}) > 1:
+            problems = ["it cites more than one contract"]
+        violations += [f"section {position}: {problem}" for problem in problems]
+    return violations
+
+
+def compose_sections(sections: Sequence[tuple[str, Sequence[str]]], titles: Mapping[str, str | None]) -> tuple[str, list[str]]:
+    """The answer text and its citations, built from verified sections. Each heading is the cited contract's title,
+    taken from the record, not from the model: it writes no list numbering and no contract names."""
+    parts = []
+    for text, cited in sections:
+        title = titles.get(cited[0])
+        parts.append(f"**{title}**\n\n{text}" if title else text)
+    return "\n\n".join(parts), list(dict.fromkeys(c for _, cited in sections for c in cited))

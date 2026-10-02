@@ -4,7 +4,7 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy import select
 
-from app.assistant.graph import Answer, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
+from app.assistant.graph import Answer, ContractSection, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
 from app.assistant.tools import ToolContext, default_tools
 from app.governance.dao import ModelConfig
 from app.governance.models import ToolInvocation
@@ -118,3 +118,17 @@ def test_a_refusal_after_three_tool_rounds_fits_in_the_step_budget(db_session, t
     ])
     state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")  # no GraphRecursionError
     assert state["answer"].refused is True
+
+
+def test_a_per_contract_answer_is_checked_section_by_section_and_rendered_by_the_service(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    numbered = Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.90%.", citations=[element_id])])  # a number the contract doesn't state
+    good = Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.85% on the next $1,500,000.", citations=[element_id])])
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), numbered, good])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")
+    assert "section 1: number 0.9" in model.prompts[-1]  # the retry was told which section failed
+    answer = state["answer"]
+    assert answer.refused is False and answer.citations == [element_id]
+    assert answer.text == "**Tremblay IMA**\n\nThe second tier is 0.85% on the next $1,500,000."
