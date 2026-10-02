@@ -132,3 +132,32 @@ def test_a_per_contract_answer_is_checked_section_by_section_and_rendered_by_the
     answer = state["answer"]
     assert answer.refused is False and answer.citations == [element_id]
     assert answer.text == "**Tremblay IMA**\n\nThe second tier is 0.85% on the next $1,500,000."
+
+
+def _mixed(element_id):
+    return Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.85% on the next $1,500,000.", citations=[element_id]),
+        ContractSection(text="The second tier is 0.90%.", citations=[element_id])])  # not what the contract states
+
+
+def test_when_the_retry_gives_up_the_sections_that_passed_are_still_answered(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    gave_up = Answer(text="", citations=[], refused=True)
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), _mixed(element_id), gave_up])
+    answer = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"]
+    assert answer.refused is False and answer.citations == [element_id]
+    assert answer.text == "**Tremblay IMA**\n\nThe second tier is 0.85% on the next $1,500,000."  # the 0.90% section is gone
+
+
+def test_when_the_retry_fails_again_the_sections_that_passed_are_still_answered(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), _mixed(element_id), _mixed(element_id)])
+    answer = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"]
+    assert answer.refused is False and "0.90" not in answer.text and "0.85%" in answer.text
+
+
+def test_when_no_section_passes_the_answer_is_refused(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    bad = Answer(text="", citations=[], refused=False, sections=[ContractSection(text="The second tier is 0.90%.", citations=[element_id])])
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), bad, bad])
+    assert _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"].refused is True

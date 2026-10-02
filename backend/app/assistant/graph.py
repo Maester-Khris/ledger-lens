@@ -18,7 +18,7 @@ from app.assistant.tools import ToolContext, ToolSpec, execute
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v2"
+GRAPH_VERSION = "v3"
 # route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
 RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
@@ -59,6 +59,7 @@ class TurnState(TypedDict, total=False):
     answer_attempts: int
     unvalidated: Annotated[list[str], operator.add]  # document ids with fields the agent may not use
     system_notices: Annotated[list[str], operator.add]
+    partial: Answer | None  # the sections of a per-contract answer that passed, kept in case the retry ends in a refusal
 
 
 def prompt_version() -> str:
@@ -119,17 +120,27 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]
+        if reply.refused and state.get("partial") is not None:
+            return {"violations": [], "answer": state["partial"]}  # the retry gave up: answer what was verified
         if reply.sections and not reply.refused and not reply.clarification:
             sections = [(section.text, section.citations) for section in reply.sections]
-            cited = state.get("citations", {})
-            violations = verify_sections(sections, state.get("sources", {}), {k: v.get("document_id") for k, v in cited.items()})
+            sources, cited = state.get("sources", {}), state.get("citations", {})
+            contracts = {k: v.get("document_id") for k, v in cited.items()}
+            violations = verify_sections(sections, sources, contracts)
             if violations:
+                # One contract's section failing must not cost the guest the others: only verified sections are kept,
+                # so nothing unverified is ever shown. ponytail: the dropped contract is not named to the guest.
+                sections = [section for section in sections if not verify_sections([section], sources, contracts)]
+            if not sections:
                 return {"violations": violations}
             text, ids = compose_sections(sections, {k: v.get("document_title") for k, v in cited.items()})
-            return {"violations": [], "answer": Answer(text=text, citations=ids, refused=False)}
+            composed = Answer(text=text, citations=ids, refused=False)
+            return {"violations": violations, "partial": composed} if violations else {"violations": [], "answer": composed}
         return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused, reply.clarification)}
 
     def refuse(state: TurnState) -> dict:
+        if state.get("partial") is not None:
+            return {"answer": state["partial"]}
         text = FAILED_VERIFICATION_MESSAGE if state.get("sources") else NO_EVIDENCE_MESSAGE
         return {"answer": Answer(text=text, citations=[], refused=True)}
 
