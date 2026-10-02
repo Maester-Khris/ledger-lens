@@ -80,6 +80,12 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   exist and belong to the tenant, amounts positive) runs on it, and it is shown to you as "demo posting, not
   recorded". Why: the demo database role has no write access to the ledger at all. This amends the backlog's
   "rolled-back `create_posting`", which would have needed that write access.
+- **Your feedback is saved, and only the operator reads it** (P5, decided 2026-10-02). Every reply has a thumbs up
+  and thumbs down; a click is saved at once, and you can add a comment or change your mind (the latest counts). Known
+  personal values in a comment are replaced by tokens before it is stored, the same as in a question. No other guest
+  sees your feedback and no screen shows it. Why: feedback is evidence for improving the answers, not content.
+- **Each document has a one-line description, and the starter questions follow the document you pick** (P8, decided
+  2026-10-02). A citation's "Open page" opens the page inside the app instead of a new browser tab.
 
 ### P2 + P9 engineering decisions (settled 2026-09-30, one spec)
 
@@ -131,6 +137,31 @@ What the public demo (`DEMO_MODE=1`) disables or changes, and why. Source for th
   - **Nonsense accepts a clarification** as well as a refusal; the keyword-only nonsense case is real nonsense.
   - **Eval runs are isolated and paced:** fresh session ids per run (earlier runs' turns were being fed back as history),
     a pause between cases, one retry after a provider error.
+
+### P5 + P8 engineering decisions (settled 2026-10-02, one spec)
+
+Input: `artifacts/pre-launch-demo-design-sprint.md` (local) is a plan with no test results yet; it supplies the journey
+steps to pass (2, 3, 5, 8) and the "feedback in under 30 seconds" target.
+
+- **Feedback rows are append-only, latest wins.** Table `chat_feedback`: each thumb click or comment inserts a row that
+  carries the rating; readers take the latest per guest and turn. `ledger_demo` gets an explicit INSERT and nothing else.
+- **Prompt version is not copied:** the feedback row references the chat turn, which is immutable and already holds
+  prompt, model and graph version.
+- **Feedback on every recorded reply:** answers, refusals and clarifying questions. Client errors and rate-limit
+  messages have no turn, so no control.
+- **The final chat event carries `turn_id`** so the browser can address the turn.
+- **Abuse bound without a second limiter:** the turn must belong to the guest (404 otherwise), and at most 5 feedback
+  rows per guest and turn (429).
+- **Comments are tokenised** with the known-value tokeniser before storage, capped at 1000 characters.
+- **Read by the operator with SQL only:** no read endpoint and no dashboard count; P7 joins the table by chat turn.
+- **Descriptions live in a separate insert-only table** `document_descriptions`, filled by the migration by
+  `document_key`. A column on `documents` was rejected: its append-only trigger blocks the UPDATE needed to fill it.
+- **Starter questions follow the selected document:** a frontend constant keyed by `document_key`; four across the
+  documents when none is selected. Every starter is an answerable `"retrieval": true` case in `tests/eval/golden.json`.
+- **Citations carry `document_id`** so "Open page" opens the in-app viewer the chat screen already has.
+- **Not adopted:** the end-of-chat feedback prompt (optional in the backlog).
+- **Operator runbook:** the migration's Railway steps go in both `backend/script.demo.md` (raw queries) and
+  `backend/script.demo.sh` (subcommands); both stay local.
 
 
 ### Reference
