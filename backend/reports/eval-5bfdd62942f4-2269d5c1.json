@@ -1,0 +1,1151 @@
+{
+  "config_hash": "5bfdd62942f4",
+  "run_id": "2269d5c1",
+  "chat_model": "gpt-4.1-2025-04-14",
+  "min_dense_similarity": 0.46,
+  "relevance_report": "relevance-bd36247ba3f7.json",
+  "summary": {
+    "answerable": {
+      "behaviour_ok": 0.9642857142857143,
+      "citation_hit": 0.9642857142857143,
+      "numbers_ok": 0.9642857142857143
+    },
+    "over_refusal": 0.037037037037037035,
+    "junk_acceptable": 1.0,
+    "junk_by_category": {
+      "out_of_corpus": 1.0,
+      "false_premise": 1.0,
+      "underspecified": 1.0,
+      "nonsense": 1.0,
+      "off_topic": 1.0
+    }
+  },
+  "results": [
+    {
+      "id": "fee-schedule",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule in the Tremblay agreement is as follows (all amounts in CAD, based on the combined household market value of the client's accounts):\n\n- 1.00% on the first $1,000,000\n- 0.85% on the next $1,500,000\n- 0.65% on assets in excess of $2,500,000\n\nFees are billed quarterly in arrears.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "Schedule A - Fee Schedule",
+          "quote": "| Household market value            | Annual rate   |\n|-----------------------------------|---------------|\n| On the first $1,000,000           | 1.00%         |\n| On the next $1,500,000            | 0.85%         |\n| On assets in excess of $2,500,000 | 0.65%         |",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=2",
+          "id": "71013104-5e93-443d-b395-3f7d9159b3aa"
+        },
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 3. Fees",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "5fa00f77-cf06-4916-b542-c3c88334cc17"
+        }
+      ]
+    },
+    {
+      "id": "termination",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement requires 30 days of notice to terminate.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 4. Termination",
+          "quote": "Either party may terminate this Agreement upon thirty (30) days' written notice to the other party.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "ec8a2982-818b-49f8-b7cf-1b2c617869cb"
+        }
+      ]
+    },
+    {
+      "id": "governing-law",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement is governed by the laws of the Province of Ontario.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 5. Governing Law",
+          "quote": "This Agreement shall be governed by the laws of the Province of Ontario.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "21aa1a6c-a01c-43ba-9d1b-8357e4125286"
+        }
+      ]
+    },
+    {
+      "id": "calamos-top-tier",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Calamos Emerging Market Equity Fund's management fee rate for assets in excess of $26 billion is 0.90% of the average daily net assets.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        }
+      ]
+    },
+    {
+      "id": "aim-first-tier",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The annual rate that applies to the first $500 million for AIM Global Trends Fund is 0.975%.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "6e6eb42a-cdc5-4c68-9611-e5c040d9f2f5"
+        }
+      ]
+    },
+    {
+      "id": "management-fee-unscoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "**Tremblay household \u2014 Investment Management Agreement (synthetic)**\n\nThe Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.\n\n**Calamos Emerging Market Equity Fund \u2014 Management Agreement notice**\n\nThe advisory fee applicable to the Calamos Emerging Market Equity Fund is calculated as follows: 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion.\n\n**AIM Global Trends Fund \u2014 Master Investment Advisory Agreement**\n\nThe Trust shall pay the Advisor, out of the assets of a Fund, as full compensation for all services rendered, an advisory fee for such Fund set forth below. Such fee shall be calculated by applying the following annual rates to the average daily net assets of such Fund for the calendar year computed in the manner used for the determination of the net asset value of shares of such Fund. For securities lending activities, a lending Fund shall pay the Advisor a fee equal to 25% of the net monthly interest or fee income retained or paid to the Fund from such activities.\n\n**Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)**\n\nFor the Nomura Tax-Free Colorado Fund: 0.55% on the first $500 million; 0.50% on the next $500 million; 0.45% on the next $1.5 billion; 0.425% on assets in excess of $2.5 billion (as a percentage of average daily net assets, annual rate).",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 3. Fees",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "5fa00f77-cf06-4916-b542-c3c88334cc17"
+        },
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "The Trust shall pay the Advisor, out of the assets of a Fund, as full compensation for all services rendered, an advisory fee for such Fund set forth below. Such fee shall be calculated by applying the following annual rates to the average daily net assets of such Fund for the calendar year computed in the manner used for the determination of the net asset value of shares of such Fund.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "f6928096-203a-4472-a0b8-6d148eab7a66"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "<PAGE>",
+          "quote": "As compensation for such services provided by the Advisor in connection with securities lending activities of each Fund, a lending Fund shall pay the Advisor a fee equal to 25% of the net monthly interest or fee income retained or paid to the Fund from such activities.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=2",
+          "id": "b100938e-dd8e-4ac9-af84-f6b6a36eeef2"
+        },
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "| Fund Name                                                                  | Effective Date   | Management Fee Schedule (as a percentage of average daily net assets) Annual Rate                                                        |\n|----------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|\n| Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund) | December 1, 2025 | 0.55% on the first $500 million 0.50% on the next $500 million 0.45% on the next $1.5 billion 0.425% on assets in excess of $2.5 billion |",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "b00ac685-f5aa-4d50-8a8b-fc669ca9fe11"
+        },
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "THIS EXHIBIT to the Investment Management Agreement dated December 1, 2025 (the 'Agreement') between VOYAGEUR MUTUAL FUNDS II and DELAWARE MANAGEMENT COMPANY (the 'Investment Manager'), a series of Nomura Investment Management Business Trust lists the Funds for which the Investment Manager provides investment management services pursuant to this Agreement, along with the management fee rate schedule for each Fund and the date on which the Agreement became effective for each Fund.",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "8457b1b0-78cf-48ef-8539-053169e871dd"
+        }
+      ]
+    },
+    {
+      "id": "repeat-in-session",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule in the Tremblay agreement is:\n\n- 1.00% on the first $1,000,000\n- 0.85% on the next $1,500,000\n- 0.65% on assets in excess of $2,500,000\n\nFees are based on the combined household market value of the client's accounts, billed quarterly in arrears, and denominated in CAD.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "Schedule A - Fee Schedule",
+          "quote": "| Household market value            | Annual rate   |\n|-----------------------------------|---------------|\n| On the first $1,000,000           | 1.00%         |\n| On the next $1,500,000            | 0.85%         |\n| On assets in excess of $2,500,000 | 0.65%         |",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=2",
+          "id": "71013104-5e93-443d-b395-3f7d9159b3aa"
+        },
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 3. Fees",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "5fa00f77-cf06-4916-b542-c3c88334cc17"
+        }
+      ]
+    },
+    {
+      "id": "leakage",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "Under the Tremblay household's contract, they would pay an annual fee of CAD 16,800. Billing currently charges them CAD 16,400 per year. This results in an annual gap of CAD 400, with billing charging less than the contract specifies.",
+      "citations": [
+        {
+          "kind": "tool",
+          "tool": "compare_contract_to_billing",
+          "inputs_cited": [
+            "71013104-5e93-443d-b395-3f7d9159b3aa"
+          ],
+          "invocation_id": "487c3bfd-1112-47eb-bfcd-ad6b86b5ceb1",
+          "id": "487c3bfd-1112-47eb-bfcd-ad6b86b5ceb1"
+        }
+      ]
+    },
+    {
+      "id": "fund-not-comparable",
+      "category": "explained",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't compare this contract with billing: This contract is not linked to a billing household (fund-level agreement).",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "billing records",
+          "detail": "This contract is not linked to a billing household (fund-level agreement)."
+        }
+      ]
+    },
+    {
+      "id": "not-in-corpus",
+      "category": "out_of_corpus",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "ooc-performance-fee",
+      "category": "out_of_corpus",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "ooc-hurdle-rate",
+      "category": "out_of_corpus",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "That took too long; please try a narrower question.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "ooc-arbitration",
+      "category": "out_of_corpus",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "ooc-minimum-account",
+      "category": "out_of_corpus",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "fp-calamos-increase",
+      "category": "false_premise",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "fp-crypto-surcharge",
+      "category": "false_premise",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "fp-soft-dollar-rebate",
+      "category": "false_premise",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "fp-maryland-office",
+      "category": "false_premise",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "That took too long; please try a narrower question.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "under-allowed",
+      "category": "underspecified",
+      "event": "clarify",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I need a little more to go on. Which contract do you mean, and what would you like to know about it? Indexed contracts: AIM Global Trends Fund \u2014 Master Investment Advisory Agreement; Calamos Emerging Market Equity Fund \u2014 Management Agreement notice; Tremblay household \u2014 Investment Management Agreement (synthetic); Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025).",
+      "citations": []
+    },
+    {
+      "id": "under-how-much",
+      "category": "underspecified",
+      "event": "clarify",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I need a little more to go on. Which contract do you mean, and what would you like to know about it? Indexed contracts: AIM Global Trends Fund \u2014 Master Investment Advisory Agreement; Calamos Emerging Market Equity Fund \u2014 Management Agreement notice; Tremblay household \u2014 Investment Management Agreement (synthetic); Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025).",
+      "citations": []
+    },
+    {
+      "id": "under-change-it",
+      "category": "underspecified",
+      "event": "clarify",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I need a little more to go on. Which contract do you mean, and what would you like to know about it? Indexed contracts: AIM Global Trends Fund \u2014 Master Investment Advisory Agreement; Calamos Emerging Market Equity Fund \u2014 Management Agreement notice; Tremblay household \u2014 Investment Management Agreement (synthetic); Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025).",
+      "citations": []
+    },
+    {
+      "id": "under-other-one",
+      "category": "underspecified",
+      "event": "clarify",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I need a little more to go on. Which contract do you mean, and what would you like to know about it? Indexed contracts: AIM Global Trends Fund \u2014 Master Investment Advisory Agreement; Calamos Emerging Market Equity Fund \u2014 Management Agreement notice; Tremblay household \u2014 Investment Management Agreement (synthetic); Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025).",
+      "citations": []
+    },
+    {
+      "id": "nonsense-keys",
+      "category": "nonsense",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "nonsense-purple",
+      "category": "nonsense",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "nonsense-keywords",
+      "category": "nonsense",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "nonsense-marks",
+      "category": "nonsense",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "off-weather",
+      "category": "off_topic",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "off-poem",
+      "category": "off_topic",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "off-world-cup",
+      "category": "off_topic",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "off-capital",
+      "category": "off_topic",
+      "event": "refused",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "calamos-first-tier",
+      "category": "answerable",
+      "event": "refused",
+      "behaviour_ok": false,
+      "citation_hit": false,
+      "numbers_ok": false,
+      "answer": "I can't find that in the indexed contracts, so I won't guess.",
+      "citations": [
+        {
+          "id": "system",
+          "kind": "system",
+          "source": "indexed contracts",
+          "detail": "No passage in the indexed contracts supports an answer to this question."
+        }
+      ]
+    },
+    {
+      "id": "calamos-fee-basis",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Calamos Emerging Market Equity Fund's fees are calculated based on the average daily net assets of the fund.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        }
+      ]
+    },
+    {
+      "id": "aim-termination",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The AIM Global Trends Fund agreement requires 60 days of notice to terminate.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 5,
+          "page_end": 5,
+          "section": "<PAGE>",
+          "quote": "Termination. This Agreement may be terminated as to the Trust or as to any one or more of the Funds at any time, without the payment of any penalty, by vote of the Board of Trustees or by vote of a majority of the outstanding voting securities of the applicable Fund, or by the Advisor, on sixty (60) days' written notice to the other party. The notice provided for herein may be waived by the party entitled to receipt thereof. This Agreement shall automatically terminate in the event of its assignment, the term \"assignment\" for purposes of this paragraph having the meaning defined in Section 2(a)(4) of the 1940 Act.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=5",
+          "id": "389292f8-182b-43dc-957b-d6a33dfae10b"
+        }
+      ]
+    },
+    {
+      "id": "aim-fee-schedule",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The full fee schedule for AIM Global Trends Fund is as follows (based on average daily net assets, billed annually):\n\n- First $500 million: 0.975%\n- Next $500 million: 0.95%\n- Next $500 million: 0.925%\n- On amounts thereafter: 0.90%\n\nThese rates are specified in the Master Investment Advisory Agreement for the fund.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "6e6eb42a-cdc5-4c68-9611-e5c040d9f2f5"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "The Trust shall pay the Advisor, out of the assets of a Fund, as full compensation for all services rendered, an advisory fee for such Fund set forth below. Such fee shall be calculated by applying the following annual rates to the average daily net assets of such Fund for the calendar year computed in the manner used for the determination of the net asset value of shares of such Fund.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "f6928096-203a-4472-a0b8-6d148eab7a66"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "ANNUAL RATE -----------",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "686475b5-a34c-4268-b4fb-71ff9d2f3771"
+        }
+      ]
+    },
+    {
+      "id": "nomura-fee-schedule",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule for the Nomura Tax-Free Colorado Fund is as follows (based on average daily net assets, billed monthly):\n\n- 0.55% on the first $500 million\n- 0.50% on the next $500 million\n- 0.45% on the next $1.5 billion\n- 0.425% on assets in excess of $2.5 billion\n\nThese fees are applied on a graduated basis.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "| Fund Name                                                                  | Effective Date   | Management Fee Schedule (as a percentage of average daily net assets) Annual Rate                                                        |\n|----------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|\n| Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund) | December 1, 2025 | 0.55% on the first $500 million 0.50% on the next $500 million 0.45% on the next $1.5 billion 0.425% on assets in excess of $2.5 billion |",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "b00ac685-f5aa-4d50-8a8b-fc669ca9fe11"
+        },
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "WITNESSETH:",
+          "quote": "As compensation for the investment services to be rendered to a particular Fund by the Investment Manager under the provisions of this Agreement, the Trust shall pay monthly to the Investment Manager exclusively from that Fund's assets, a fee based on the average daily net assets of that Fund during the month. Such fee shall be calculated in accordance with the fee schedule applicable to that Fund as set forth in Exhibit A hereto.",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=2",
+          "id": "4b1d3b31-4fcb-402c-9339-fd7cec495ec3"
+        }
+      ]
+    },
+    {
+      "id": "nomura-top-tier",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "For the Nomura Tax-Free Colorado Fund, the rate that applies to assets in excess of $2.5 billion is 0.425%.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "| Fund Name                                                                  | Effective Date   | Management Fee Schedule (as a percentage of average daily net assets) Annual Rate                                                        |\n|----------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|\n| Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund) | December 1, 2025 | 0.55% on the first $500 million 0.50% on the next $500 million 0.45% on the next $1.5 billion 0.425% on assets in excess of $2.5 billion |",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "b00ac685-f5aa-4d50-8a8b-fc669ca9fe11"
+        }
+      ]
+    },
+    {
+      "id": "nomura-billing-frequency",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The management fee for the Nomura Tax-Free Colorado Fund is paid monthly.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "WITNESSETH:",
+          "quote": "As compensation for the investment services to be rendered to a particular Fund by the Investment Manager under the provisions of this Agreement, the Trust shall pay monthly to the Investment Manager exclusively from that Fund's assets, a fee based on the average daily net assets of that Fund during the month. Such fee shall be calculated in accordance with the fee schedule applicable to that Fund as set forth in Exhibit A hereto.",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=2",
+          "id": "4b1d3b31-4fcb-402c-9339-fd7cec495ec3"
+        }
+      ]
+    },
+    {
+      "id": "fee-schedule@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule in the Tremblay agreement is as follows (all percentages are annual rates, applied to the combined household market value of the client's accounts):\n\n- 1.00% on the first $1,000,000\n- 0.85% on the next $1,500,000\n- 0.65% on assets in excess of $2,500,000\n\nFees are billed quarterly in arrears.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "Schedule A - Fee Schedule",
+          "quote": "| Household market value            | Annual rate   |\n|-----------------------------------|---------------|\n| On the first $1,000,000           | 1.00%         |\n| On the next $1,500,000            | 0.85%         |\n| On assets in excess of $2,500,000 | 0.65%         |",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=2",
+          "id": "71013104-5e93-443d-b395-3f7d9159b3aa"
+        },
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 3. Fees",
+          "quote": "The Client shall pay the Adviser an annual management fee calculated on the combined household market value of the Client's accounts, as set out in Schedule A. Fees are calculated on a graduated basis, billed quarterly in arrears, and are payable in Canadian dollars.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "5fa00f77-cf06-4916-b542-c3c88334cc17"
+        }
+      ]
+    },
+    {
+      "id": "termination@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement requires 30 days of notice to terminate.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 4. Termination",
+          "quote": "Either party may terminate this Agreement upon thirty (30) days' written notice to the other party.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "ec8a2982-818b-49f8-b7cf-1b2c617869cb"
+        }
+      ]
+    },
+    {
+      "id": "governing-law@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Tremblay agreement is governed by the laws of the Province of Ontario.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5",
+          "document_title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "Investment Management Agreement \u203a 5. Governing Law",
+          "quote": "This Agreement shall be governed by the laws of the Province of Ontario.",
+          "file_url": "/documents/cee17bc9-9ac6-44c9-8ecd-a83e08f18ae5/versions/1/file#page=1",
+          "id": "21aa1a6c-a01c-43ba-9d1b-8357e4125286"
+        }
+      ]
+    },
+    {
+      "id": "calamos-top-tier@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Calamos Emerging Market Equity Fund's management fee rate for assets in excess of $26 billion is 0.90% of the average daily net assets.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        }
+      ]
+    },
+    {
+      "id": "aim-first-tier@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The annual rate that applies to the first $500 million for AIM Global Trends Fund is 0.975%.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "6e6eb42a-cdc5-4c68-9611-e5c040d9f2f5"
+        }
+      ]
+    },
+    {
+      "id": "calamos-first-tier@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The rate that applies to the first $500 million of the Calamos Emerging Market Equity Fund's assets is 1.10% of the average daily net assets.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        }
+      ]
+    },
+    {
+      "id": "calamos-fee-basis@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The Calamos Emerging Market Equity Fund's fees are calculated on the average daily net assets of the fund.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e21f5fee-75c2-4c92-ad54-1e10efd3ec5f",
+          "document_title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+          "version": 1,
+          "page": 1,
+          "page_end": 1,
+          "section": "CALAMOS INVESTMENT TRUST",
+          "quote": "Calamos Advisors LLC 2020 Calamos Court Naperville, Illinois 60563 Ladies and Gentlemen: Re: Management Agreement Pursuant to paragraph 1(b) of the Management Agreement (the 'Agreement') between Calamos Investment Trust and Calamos Advisors LLC dated December 13, 2004, as amended, we hereby notify you that the board of trustees of Calamos Investment Trust have established an additional sub-trust, designated Calamos Emerging Market Equity Fund (the 'New Fund'), and have appointed you as Manager to act as manager and investment adviser to that New Fund on the terms and conditions set forth in the Agreement, except that the advisory fee applicable to the New Fund shall be calculated as follows: The base fee rate shall be at the annual rate of 1.10% of the first $500 million of the average daily net assets; 1.05% of the next $500 million of the average daily net assets; 1.00% of the next $5 billion of the average daily net assets; 0.98% of the next $5 billion of the average daily net assets; 0.96% of the next $5 billion of the average daily net assets; 0.94% of the next $5 billion of the average daily net assets; 0.92% of the next $5 billion of the average daily net assets; and 0.90% in excess of $26 billion. Please sign below to evidence the acceptance of your appointment as Manager for the New Fund designated Calamos Emerging Market Equity Fund, as set forth above and in the Agreement.",
+          "file_url": "/documents/e21f5fee-75c2-4c92-ad54-1e10efd3ec5f/versions/1/file#page=1",
+          "id": "09e7e7e8-74fc-4408-9bec-3e06f44f4c94"
+        }
+      ]
+    },
+    {
+      "id": "aim-termination@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The AIM Global Trends Fund agreement requires sixty (60) days' written notice to terminate. This applies whether termination is by the Board of Trustees, a majority of the outstanding voting securities of the Fund, or by the Advisor. The notice period may be waived by the party entitled to receive it.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 5,
+          "page_end": 5,
+          "section": "<PAGE>",
+          "quote": "Termination. This Agreement may be terminated as to the Trust or as to any one or more of the Funds at any time, without the payment of any penalty, by vote of the Board of Trustees or by vote of a majority of the outstanding voting securities of the applicable Fund, or by the Advisor, on sixty (60) days' written notice to the other party. The notice provided for herein may be waived by the party entitled to receipt thereof. This Agreement shall automatically terminate in the event of its assignment, the term \"assignment\" for purposes of this paragraph having the meaning defined in Section 2(a)(4) of the 1940 Act.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=5",
+          "id": "389292f8-182b-43dc-957b-d6a33dfae10b"
+        }
+      ]
+    },
+    {
+      "id": "aim-fee-schedule@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The full fee schedule for AIM Global Trends Fund is as follows (based on average daily net assets, billed annually):\n\n- First $500 million: 0.975%\n- Next $500 million: 0.95%\n- Next $500 million: 0.925%\n- On amounts thereafter: 0.90%\n\nThese rates are specified in the Master Investment Advisory Agreement for the fund.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "First $500 million........................................................ 0.975% Next $500 million......................................................... 0.95% Next $500 million......................................................... 0.925% On amounts thereafter..................................................... 0.90% </Table>",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "6e6eb42a-cdc5-4c68-9611-e5c040d9f2f5"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "The Trust shall pay the Advisor, out of the assets of a Fund, as full compensation for all services rendered, an advisory fee for such Fund set forth below. Such fee shall be calculated by applying the following annual rates to the average daily net assets of such Fund for the calendar year computed in the manner used for the determination of the net asset value of shares of such Fund.",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "f6928096-203a-4472-a0b8-6d148eab7a66"
+        },
+        {
+          "kind": "element",
+          "document_id": "1dae8bb6-38b3-44b1-9283-19c3960895b6",
+          "document_title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+          "version": 1,
+          "page": 7,
+          "page_end": 7,
+          "section": "<PAGE>",
+          "quote": "ANNUAL RATE -----------",
+          "file_url": "/documents/1dae8bb6-38b3-44b1-9283-19c3960895b6/versions/1/file#page=7",
+          "id": "686475b5-a34c-4268-b4fb-71ff9d2f3771"
+        }
+      ]
+    },
+    {
+      "id": "nomura-fee-schedule@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The fee schedule for the Nomura Tax-Free Colorado Fund is as follows (based on average daily net assets, billed monthly):\n\n- 0.55% on the first $500 million\n- 0.50% on the next $500 million\n- 0.45% on the next $1.5 billion\n- 0.425% on assets in excess of $2.5 billion\n\nThis is a graduated fee schedule.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "WITNESSETH:",
+          "quote": "As compensation for the investment services to be rendered to a particular Fund by the Investment Manager under the provisions of this Agreement, the Trust shall pay monthly to the Investment Manager exclusively from that Fund's assets, a fee based on the average daily net assets of that Fund during the month. Such fee shall be calculated in accordance with the fee schedule applicable to that Fund as set forth in Exhibit A hereto.",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=2",
+          "id": "4b1d3b31-4fcb-402c-9339-fd7cec495ec3"
+        },
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "| Fund Name                                                                  | Effective Date   | Management Fee Schedule (as a percentage of average daily net assets) Annual Rate                                                        |\n|----------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|\n| Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund) | December 1, 2025 | 0.55% on the first $500 million 0.50% on the next $500 million 0.45% on the next $1.5 billion 0.425% on assets in excess of $2.5 billion |",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "b00ac685-f5aa-4d50-8a8b-fc669ca9fe11"
+        }
+      ]
+    },
+    {
+      "id": "nomura-top-tier@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "For the Nomura Tax-Free Colorado Fund, the management fee rate that applies to assets in excess of $2.5 billion is 0.425% of average daily net assets per year.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 4,
+          "page_end": 4,
+          "section": "OF THE INVESTMENT MANAGEMENT AGREEMENT",
+          "quote": "| Fund Name                                                                  | Effective Date   | Management Fee Schedule (as a percentage of average daily net assets) Annual Rate                                                        |\n|----------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|\n| Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund) | December 1, 2025 | 0.55% on the first $500 million 0.50% on the next $500 million 0.45% on the next $1.5 billion 0.425% on assets in excess of $2.5 billion |",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=4",
+          "id": "b00ac685-f5aa-4d50-8a8b-fc669ca9fe11"
+        }
+      ]
+    },
+    {
+      "id": "nomura-billing-frequency@scoped",
+      "category": "answerable",
+      "event": "answer",
+      "behaviour_ok": true,
+      "citation_hit": true,
+      "numbers_ok": true,
+      "answer": "The management fee for the Nomura Tax-Free Colorado Fund is paid monthly.",
+      "citations": [
+        {
+          "kind": "element",
+          "document_id": "e5114eb4-2f84-4e15-8215-90ef6f3a7e52",
+          "document_title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+          "version": 1,
+          "page": 2,
+          "page_end": 2,
+          "section": "WITNESSETH:",
+          "quote": "As compensation for the investment services to be rendered to a particular Fund by the Investment Manager under the provisions of this Agreement, the Trust shall pay monthly to the Investment Manager exclusively from that Fund's assets, a fee based on the average daily net assets of that Fund during the month. Such fee shall be calculated in accordance with the fee schedule applicable to that Fund as set forth in Exhibit A hereto.",
+          "file_url": "/documents/e5114eb4-2f84-4e15-8215-90ef6f3a7e52/versions/1/file#page=2",
+          "id": "4b1d3b31-4fcb-402c-9339-fd7cec495ec3"
+        }
+      ]
+    }
+  ]
+}
