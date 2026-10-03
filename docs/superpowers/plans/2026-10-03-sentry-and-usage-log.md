@@ -529,7 +529,9 @@ def add_timing(session: Session, row: ChatTurnTiming) -> bool:
         .on_conflict_do_nothing(index_elements=["turn_id"])
         .returning(ChatTurnTiming.id)
     )
-    return result.first() is not None
+    inserted = result.first() is not None
+    session.commit()  # the session dependency only closes; every DAO write commits itself, as add_feedback does
+    return inserted
 ```
 
 Add `from sqlalchemy.dialects.postgresql import insert` and `ChatTurnTiming` to the imports if they are not there.
@@ -594,7 +596,7 @@ def give_timing(
     return TimingOut(recorded=recorded)
 ```
 
-Add `from app.assistant.timing import TimingInput, record_timing` to the imports. Do **not** call `session.commit()` in the route. `give_feedback` in the same file does not either. Before relying on that, read `get_session` in `backend/app/deps.py` and confirm how the transaction is committed; if it does not commit, stop and report.
+Add `from app.assistant.timing import TimingInput, record_timing` to the imports. Do **not** call `session.commit()` in the route. The commit happens in `dao.add_timing` (Step 6), as `add_feedback` does. `get_session` in `backend/app/deps.py` only closes the session; it never commits.
 
 - [ ] **Step 9: Run and confirm it passes**
 
