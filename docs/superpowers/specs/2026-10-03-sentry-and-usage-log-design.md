@@ -46,16 +46,18 @@ Success: a forced error appears in the right Sentry project, and one chat turn h
 
 ### 3. Usage log: migration 0016 (P7)
 
-- `ALTER TABLE chat_turns ADD COLUMN client_ttfb_ms integer NULL`, with a check that the value is between 0 and 60 000 when it is not null.
-- The existing grants stay. `ledger_demo` needs `UPDATE` on the single column only, if the demo role is the writer; this is checked in the plan, not assumed here.
-- No new table. `chat_turns` is already one row per query.
+- New table `chat_turn_timing`: `id uuid PK`, `tenant_id uuid FK tenants`, `turn_id uuid FK chat_turns UNIQUE`, `guest_id uuid FK guests`, `ttfb_ms integer NOT NULL CHECK (ttfb_ms BETWEEN 0 AND 60000)`, `created_at timestamptz NOT NULL DEFAULT now()`.
+- The table is append-only in the same style as the rest of the schema: a `BEFORE UPDATE OR DELETE` trigger that raises, and a `BEFORE TRUNCATE` guard, both reusing the existing `forbid_mutation()` function.
+- `chat_turns` is not changed. Its append-only trigger from migration 0009 stays exactly as it is.
+- Grants: `ledger_demo` gets `INSERT` and `SELECT` on `chat_turn_timing`, and nothing else. `ledger_app` gets `SELECT` for the usage view.
+- The unique key on `turn_id` makes a second timing write fail at the database, not in application code.
 
 ### 4. Timing endpoint (P7)
 
 - `POST /chat/turns/{turn_id}/timing`, body `{"ttfb_ms": int}`, validated by Pydantic with `ge=0` and `le=60000`.
 - Requires `X-Guest-Id`. The turn must belong to the calling guest and tenant; otherwise 404, so one guest cannot read or write another guest's turn.
-- Writes only when `client_ttfb_ms` is null. A second call returns 200 and leaves the first value. The first write wins.
-- Route stays thin: parse, call a function in `app/assistant/`, return. The write goes through `assistant/dao.py`.
+- Inserts one row. If a row already exists for the turn (unique violation), it returns 200 and leaves the first value. The first write wins.
+- Route stays thin: parse, call a function in `app/assistant/`, return. The insert goes through `assistant/dao.py`, inside the existing demo role's grants.
 
 ### 5. Client TTFB measurement (P7)
 
@@ -67,12 +69,12 @@ Success: a forced error appears in the right Sentry project, and one chat turn h
 
 - Cited-answer share per session: sessions with at least one `chat_turns` row where `outcome = 'answered'` and `citations` is a non-empty array, divided by all sessions with at least one turn.
 - TTFB: average, and a rolling window over the last N turns, computed in the same query. Nulls are excluded from the TTFB figures and reported as a count.
-- Delivered as a SQL view `chat_usage_daily`, plus an entry in `backend/script.demo.sh` (`usage` subcommand), following the existing feedback pattern.
+- Delivered as a SQL view `chat_usage_daily` that left-joins `chat_turn_timing` on `turn_id`, plus an entry in `backend/script.demo.sh` (`usage` subcommand), following the existing feedback pattern.
 
 ## Testing
 
 - **Backend, pytest:** the timing endpoint rejects values outside 0 to 60 000, rejects a missing `X-Guest-Id`, returns 404 for another guest's turn, writes the first value, and ignores a second. The `before_send` hook removes request data and chat text.
-- **Migration:** `alembic upgrade head` and `downgrade -1` on `ledger_test`.
+- **Migration:** `alembic upgrade head` and `downgrade -1` on `ledger_test`. A test that an `UPDATE` and a `DELETE` on `chat_turn_timing` are rejected, and that `chat_turns` still rejects updates.
 - **Frontend, vitest:** `streamChat` posts a TTFB after the first chunk, and posts nothing when the stream is aborted.
 - **Smoke, deployed:** a forced error reaches both Sentry projects in the `demo` environment with no chat text in the event. One real chat turn has `client_ttfb_ms` set, and the usage view returns a row.
 
@@ -80,7 +82,7 @@ Success: a forced error appears in the right Sentry project, and one chat turn h
 
 - TTFB includes the guest's network time. The figures are a range that depends on the connection, not a single server number.
 - A turn whose stream never finishes leaves the timing null. The metric skips nulls and reports how many there are.
-- The `ledger_demo` role's grants on `chat_turns` must allow the single-column update. This is checked against the demo database before the migration runs.
+- Timing rows are written only by the demo role's `INSERT` grant. The role has no `UPDATE` on `chat_turns`, so the existing append-only rule holds.
 
 ## Decisions taken
 
@@ -90,10 +92,9 @@ Success: a forced error appears in the right Sentry project, and one chat turn h
 | TTFB stop point | First chunk of the response body, including the status event | Literal TTFB definition |
 | Storage of aggregates | Computed in SQL, not stored | Average and rolling windows are changed later without a migration |
 | Outcome enum | Unchanged; cited answer derived from `citations` | No enum migration; the data is already stored |
-| Usage table | None; column on `chat_turns` | One row per query already exists |
+| Timing storage | Separate append-only table `chat_turn_timing` | `chat_turns` is append-only (migration 0009 trigger); an UPDATE would break that rule |
 | Sentry traces | Off | Demo scope; avoids extra event volume |
 
 ## Open items for the plan
 
-- Confirm the `ledger_demo` grant on `chat_turns` (see Risks).
 - Where the final SSE event is parsed on the client (`streamChat` is at `frontend/src/api.ts:135`; confirm the event parser sits in the same function).
