@@ -68,3 +68,14 @@ class ChatFeedback(Base):
     rating: Mapped[FeedbackRating] = mapped_column(SAEnum(FeedbackRating, name="feedback_rating", native_enum=True), nullable=False)
     comment_redacted: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+
+class ChatTurnTiming(Base):
+    __tablename__ = "chat_turn_timing"
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    turn_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chat_turns.id"), nullable=False, unique=True)
+    guest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("guests.id"), nullable=False)
+    ttfb_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())

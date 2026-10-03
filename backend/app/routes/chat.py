@@ -12,6 +12,7 @@ from app import config
 from app.assistant.feedback import MAX_COMMENT_LENGTH, FeedbackInput, record_feedback
 from app.assistant.models import FeedbackRating
 from app.assistant.service import AssistantRuntime, run_turn
+from app.assistant.timing import TimingInput, record_timing
 from app.deps import get_guest_id, get_overlay_guest, get_session, get_tenant_id, limit_chat
 from app.documents import dao as documents_dao
 from app.errors import GuestRequired
@@ -83,3 +84,26 @@ def give_feedback(
         raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to give feedback.")
     feedback = FeedbackInput(tenant_id=tenant_id, guest_id=guest_id, turn_id=turn_id, rating=body.rating, comment=body.comment)
     return FeedbackOut(id=record_feedback(session, feedback, config.require("PII_HMAC_KEY"), config.require("PII_VAULT_KEY")))
+
+
+class TimingIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ttfb_ms: Annotated[int, Field(ge=0, le=60000)]
+
+
+class TimingOut(BaseModel):
+    recorded: bool
+
+
+@router.post("/turns/{turn_id}/timing", response_model=TimingOut)
+def give_timing(
+    turn_id: uuid.UUID,
+    body: TimingIn,
+    session: Annotated[Session, Depends(get_session)],
+    tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
+    guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
+) -> TimingOut:
+    if guest_id is None:
+        raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to report timing.")
+    recorded = record_timing(session, TimingInput(tenant_id=tenant_id, guest_id=guest_id, turn_id=turn_id, ttfb_ms=body.ttfb_ms))
+    return TimingOut(recorded=recorded)
