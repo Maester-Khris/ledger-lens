@@ -37,3 +37,22 @@ class RateLimited(DomainError):
 
     def headers(self) -> dict[str, str]:
         return {"Retry-After": str(self.retry_after)}
+
+
+class TurnNotFound(DomainError):
+    """The chat turn does not exist, or belongs to another guest: both look the same to the caller."""
+
+    status = 404
+    type_slug = "turn-not-found"
+    title = "Chat turn not found"
+
+
+class FeedbackLimitReached(DomainError):
+    """One guest may leave a few rows per reply (a thumb, a comment, a change of mind), not an unbounded number."""
+
+    status = 429
+    type_slug = "feedback-limit"
+    title = "Too much feedback on one answer"
+
+    def __init__(self) -> None:
+        super().__init__("This answer already has the maximum number of feedback entries.")

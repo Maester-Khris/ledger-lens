@@ -6,12 +6,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app import config
+from app.assistant.feedback import MAX_COMMENT_LENGTH, FeedbackInput, record_feedback
+from app.assistant.models import FeedbackRating
 from app.assistant.service import AssistantRuntime, run_turn
-from app.deps import get_guest_id, get_overlay_guest, get_tenant_id, limit_chat
+from app.deps import get_guest_id, get_overlay_guest, get_session, get_tenant_id, limit_chat
 from app.documents import dao as documents_dao
+from app.errors import GuestRequired
 from app.documents.errors import DocumentNotFound
 from app.ledger.db import SessionLocal
 
@@ -56,3 +59,27 @@ async def chat(
             yield f"event: {event.type}\ndata: {json.dumps(event.data)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
+
+
+class FeedbackIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    rating: FeedbackRating
+    comment: Annotated[str, StringConstraints(max_length=MAX_COMMENT_LENGTH)] | None = None
+
+
+class FeedbackOut(BaseModel):
+    id: uuid.UUID
+
+
+@router.post("/turns/{turn_id}/feedback", status_code=201, response_model=FeedbackOut)
+def give_feedback(
+    turn_id: uuid.UUID,
+    body: FeedbackIn,
+    session: Annotated[Session, Depends(get_session)],
+    tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
+    guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
+) -> FeedbackOut:
+    if guest_id is None:
+        raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to give feedback.")
+    feedback = FeedbackInput(tenant_id=tenant_id, guest_id=guest_id, turn_id=turn_id, rating=body.rating, comment=body.comment)
+    return FeedbackOut(id=record_feedback(session, feedback, config.require("PII_HMAC_KEY"), config.require("PII_VAULT_KEY")))
