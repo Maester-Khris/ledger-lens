@@ -14,15 +14,9 @@ import { AuditLog } from '../components/workspace/AuditLog';
 import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import { DocumentViewer } from '../components/DocumentViewer';
+import { startersFor } from '../lib/starters';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
-
-const SUGGESTED_QUESTIONS = [
-  'What is the fee schedule in the Tremblay agreement?',
-  'How much notice is needed to terminate the Tremblay agreement?',
-  'Which law governs the Tremblay agreement?',
-  'What is the Calamos fund’s rate in excess of $26 billion?',
-];
 
 interface AssistantHeadProps {
   label: string;
@@ -105,6 +99,7 @@ export function Chat() {
   const [cardsOpen, setCardsOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const scoped = documents.find((d) => d.id === scopeId) ?? null;
+  const starters = startersFor(documents, scopeId);
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);
   const [auditKey, setAuditKey] = useState(0);
@@ -219,11 +214,11 @@ export function Chat() {
               ) : (
                 <ScopeChip title={scoped?.title ?? null} onOpen={() => { setCardsOpen(true); setPanelOpen(true); }} onClear={() => startConversation(null)} />
               )}
-              {turns.length === 0 && (
+              {turns.length === 0 && starters.length > 0 && (
                 <div className="chat__prompts">
                   <span className="chat__prompts-label">Suggested questions</span>
                   <div className="chat__prompt-chips">
-                    {SUGGESTED_QUESTIONS.map((question) => (
+                    {starters.map((question) => (
                       <button type="button" className="chat__prompt-chip" key={question} onClick={() => void ask(question)}>
                         {question}
                       </button>
