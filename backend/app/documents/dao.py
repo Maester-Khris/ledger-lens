@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
-from app.documents.models import Document, DocumentElement, DocumentVersion, PiiToken, VersionEvent
+from app.documents.models import Document, DocumentDescription, DocumentElement, DocumentVersion, PiiToken, VersionEvent
 from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
@@ -169,6 +169,7 @@ class DocumentRow:
     version: DocumentVersion
     events: list[VersionEvent]
     element_count: int
+    description: str | None = None
 
 
 def _row(session: Session, document: Document) -> DocumentRow:
@@ -176,7 +177,8 @@ def _row(session: Session, document: Document) -> DocumentRow:
         select(DocumentVersion).where(DocumentVersion.document_id == document.id).order_by(DocumentVersion.version.desc())
     ).first()
     count = session.scalar(select(func.count()).select_from(DocumentElement).where(DocumentElement.version_id == version.id))
-    return DocumentRow(document, version, version_events(session, version.id), count)
+    description = session.scalar(select(DocumentDescription.description).where(DocumentDescription.document_id == document.id))
+    return DocumentRow(document, version, version_events(session, version.id), count, description)
 
 
 def list_documents(session: Session, tenant_id: uuid.UUID) -> list[DocumentRow]:

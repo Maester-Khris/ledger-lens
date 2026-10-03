@@ -27,6 +27,7 @@ export interface DocumentSummary {
   element_count: number;
   status: DocumentStatus;
   status_note: string | null;
+  description: string | null;
   events: DocumentEvent[];
 }
 

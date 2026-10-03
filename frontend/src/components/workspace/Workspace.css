@@ -1,10 +1,11 @@
 .ws-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); min-height: 0; flex: 1; }
 @media (min-width: 1100px) { .ws-layout--with-panel { grid-template-columns: minmax(0, 1fr) 380px; } }
 .ws-cards { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-1); }
-.ws-card { flex: 0 0 220px; text-align: left; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border);
+.ws-card { flex: 0 0 260px; text-align: left; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border);
   border-radius: var(--radius-card); background: var(--color-surface); color: var(--color-text-primary); cursor: pointer; }
 .ws-card--selected { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
 .ws-card__title { display: block; font-weight: 600; }
+.ws-card__description { display: block; margin: 2px 0 4px; color: var(--color-text-secondary); font-size: 0.85em; line-height: 1.35; }
 .ws-card__meta { display: block; color: var(--color-text-secondary); font-size: 0.85em; }
 .ws-chip { display: inline-flex; align-items: center; gap: var(--space-1); border: 1px solid var(--color-border);
   border-radius: var(--radius-pill); padding: 0 var(--space-1) 0 var(--space-2); background: var(--color-bg-subtle); }

@@ -53,6 +53,7 @@ class DocumentOut(BaseModel):
     element_count: int
     status: Literal["processing", "ready", "failed"]
     status_note: str | None
+    description: str | None
     events: list[EventOut]
 
 
@@ -76,7 +77,7 @@ def _out(row: dao.DocumentRow) -> dict:
         source_url=row.document.source_url, household_id=row.document.household_id, version=row.version.version, version_id=row.version.id,
         page_count=row.version.page_count, byte_size=row.version.byte_size, file_sha256=row.version.file_sha256,
         uploaded_at=row.version.created_at, element_count=row.element_count, status=status.state,
-        status_note=status.note,
+        status_note=status.note, description=row.description,
         events=[EventOut(stage=e.stage.value, at=e.created_at, detail=e.detail) for e in row.events],
     )
 

@@ -269,6 +269,7 @@ export function Documents() {
                         <div className="documents__name" title={doc.title}>
                           {doc.title}
                         </div>
+                        {doc.description && <div className="documents__description">{doc.description}</div>}
                         <div className="documents__id mono">{doc.id}</div>
                       </td>
                       <td className="num">{doc.page_count}</td>

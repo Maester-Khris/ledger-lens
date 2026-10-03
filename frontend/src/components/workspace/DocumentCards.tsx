@@ -18,6 +18,7 @@ export function DocumentCards({ documents, selectedId, onSelect }: DocumentCards
                   className={`ws-card${selected ? ' ws-card--selected' : ''}`}
                   onClick={() => onSelect(selected ? null : d.id)}>
             <span className="ws-card__title">{d.title}</span>
+            {d.description && <span className="ws-card__description">{d.description}</span>}
             <span className="ws-card__meta">{d.page_count} pages · v{d.version}</span>
           </button>
         );
