@@ -452,39 +452,65 @@ class ChatTurnTiming(Base):
 
 - [ ] **Step 4: Write the failing endpoint test**
 
-Create `backend/tests/test_chat_timing.py`. Use the same fixtures and fake-guest helpers as `backend/tests/test_chat_feedback.py` (open that file first and copy its setup). The file must contain these cases:
+Create `backend/tests/test_chat_timing.py`. Copy the helpers `_guest` and `_turn` and the fixtures `client`, `db_session`, `tenant_id` from `backend/tests/test_chat_feedback.py` (same names, same signatures; `_turn` returns the turn id). The file must contain these cases:
 
 ```python
-def test_first_timing_is_recorded(client, guest_headers, answered_turn_id):
-    r = client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": 850}, headers=guest_headers)
+import uuid
+
+from sqlalchemy import select
+
+from app.assistant.models import ChatTurnTiming
+
+
+def _guest(client) -> dict[str, str]:  # copied from test_chat_feedback.py
+    return {"X-Guest-Id": client.post("/guests").json()["id"]}
+
+
+def _timings(db_session, turn_id: uuid.UUID) -> list[ChatTurnTiming]:
+    return list(db_session.scalars(select(ChatTurnTiming).where(ChatTurnTiming.turn_id == turn_id)))
+
+
+def test_first_timing_is_recorded(client, db_session, tenant_id):
+    guest = _guest(client)
+    turn_id = _turn(db_session, tenant_id, guest)
+    r = client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": 850}, headers=guest)
     assert r.status_code == 200
     assert r.json() == {"recorded": True}
+    assert [t.ttfb_ms for t in _timings(db_session, turn_id)] == [850]
 
 
-def test_second_timing_keeps_the_first(client, guest_headers, answered_turn_id):
-    client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": 850}, headers=guest_headers)
-    r = client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": 9000}, headers=guest_headers)
+def test_second_timing_keeps_the_first(client, db_session, tenant_id):
+    guest = _guest(client)
+    turn_id = _turn(db_session, tenant_id, guest)
+    client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": 850}, headers=guest)
+    r = client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": 9000}, headers=guest)
     assert r.status_code == 200
     assert r.json() == {"recorded": False}
+    assert [t.ttfb_ms for t in _timings(db_session, turn_id)] == [850]
 
 
-def test_other_guest_gets_404(client, other_guest_headers, answered_turn_id):
-    r = client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": 850}, headers=other_guest_headers)
+def test_another_guests_turn_is_not_found(client, db_session, tenant_id):
+    owner, other = _guest(client), _guest(client)
+    turn_id = _turn(db_session, tenant_id, owner)
+    r = client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": 850}, headers=other)
     assert r.status_code == 404
+    assert _timings(db_session, turn_id) == []
 
 
-def test_missing_guest_header_gets_400(client, answered_turn_id):
-    r = client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": 850})
+def test_missing_guest_header_gets_400(client, db_session, tenant_id):
+    turn_id = _turn(db_session, tenant_id, _guest(client))
+    r = client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": 850})
     assert r.status_code == 400
 
 
-def test_out_of_range_values_get_422(client, guest_headers, answered_turn_id):
+def test_out_of_range_values_get_422(client, db_session, tenant_id):
+    guest = _guest(client)
+    turn_id = _turn(db_session, tenant_id, guest)
     for bad in (-1, 60001, "fast", 1.5):
-        r = client.post(f"/chat/turns/{answered_turn_id}/timing", json={"ttfb_ms": bad}, headers=guest_headers)
+        r = client.post(f"/chat/turns/{turn_id}/timing", json={"ttfb_ms": bad}, headers=guest)
         assert r.status_code == 422, bad
+    assert _timings(db_session, turn_id) == []
 ```
-
-If `test_chat_feedback.py` names its fixtures differently, use its names and say so in the checkpoint report.
 
 - [ ] **Step 5: Run and confirm it fails**
 
@@ -565,11 +591,10 @@ def give_timing(
     if guest_id is None:
         raise GuestRequired("Send the X-Guest-Id of a known guest (POST /guests) to report timing.")
     recorded = record_timing(session, TimingInput(tenant_id=tenant_id, guest_id=guest_id, turn_id=turn_id, ttfb_ms=body.ttfb_ms))
-    session.commit()
     return TimingOut(recorded=recorded)
 ```
 
-Add `from app.assistant.timing import TimingInput, record_timing` to the imports. Confirm the feedback route commits the same way; if it does not, match it and say so in the checkpoint report.
+Add `from app.assistant.timing import TimingInput, record_timing` to the imports. Do **not** call `session.commit()` in the route. `give_feedback` in the same file does not either. Before relying on that, read `get_session` in `backend/app/deps.py` and confirm how the transaction is committed; if it does not commit, stop and report.
 
 - [ ] **Step 9: Run and confirm it passes**
 
