@@ -164,6 +164,18 @@ export async function streamChat(
   }
 }
 
+export type FeedbackRating = 'up' | 'down';
+
+/** One row per call: a thumb, then optionally the same thumb with a comment. The latest row is the guest's feedback. */
+export async function sendFeedback(turnId: string, rating: FeedbackRating, comment?: string): Promise<{ id: string }> {
+  const response = await fetch(`${API_BASE}/chat/turns/${turnId}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
+    body: JSON.stringify(comment ? { rating, comment } : { rating }),
+  });
+  return json<{ id: string }>(response);
+}
+
 export function fileUrl(citation: Citation): string | undefined {
   return citation.file_url ? `${API_BASE}${citation.file_url}` : undefined;
 }

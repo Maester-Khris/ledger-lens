@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig, normalizeApiBase } from './api';
+import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig, normalizeApiBase, sendFeedback } from './api';
 
 type Call = { url: string; init?: RequestInit };
 
@@ -59,4 +59,18 @@ it('defaults the API base to /api and strips trailing slashes', () => {
   expect(normalizeApiBase('https://api.example.com')).toBe('https://api.example.com');
   expect(normalizeApiBase('https://api.example.com/')).toBe('https://api.example.com');
   expect(normalizeApiBase('https://api.example.com//')).toBe('https://api.example.com');
+});
+
+it('posts a rating, and the comment only when there is one', async () => {
+  const calls = respondWith({ id: 'f1' }, 201);
+  await sendFeedback('t1', 'up');
+  await sendFeedback('t1', 'down', 'Wrong tier.');
+  const posts = calls.filter((call) => call.url === `${API_BASE}/chat/turns/t1/feedback`);
+  expect(posts.map((call) => JSON.parse(String(call.init?.body)))).toEqual([{ rating: 'up' }, { rating: 'down', comment: 'Wrong tier.' }]);
+  expect(posts[0].init?.method).toBe('POST');
+});
+
+it('rejects when the feedback is refused', async () => {
+  respondWith({ detail: 'Chat turn t1 does not exist.' }, 404);
+  await expect(sendFeedback('t1', 'up')).rejects.toThrow('does not exist');
 });

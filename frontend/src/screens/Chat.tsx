@@ -16,6 +16,7 @@ import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import { DocumentViewer } from '../components/DocumentViewer';
 import { startersFor } from '../lib/starters';
 import { citationTarget, type ViewerTarget } from '../lib/viewer';
+import { FeedbackControl } from '../components/FeedbackControl';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
 
@@ -271,6 +272,7 @@ export function Chat() {
                         )}
                       </>
                     )}
+                    {turn.turnId && <FeedbackControl key={turn.turnId} turnId={turn.turnId} />}
                   </div>
                 </div>
               ))}
