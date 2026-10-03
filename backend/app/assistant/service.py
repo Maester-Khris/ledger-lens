@@ -103,6 +103,10 @@ async def run_turn(
             history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
         turn_id = uuid.uuid4()
         record["id"] = turn_id
+
+        def final(kind: Literal["answer", "refused", "clarify"], text: str, citations: list[dict]) -> TurnEvent:
+            """The event that ends a turn. It names the turn so the client can attach feedback to it (spec P5 D5)."""
+            return TurnEvent(kind, {"text": text, "citations": citations, "turn_id": str(turn_id)})
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=turn_id,
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
@@ -145,7 +149,7 @@ async def run_turn(
                               retrieved=state.get("retrieved", []))
                 record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
                 outcome = ChatOutcome.refused
-                yield TurnEvent("refused", {"text": NOT_COMPARABLE_TEXT.format(reason=notices[-1]), "citations": [citation]})
+                yield final("refused", NOT_COMPARABLE_TEXT.format(reason=notices[-1]), [citation])
                 return
             record["retrieved"] = state.get("retrieved", [])
             record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
@@ -155,30 +159,28 @@ async def run_turn(
                 citation = _no_support_citation()
                 record.update(answer_redacted=text, citations=[citation])
                 outcome = ChatOutcome.refused
-                yield TurnEvent("refused", {"text": text, "citations": [citation]})
+                yield final("refused", text, [citation])
                 return
             if answer.clarification:
                 text = _clarifying_question(session, tenant_id, document_id)
                 record.update(answer_redacted=text, citations=[])
                 outcome = ChatOutcome.clarified
-                yield TurnEvent("clarify", {"text": text, "citations": []})
+                yield final("clarify", text, [])
                 return
             cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
             record.update(answer_redacted=answer.text, citations=cited)
             outcome = ChatOutcome.answered
             [text, *quotes] = documents_dao.reveal(session, tenant_id, [answer.text, *(c.get("quote", "") for c in cited)], vault_key)
             shown = [c | ({"quote": q} if "quote" in c else {}) for c, q in zip(cited, quotes)]
-            yield TurnEvent("answer", {"text": text, "citations": shown})
+            yield final("answer", text, shown)
         except TimeoutError:
             outcome = ChatOutcome.timed_out
             record["citations"] = [_no_support_citation()]
-            yield TurnEvent("refused", {"text": "That took too long; please try a narrower question.",
-                                        "citations": record["citations"]})
+            yield final("refused", "That took too long; please try a narrower question.", record["citations"])
         except GraphRecursionError:
             outcome = ChatOutcome.refused
             record["citations"] = [_no_support_citation()]
-            yield TurnEvent("refused", {"text": "I couldn't settle on an answer within my step limit.",
-                                        "citations": record["citations"]})
+            yield final("refused", "I couldn't settle on an answer within my step limit.", record["citations"])
         except Exception:  # the client gets a generic error; the details stay in the logs and the audit row
             logger.exception("chat turn failed")
             outcome = ChatOutcome.error

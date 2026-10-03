@@ -289,3 +289,15 @@ def test_search_is_scored_against_the_guests_question_not_only_the_models_query(
     _override(client, _runtime(model, embeddings, index), session_factory)
     kind, data = _events(client.post("/chat", json={"session_id": "s-terse", "message": full}))[-1]
     assert kind == "answer" and data["citations"][0]["id"] == element_id
+
+
+def test_the_final_event_names_the_saved_turn(client, session_factory, db_session, tenant_id):
+    model = ScriptedChatModel(replies=[
+        AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": "donations"}, "id": "c1"}]),
+        AIMessage(content="done"),
+        Answer(text="", citations=[], refused=True),
+    ])
+    _override(client, _runtime(model, RecordingEmbeddings(), InMemoryVectorIndex()), session_factory)
+    kind, data = _events(client.post("/chat", json={"session_id": "s-turn-id", "message": "Donations?"}))[-1]
+    turn = db_session.scalars(select(ChatTurn).where(ChatTurn.session_id == "s-turn-id")).one()
+    assert kind == "refused" and data["turn_id"] == str(turn.id)

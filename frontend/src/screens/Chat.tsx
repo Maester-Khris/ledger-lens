@@ -47,6 +47,7 @@ type Turn = {
   text: string;
   citations: Citation[];
   unvalidated: UnvalidatedDto[];
+  turnId: string | null;
 };
 
 interface CitationCardProps {
@@ -167,12 +168,12 @@ export function Chat() {
     if (!question.trim() || busy) return;
     setInputValue('');
     setCardsOpen(false);
-    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [] }]);
+    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [], turnId: null }]);
     const onEvent = (event: ChatEvent) => {
       if (event.type === 'progress') updateLast({ step: event.data.step });
       else if (event.type === 'unvalidated') setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, unvalidated: [...t.unvalidated, event.data] } : t)));
       else if (event.type === 'error') updateLast({ outcome: 'error', text: event.data.text });
-      else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations });
+      else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations, turnId: event.data.turn_id });
     };
     try {
       await streamChat(sessionId, question, onEvent, { documentId: scopeId ?? undefined });
