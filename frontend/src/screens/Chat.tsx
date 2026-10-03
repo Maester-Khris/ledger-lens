@@ -4,7 +4,7 @@ import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
+import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, listDocuments, streamChat, listToolInvocations } from '../api';
 import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
@@ -15,6 +15,7 @@ import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import { DocumentViewer } from '../components/DocumentViewer';
 import { startersFor } from '../lib/starters';
+import { citationTarget, type ViewerTarget } from '../lib/viewer';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
 
@@ -46,10 +47,11 @@ type Turn = {
 
 interface CitationCardProps {
   citation: Citation;
+  onOpen(target: ViewerTarget): void;
 }
 
-function CitationCard({ citation }: CitationCardProps) {
-  const href = fileUrl(citation);
+function CitationCard({ citation, onOpen }: CitationCardProps) {
+  const target = citationTarget(citation);
   return (
     <div className="citation-card">
       <div className="citation-card__head">
@@ -69,10 +71,10 @@ function CitationCard({ citation }: CitationCardProps) {
       {citation.detail && <p className="mono citation-card__excerpt">{citation.detail}</p>}
       <div className="citation-card__foot">
         <span className="mono">{citation.id}</span>
-        {href && (
-          <a href={href} target="_blank" rel="noreferrer">
+        {target && (
+          <button type="button" className="citation-card__open" onClick={() => onOpen(target)}>
             Open page →
-          </a>
+          </button>
         )}
       </div>
     </div>
@@ -106,7 +108,7 @@ export function Chat() {
   const [ledgerKey, setLedgerKey] = useState(0);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
-  const [viewer, setViewer] = useState<{ documentId: string; version: number; page: number; title: string } | null>(null);
+  const [viewer, setViewer] = useState<ViewerTarget | null>(null);
 
   const tabs: PanelTab[] = [
     ...(scopeId ? [
@@ -244,7 +246,7 @@ export function Chat() {
                         {turn.citations.length > 0 && (
                           <div className="chat__citations">
                             {turn.citations.map((c) => (
-                              <CitationCard key={c.id} citation={c} />
+                              <CitationCard key={c.id} citation={c} onOpen={setViewer} />
                             ))}
                           </div>
                         )}
@@ -263,7 +265,7 @@ export function Chat() {
                         {turn.citations.length > 0 && (
                           <div className="chat__citations">
                             {turn.citations.map((c) => (
-                              <CitationCard key={c.id} citation={c} />
+                              <CitationCard key={c.id} citation={c} onOpen={setViewer} />
                             ))}
                           </div>
                         )}

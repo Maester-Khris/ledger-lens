@@ -47,6 +47,7 @@ export interface DocumentDetail extends DocumentSummary {
 export interface Citation {
   id: string;
   kind: 'element' | 'tool' | 'system';
+  document_id?: string;
   document_title?: string;
   version?: number;
   page?: number;

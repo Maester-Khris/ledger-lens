@@ -215,9 +215,18 @@
   color: var(--color-text-secondary);
 }
 
-.citation-card__foot a {
+.citation-card__open {
+  border: 0;
+  background: none;
+  padding: 0;
   font-size: 12px;
   font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.citation-card__open:hover {
+  color: var(--color-accent-hover);
 }
 
 .chat__composer {
