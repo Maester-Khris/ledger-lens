@@ -72,6 +72,10 @@ def require(name: str) -> str:
     return value
 
 
+# Errors (Sentry). No DSN means Sentry stays off, as in tests and local runs.
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "local")
+
 # Tracing
 LANGFUSE_PUBLIC_KEY = os.environ.get("LANGFUSE_PUBLIC_KEY")
 LANGFUSE_SECRET_KEY = os.environ.get("LANGFUSE_SECRET_KEY")

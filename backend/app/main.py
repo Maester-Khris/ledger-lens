@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +7,10 @@ from app import config
 from app.problem import install_problem_handlers
 from app.routes import health, postings, fee_runs, tool_invocations, gl_exports, documents, chat, reviews, stats, guests, contract_terms, document_timeline
 from app.tracing import flush_tracing
+
+# ponytail: no traces and no PII (chat text and guest ids stay out of events); the dashboard scrubber is the second layer.
+if config.SENTRY_DSN:
+    sentry_sdk.init(dsn=config.SENTRY_DSN, environment=config.SENTRY_ENVIRONMENT, send_default_pii=False)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
