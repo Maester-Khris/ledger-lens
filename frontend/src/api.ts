@@ -137,6 +137,7 @@ export interface StreamChatOptions { documentId?: string }
 export async function streamChat(
   sessionId: string, message: string, onEvent: (event: ChatEvent) => void, options: StreamChatOptions = {},
 ): Promise<void> {
+  const t0 = performance.now();
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
@@ -149,8 +150,11 @@ export async function streamChat(
   }
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
+  let t1: number | undefined;
+  let turnId: string | undefined;
   for (;;) {
     const { value, done } = await reader.read();
+    if (value && t1 === undefined) t1 = performance.now();
     if (done) break;
     buffer += value;
     let boundary = buffer.indexOf('\n\n');
@@ -158,10 +162,15 @@ export async function streamChat(
       const block = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
       const fields = Object.fromEntries(block.split('\n').map((line) => [line.slice(0, line.indexOf(': ')), line.slice(line.indexOf(': ') + 2)]));
-      if (fields.event && fields.data) onEvent({ type: fields.event, data: JSON.parse(fields.data) } as ChatEvent);
+      if (fields.event && fields.data) {
+        const parsedData = JSON.parse(fields.data);
+        if ('turn_id' in parsedData) turnId = parsedData.turn_id;
+        onEvent({ type: fields.event, data: parsedData } as ChatEvent);
+      }
       boundary = buffer.indexOf('\n\n');
     }
   }
+  if (turnId && t1 !== undefined) void sendTiming(turnId, Math.round(t1 - t0));
 }
 
 export type FeedbackRating = 'up' | 'down';
@@ -174,6 +183,19 @@ export async function sendFeedback(turnId: string, rating: FeedbackRating, comme
     body: JSON.stringify(comment ? { rating, comment } : { rating }),
   });
   return json<{ id: string }>(response);
+}
+
+/** Fire-and-forget: a lost timing row is acceptable, a visible error for the guest is not. */
+export async function sendTiming(turnId: string, ttfbMs: number): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/chat/turns/${turnId}/timing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
+      body: JSON.stringify({ ttfb_ms: ttfbMs }),
+    });
+  } catch {
+    // ignored on purpose: see the comment above
+  }
 }
 
 export function fileUrl(citation: Citation): string | undefined {
