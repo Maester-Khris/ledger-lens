@@ -11,25 +11,39 @@
   border-radius: var(--radius-pill); padding: 0 var(--space-1) 0 var(--space-2); background: var(--color-bg-subtle); }
 .ws-chip__label, .ws-chip__clear { background: none; border: 0; color: var(--color-text-primary); cursor: pointer; padding: var(--space-1); }
 .ws-panel { border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface);
-  display: flex; flex-direction: column; min-height: 0; }
+  display: flex; flex-direction: column; min-height: 0; position: relative; }
 @media (max-width: 1099px) { .ws-panel { position: fixed; inset: 0 0 0 auto; width: min(420px, 100vw); z-index: 20; } }
-.ws-panel__head { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border); }
-.ws-panel__select-label { font-size: 0.78em; font-weight: 600; color: var(--color-text-secondary);
-  text-transform: uppercase; letter-spacing: 0.02em; }
-.ws-panel__select { flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-control);
-  padding: 6px var(--space-2); font-size: 13px; font-weight: 500; color: var(--color-text-primary);
-  background: var(--color-surface); }
+
+/* Header band: the "Viewing" row here, then each pane's .ws-pane__intro continues the same tint. */
+.ws-panel__head { display: flex; align-items: center; gap: var(--space-1); min-height: 30px;
+  padding: var(--space-2) var(--space-3) var(--space-1); background: var(--color-bg-subtle);
+  border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.ws-panel__select-label { font-size: 0.72em; font-weight: 600; color: var(--color-text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em; }
+.ws-panel__select-wrapper { position: relative; background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill); }
+.ws-panel__select-wrapper::after { content: ""; position: absolute; right: 12px; top: 50%; margin-top: -2px;
+  border: 4px solid transparent; border-top-color: var(--color-accent); pointer-events: none; }
+.ws-panel__select { border: none; border-radius: var(--radius-pill); height: 28px; padding: 0 28px 0 12px;
+  font-size: 14px; font-weight: 600; color: var(--color-accent); background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none; }
 .ws-panel__select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-.ws-pane { overflow-y: auto; padding: var(--space-3); }
-.ws-pane__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
-.ws-refresh {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--color-accent); border: 1px solid var(--color-accent); border-radius: var(--radius-control);
-  padding: 6px var(--space-2); color: var(--color-on-accent); cursor: pointer;
-  transition: background var(--motion-fast), border-color var(--motion-fast);
-}
-.ws-refresh:hover:not(:disabled) { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+
+.ws-pane { overflow-y: auto; padding: 0 var(--space-3) var(--space-3); flex: 1; min-height: 0; }
+.ws-pane > .ws-empty, .ws-pane > .ws-error { margin-top: var(--space-2); }
+.ws-pane__intro { margin: 0 calc(var(--space-3) * -1) var(--space-2); padding: 0 var(--space-3) var(--space-2);
+  background: var(--color-bg-subtle); border-bottom: 1px solid var(--color-border); display: grid; gap: var(--space-1); }
+.ws-pane__meta { margin: 0; font-family: var(--font-mono); font-size: 0.78em; font-weight: 400; color: var(--color-text-secondary); }
+.ws-pane__desc { margin: 0; font-size: 0.85em; color: var(--color-text-secondary); }
+
+/* The refresh button is rendered by the pane (it owns the reload) and anchored into the header band. */
+.ws-refresh { position: absolute; top: var(--space-2); right: var(--space-3);
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-control);
+  color: var(--color-text-secondary); cursor: pointer;
+  transition: color var(--motion-fast), border-color var(--motion-fast); }
+.ws-refresh:hover:not(:disabled) { color: var(--color-accent); border-color: var(--color-accent); }
+.ws-refresh:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .ws-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -42,38 +56,64 @@
 .ws-muted li { display: flex; align-items: center; gap: 8px; padding: 8px var(--space-2);
   border: 1px dashed var(--color-border); border-radius: var(--radius-control); background: var(--color-bg-subtle);
   font-size: 0.85em; color: var(--color-text-secondary); }
-.ws-badge { font-size: 0.75em; border-radius: var(--radius-pill); padding: 0 var(--space-1); border: 1px solid var(--color-border); }
 .ws-reason { color: var(--color-text-secondary); font-size: 0.85em; }
 
-.ws-field { display: grid; gap: 4px; margin-bottom: var(--space-3); }
-.ws-field__label { display: flex; align-items: center; gap: 6px; font-size: 0.78em; font-weight: 600;
-  color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.02em; }
-.ws-field__value { margin: 0; }
-.ws-field__value-text { display: block; font-size: 0.95em; color: var(--color-text-primary); }
-.ws-field__reason { margin: 4px 0 0; font-size: 0.82em; color: var(--color-text-secondary); font-style: italic; }
-.ws-field__page { display: inline-block; margin-top: 6px; font-size: 0.82em; font-weight: 600; color: var(--color-accent); }
-.ws-field__page--button { background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-align: left; }
+.ws-badge { display: inline-block; font-size: 0.75em; font-weight: 600; line-height: 1.7; white-space: nowrap;
+  border-radius: var(--radius-control); padding: 0 var(--space-1); border: 1px solid var(--color-border); }
+.ws-badge--accepted, .ws-badge--confirmed, .ws-badge--approved, .ws-badge--posted {
+  color: var(--color-success); background: var(--color-success-tint); border-color: transparent; }
+.ws-badge--needs_review, .ws-badge--corrected, .ws-badge--ai_proposed {
+  color: var(--color-warning); background: var(--color-warning-tint); border-color: transparent; }
+.ws-badge--rejected { color: var(--color-error); background: var(--color-error-tint); border-color: transparent; }
+.ws-badge--extracted, .ws-badge--reviewed, .ws-badge--decided {
+  color: var(--color-accent); background: var(--color-accent-tint); border-color: transparent; }
+.ws-badge--ingested { color: var(--color-text-secondary); background: var(--color-surface); }
+.ws-badge--dot::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px;
+  border-radius: 50%; background: currentColor; vertical-align: middle; }
 
-.ws-badge--accepted, .ws-badge--confirmed { color: var(--color-success); border-color: var(--color-success); }
-.ws-badge--needs_review, .ws-badge--rejected { color: var(--color-warning); border-color: var(--color-warning); }
+/* Profile and billing: one card per field. */
+.ws-profile section > h3, .ws-profile dl { margin: 0; }
+.ws-profile section > h3 { margin-bottom: var(--space-1); font-size: 0.72em; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--color-text-secondary); }
+.ws-profile section { margin-bottom: var(--space-2); }
+.ws-field { display: grid; gap: 4px; margin-bottom: var(--space-1); padding: 12px var(--space-2);
+  background: var(--color-bg-subtle); border-radius: var(--radius-card); }
+.ws-field__label { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1);
+  font-size: 0.82em; font-weight: 500; color: var(--color-text-secondary); }
+.ws-field__value { margin: 0; }
+.ws-field__value-text { display: block; font-size: 1em; font-weight: 600; color: var(--color-text-primary); overflow-wrap: anywhere; }
+.ws-field__value-text--lg { font-size: 1.15em; }
+.ws-token { font-family: var(--font-mono); font-size: 0.9em; font-weight: 500; color: var(--color-accent); }
+.ws-field__reason { margin: 4px 0 0; font-size: 0.82em; color: var(--color-text-secondary); font-style: italic; }
+.ws-field__page { display: inline-block; margin-top: 6px; font-family: var(--font-mono); font-size: 0.78em;
+  font-weight: 500; color: var(--color-accent); }
+.ws-field__page--button { background: none; border: none; padding: 0; cursor: pointer; text-align: left; }
 
 .ws-notice { border-left: 3px solid var(--color-accent); padding: var(--space-2); background: var(--color-bg-subtle); margin-top: var(--space-2); }
-.ws-audit { list-style: none; padding: 0; display: grid; gap: var(--space-2); } .ws-input { font-size: 0.8em; white-space: pre-wrap; margin: 0; }
-.ws-timeline { list-style: none; padding: 0 0 0 var(--space-3); border-left: 2px solid var(--color-border); display: grid; gap: var(--space-2); }
-.ws-billing__household { margin: 0 0 var(--space-3); color: var(--color-text-secondary); }
 
-.ws-timeline__item { padding-bottom: var(--space-2); }
-.ws-timeline__item:last-child { padding-bottom: 0; }
-.ws-timeline__item > div:first-child { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 0.95em; font-weight: 500; color: var(--color-text-primary); }
-.ws-timeline__item details { margin-top: 6px; font-size: 0.85em; }
-.ws-timeline__item details summary { cursor: pointer; color: var(--color-text-secondary); }
-.ws-timeline__item details ul { margin: 6px 0 0; padding-left: var(--space-3); }
-.ws-timeline__item > a { display: inline-block; margin-top: 6px; font-size: 0.82em; font-weight: 600; color: var(--color-accent); }
+/* Audit trail and ledger: a rail with one dot and one card per event. */
+.ws-timeline { list-style: none; margin: 0 0 0 5px; padding: 0 0 0 var(--space-2);
+  border-left: 2px solid var(--color-border); display: grid; gap: var(--space-2); }
+.ws-timeline__item { position: relative; }
+.ws-timeline__item::before { content: ""; position: absolute; top: 12px; left: calc(var(--space-2) * -1 - 8px);
+  width: 10px; height: 10px; border-radius: 50%; background: var(--color-accent);
+  border: 2px solid var(--color-surface); box-shadow: 0 0 0 1px var(--color-border); }
+.ws-timeline__item--ingested::before { background: var(--color-text-secondary); }
+.ws-timeline__item--ai_proposed::before, .ws-timeline__item--pending::before { background: var(--color-warning); }
+.ws-timeline__item--posted::before, .ws-timeline__item--approved::before { background: var(--color-success); }
+.ws-timeline__item--rejected::before { background: var(--color-error); }
 
-.ws-badge--ingested { color: var(--color-text-secondary); }
-.ws-badge--extracted { color: var(--color-accent); border-color: var(--color-accent); }
-.ws-badge--reviewed { color: var(--color-accent); border-color: var(--color-accent); }
-.ws-badge--ai_proposed { color: var(--color-warning); border-color: var(--color-warning); }
-.ws-badge--decided { color: var(--color-accent); border-color: var(--color-accent); }
-.ws-badge--posted { color: var(--color-success); border-color: var(--color-success); }
+.ws-event { display: grid; gap: 6px; padding: 12px var(--space-2); background: var(--color-bg-subtle);
+  border-radius: var(--radius-card); min-width: 0; }
+.ws-event__top, .ws-event__row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-1); flex-wrap: wrap; }
+.ws-event__title { font-size: 0.95em; font-weight: 600; color: var(--color-text-primary); overflow-wrap: anywhere; }
+.ws-event__name { font-size: 0.78em; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.ws-event__row, .ws-event__time { font-family: var(--font-mono); font-size: 0.75em; color: var(--color-text-secondary); }
+.ws-event__row--foot { padding: 6px var(--space-1); background: var(--color-surface); border-radius: var(--radius-control); }
+.ws-event__row--foot strong { font-weight: 600; color: var(--color-text-primary); }
+.ws-event a { font-size: 0.82em; font-weight: 600; color: var(--color-accent); }
+.ws-event details { font-size: 0.85em; }
+.ws-event details summary { cursor: pointer; color: var(--color-text-secondary); }
+.ws-event details ul { margin: 6px 0 0; padding-left: var(--space-3); }
+.ws-input { margin: 0; padding: var(--space-1); max-height: 160px; overflow: auto; background: var(--color-surface);
+  border-radius: var(--radius-control); font-family: var(--font-mono); font-size: 0.75em; white-space: pre-wrap; overflow-wrap: anywhere; }

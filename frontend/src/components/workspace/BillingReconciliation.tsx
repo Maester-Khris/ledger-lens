@@ -25,17 +25,21 @@ export function BillingReconciliation({ documentId }: BillingReconciliationProps
 
   return (
     <div className="ws-billing">
-      <p className="ws-billing__household">Household <strong>{terms.household.name}</strong></p>
+      <div className="ws-pane__intro">
+        <p className="ws-pane__meta">Household <strong>{terms.household.name}</strong></p>
+      </div>
       {terms.billing_schedule ? (
-        <div className="ws-field">
-          <dt className="ws-field__label">Billing schedule</dt>
+        <dl className="ws-field">
+          <dt className="ws-field__label">
+            <span>Billing schedule</span>
+            <span className="ws-badge mono">v{terms.billing_schedule.version} ({terms.billing_schedule.method})</span>
+          </dt>
           <dd className="ws-field__value">
-            <span className="ws-field__value-text">
-              v{terms.billing_schedule.version} ({terms.billing_schedule.method}) -{' '}
+            <span className="ws-field__value-text ws-field__value-text--lg">
               {terms.billing_schedule.tiers.map((t) => percent(t.rate_bps)).join(' / ')}
             </span>
           </dd>
-        </div>
+        </dl>
       ) : <p className="ws-empty">No billing schedule in effect today.</p>}
     </div>
   );

@@ -34,29 +34,35 @@ export function LedgerTimeline({ documentId, refreshKey }: LedgerTimelineProps) 
 
   return (
     <div>
-      <div className="ws-pane__head"><h3>From contract to ledger</h3><RefreshButton onClick={load} busy={busy} /></div>
+      <div className="ws-pane__intro"><h3 className="ws-pane__meta">From contract to ledger</h3></div>
+      <RefreshButton onClick={load} busy={busy} />
       {error && <p className="ws-error">{error}</p>}
       {!error && items === null && <p className="ws-empty">Loading…</p>}
       {items?.length === 0 && <p className="ws-empty">Nothing has happened to this document yet.</p>}
       <ol className="ws-timeline">
         {items?.map((item, index) => (
           <li key={`${item.at}-${index}`} className={`ws-timeline__item ws-timeline__item--${item.kind}`}>
-            <div><span className={`ws-badge ws-badge--${item.kind}`}>{KIND_LABEL[item.kind]}</span> {item.title}</div>
-            <div className="ws-reason">{new Date(item.at).toLocaleString()}</div>
-            {item.kind === 'decided' && item.detail.recorded === false && (
-              <div className="ws-reason">Demo decision, not recorded</div>
-            )}
-            {item.detail.entries && (
-              <details>
-                <summary>Entries</summary>
-                <ul>
-                  {item.detail.entries.map((e, i) => (
-                    <li key={i}>{e.direction === 'debit' ? 'Dr' : 'Cr'} {e.account} {money(e.amount_minor, e.currency)}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
-            {item.links.ledger && <Link to={item.links.ledger}>View in ledger →</Link>}
+            <div className="ws-event">
+              <div className="ws-event__top">
+                <span className={`ws-badge ws-badge--${item.kind}`}>{KIND_LABEL[item.kind]}</span>
+                <time className="ws-event__time" dateTime={item.at}>{new Date(item.at).toLocaleString()}</time>
+              </div>
+              <div className="ws-event__title">{item.title}</div>
+              {item.kind === 'decided' && item.detail.recorded === false && (
+                <div className="ws-reason">Demo decision, not recorded</div>
+              )}
+              {item.detail.entries && (
+                <details>
+                  <summary>Entries</summary>
+                  <ul>
+                    {item.detail.entries.map((e, i) => (
+                      <li key={i}>{e.direction === 'debit' ? 'Dr' : 'Cr'} {e.account} {money(e.amount_minor, e.currency)}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {item.links.ledger && <Link to={item.links.ledger}>View in ledger →</Link>}
+            </div>
           </li>
         ))}
       </ol>
