@@ -61,7 +61,7 @@ function Provenance({ postingId }: ProvenanceProps) {
       <dd className="mono">{invocation.session_id}</dd>
       <dt>Approved by</dt>
       <dd className="mono">
-        {invocation.decision ? `${invocation.decision.decided_by} · ${formatUtc(invocation.decision.decided_at)}` : '—'}
+        {invocation.decision ? `${invocation.decision.decided_by} · ${formatUtc(invocation.decision.decided_at)}` : '-'}
       </dd>
     </dl>
   );
@@ -187,7 +187,7 @@ export function Ledger() {
             </span>
           </h1>
           <p className="ledger__subtitle">
-            Every journal entry in the double-entry ledger. Postings are never edited — a correction is a compensating
+            Every journal entry in the double-entry ledger. Postings are never edited - a correction is a compensating
             reversal.
           </p>
         </div>
@@ -313,7 +313,7 @@ export function Ledger() {
                 )}
               </span>
               <span className="ledger__invariant">
-                <CheckIcon size={13} /> Every posting balances — debits = credits enforced by a database constraint
+                <CheckIcon size={13} /> Every posting balances - debits = credits enforced by a database constraint
               </span>
             </div>
           </div>
@@ -359,8 +359,8 @@ export function Ledger() {
                     {selected.lines.map((line, index) => (
                       <tr key={index}>
                         <td>{line.account}</td>
-                        <td className="num mono">{line.debit ?? '—'}</td>
-                        <td className="num mono">{line.credit ?? '—'}</td>
+                        <td className="num mono">{line.debit ?? '-'}</td>
+                        <td className="num mono">{line.credit ?? '-'}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -12,7 +12,7 @@ export function CopyButton({ value }: CopyButtonProps) {
       aria-label={`Copy ${value}`}
       onClick={(event) => {
         event.stopPropagation();
-        // ponytail: clipboard can be unavailable (non-secure origin) — copying is a convenience, fail silently
+        // ponytail: clipboard can be unavailable (non-secure origin) - copying is a convenience, fail silently
         navigator.clipboard?.writeText(value).catch(() => {});
       }}
     >

@@ -17,7 +17,7 @@ describe('stats formatting', () => {
   it('formats latency and shows a dash when there is none', () => {
     expect(formatMs(412)).toBe('412 ms');
     expect(formatMs(1830)).toBe('1.8 s');
-    expect(formatMs(null)).toBe('—');
+    expect(formatMs(null)).toBe('-');
   });
 
   it('describes how long ago something happened', () => {

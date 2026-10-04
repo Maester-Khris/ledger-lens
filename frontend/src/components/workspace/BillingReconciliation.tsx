@@ -31,7 +31,7 @@ export function BillingReconciliation({ documentId }: BillingReconciliationProps
           <dt className="ws-field__label">Billing schedule</dt>
           <dd className="ws-field__value">
             <span className="ws-field__value-text">
-              v{terms.billing_schedule.version} ({terms.billing_schedule.method}) —{' '}
+              v{terms.billing_schedule.version} ({terms.billing_schedule.method}) -{' '}
               {terms.billing_schedule.tiers.map((t) => percent(t.rate_bps)).join(' / ')}
             </span>
           </dd>

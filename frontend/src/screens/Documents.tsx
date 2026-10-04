@@ -190,7 +190,7 @@ export function Documents() {
           <div>
             <h1 className="documents__title">Documents</h1>
             <p className="documents__subtitle">
-              Every uploaded contract and its ingestion pipeline — parse, tokenise, index, extract. Answers in Chat cite
+              Every uploaded contract and its ingestion pipeline - parse, tokenise, index, extract. Answers in Chat cite
               these chunks by page and section.
             </p>
             <p className="documents__stack mono">
@@ -273,7 +273,7 @@ export function Documents() {
                         <div className="documents__id mono">{doc.id}</div>
                       </td>
                       <td className="num">{doc.page_count}</td>
-                      <td className="num">{doc.element_count || '—'}</td>
+                      <td className="num">{doc.element_count || '-'}</td>
                       <td className="mono documents__uploaded">{formatUtc(doc.uploaded_at)}</td>
                       <td>
                         <StatusCell doc={doc} />
@@ -312,7 +312,7 @@ export function Documents() {
                 <dt>Pages</dt>
                 <dd className="mono">{current.page_count}</dd>
                 <dt>Chunks</dt>
-                <dd className="mono">{current.element_count || '—'}</dd>
+                <dd className="mono">{current.element_count || '-'}</dd>
                 <dt>Uploaded</dt>
                 <dd className="mono">{formatUtcFull(current.uploaded_at)}</dd>
                 <dt>Size</dt>

@@ -22,7 +22,7 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
   const result =
     invocation.result_amount_minor !== null && invocation.result_currency
       ? formatMinor(invocation.result_amount_minor, invocation.result_currency)
-      : '—';
+      : '-';
 
   const decide = async (choice: 'approved' | 'rejected') => {
     setSubmitting(true);
@@ -83,8 +83,8 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
             {entries.map((entry, index) => (
               <tr key={index}>
                 <td>{entry.account_name}</td>
-                <td className="num mono">{entry.direction === 'debit' ? formatMinor(entry.amount, entry.currency) : '—'}</td>
-                <td className="num mono">{entry.direction === 'credit' ? formatMinor(entry.amount, entry.currency) : '—'}</td>
+                <td className="num mono">{entry.direction === 'debit' ? formatMinor(entry.amount, entry.currency) : '-'}</td>
+                <td className="num mono">{entry.direction === 'credit' ? formatMinor(entry.amount, entry.currency) : '-'}</td>
               </tr>
             ))}
           </tbody>

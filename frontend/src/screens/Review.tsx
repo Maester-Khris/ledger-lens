@@ -174,7 +174,7 @@ export function Review() {
           <h1 className="review__title">Review</h1>
           <p className="review__subtitle">
             Every AI decision that reaches this screen is logged in the audit trail. Decisions are recorded append-only
-            with your name and the time — nothing reaches the assistant or the ledger until someone decides.
+            with your name and the time - nothing reaches the assistant or the ledger until someone decides.
           </p>
           {error && (
             <p className="review__error" role="alert">
@@ -268,7 +268,7 @@ export function Review() {
               />
             </Suspense>
           ) : (
-            <p className="review__empty review__viewer-empty">Nothing to show — the review queue is empty.</p>
+            <p className="review__empty review__viewer-empty">Nothing to show - the review queue is empty.</p>
           )}
         </aside>
       </div>

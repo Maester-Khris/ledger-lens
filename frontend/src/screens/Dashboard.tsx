@@ -154,10 +154,10 @@ export function Dashboard() {
                 tone={data.stats.reviews_pending + data.stats.approvals_pending > 0 ? 'warning' : undefined}
                 to="/review"
               />
-              <StatTile label="Confidence drop-rate" value="—" detail="Rolling 7-day window · not tracked in this demo" muted />
+              <StatTile label="Confidence drop-rate" value="-" detail="Rolling 7-day window · not tracked in this demo" muted />
               <StatTile
                 label="Golden-set eval"
-                value={data.stats.eval ? formatPercent(evalScore(data.stats.eval)) : '—'}
+                value={data.stats.eval ? formatPercent(evalScore(data.stats.eval)) : '-'}
                 detail={
                   data.stats.eval
                     ? `${data.stats.eval.cases} cases · numbers ${formatPercent(data.stats.eval.numbers_ok)} · refusals ${formatPercent(data.stats.eval.refusal_ok)} · citations ${formatPercent(data.stats.eval.citation_hit)}`
@@ -260,7 +260,7 @@ export function Dashboard() {
                     <TelemetryRow label="Chat model" value={data.config.chat_model} />
                     <TelemetryRow
                       label="Last ingestion"
-                      value={data.stats.last_ingestion_at ? formatUtc(data.stats.last_ingestion_at) : '—'}
+                      value={data.stats.last_ingestion_at ? formatUtc(data.stats.last_ingestion_at) : '-'}
                       note={data.stats.last_ingestion_at ? formatAgo(data.stats.last_ingestion_at, data.loadedAt) : undefined}
                     />
                     <TelemetryRow
@@ -270,7 +270,7 @@ export function Dashboard() {
                     />
                     <TelemetryRow
                       label="Citation coverage"
-                      value={data.stats.eval ? formatPercent(data.stats.eval.citation_hit) : '—'}
+                      value={data.stats.eval ? formatPercent(data.stats.eval.citation_hit) : '-'}
                       note="golden set"
                     />
                   </dl>

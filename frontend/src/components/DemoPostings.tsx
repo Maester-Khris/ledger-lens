@@ -45,8 +45,8 @@ export function DemoPostings() {
             {(invocation.proposed_entries ?? []).map((entry, index) => (
               <tr key={index}>
                 <td>{entry.account_name}</td>
-                <td className="num mono">{entry.direction === 'debit' ? formatMinor(entry.amount, entry.currency) : '—'}</td>
-                <td className="num mono">{entry.direction === 'credit' ? formatMinor(entry.amount, entry.currency) : '—'}</td>
+                <td className="num mono">{entry.direction === 'debit' ? formatMinor(entry.amount, entry.currency) : '-'}</td>
+                <td className="num mono">{entry.direction === 'credit' ? formatMinor(entry.amount, entry.currency) : '-'}</td>
               </tr>
             ))}
           </tbody>

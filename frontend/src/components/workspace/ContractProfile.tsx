@@ -23,7 +23,7 @@ interface ContractProfileProps {
 }
 
 function display(value: unknown): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
   if (typeof value === 'object') {
     const band = value as { band_text?: string; rate_text?: string };
     if (band.band_text || band.rate_text) return [band.band_text, band.rate_text].filter(Boolean).join(' · ');

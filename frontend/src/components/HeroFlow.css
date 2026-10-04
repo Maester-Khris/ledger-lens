@@ -138,7 +138,7 @@
     animation: hero-flow-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
   }
 
-  /* Review Focus 3: both dot phases are 1200ms in PHASE_DURATIONS_MS — this duration must match. */
+  /* Review Focus 3: both dot phases are 1200ms in PHASE_DURATIONS_MS - this duration must match. */
   .hero-flow__dot {
     animation: hero-flow-travel 1200ms linear forwards;
   }

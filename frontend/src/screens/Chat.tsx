@@ -315,7 +315,7 @@ export function Chat() {
                 </button>
               </div>
               <div className="chat__composer-foot">
-                Every number in an answer traces to the page it's cited from, checked before you see it — and the
+                Every number in an answer traces to the page it's cited from, checked before you see it - and the
                 assistant says so when it can't find one.
               </div>
             </form>
