@@ -4,10 +4,14 @@ import { CheckIcon, LockIcon, RefreshIcon, SparkleIcon } from '../components/Ico
 import { HeroFlow } from '../components/HeroFlow';
 import './Landing.css';
 
+const REPO_URL = 'https://github.com/Maester-Khris/ledger-lens';
+// The reports are on preview and not yet on main; switch to main after the next release.
+const REPORTS_URL = `${REPO_URL}/tree/preview/backend/reports`;
+
 const STEPS = [
   {
     title: 'Read the agreement',
-    body: 'Upload an investment advisory agreement as a PDF. It is parsed on your machine, names, emails, phone and account numbers are replaced with tokens, and the fee schedule is extracted together with the clause it came from.',
+    body: 'Upload an investment advisory agreement as a PDF. It is parsed and tokenized before anything reaches a model: names, emails, phone and account numbers are replaced with tokens, and the fee schedule is extracted together with the clause it came from.',
   },
   {
     title: 'Reconcile it with billing',
@@ -26,6 +30,44 @@ const GUARANTEES = [
   'The ledger is append-only. A mistake is undone with a reversal, never an edit.',
 ];
 
+// Every figure here is copied from a report in the repository; the source column names it.
+const PROOF = [
+  {
+    claim: 'No duplicate postings under load',
+    measured: '0 of 500 concurrent requests',
+    source: 'reports/concurrency.json',
+    date: '2026-09-23',
+  },
+  {
+    claim: 'Answerable questions answered with the right numbers and a citation',
+    measured: '27 to 28 of 28, across three runs',
+    source: 'reports/eval-5bfdd62942f4*.json',
+    date: '2026-10-02',
+  },
+  {
+    claim: 'Unanswerable questions refused or sent back for clarification',
+    measured: '21 of 21, across three runs',
+    source: 'reports/eval-5bfdd62942f4*.json',
+    date: '2026-10-02',
+  },
+];
+
+const DATA_HANDLING = [
+  'Names, emails, phone and account numbers are tokenized before any text reaches a model.',
+  'Parsing and tokenization run locally, with Docling and Presidio.',
+  'Search vectors are stored in Pinecone (AWS us-east-1).',
+  'Answers and extraction use OpenAI GPT-4.1, pinned to a dated snapshot.',
+  'Search embeddings use OpenAI text-embedding-3-small.',
+];
+
+const DEMO_LIMITS = [
+  'Agreements are synthetic or public EDGAR filings. There is no client data.',
+  'Guests are identified for attribution, not authenticated.',
+  'In the public demo, approvals are checked by the ledger but not recorded.',
+  'One tenant.',
+  'A comparison runs when you ask for it, against the billing schedule in effect, not against invoices.',
+];
+
 export function Landing() {
   return (
     <div className="landing">
@@ -35,8 +77,9 @@ export function Landing() {
           Ledger Assistant
         </div>
         <nav className="landing__nav-links" aria-label="Page sections">
-          <a href="#how-it-works">How it works</a>
           <a href="#guarantees">Guarantees</a>
+          <a href="#proof">Proof</a>
+          <a href="#how-it-works">How it works</a>
         </nav>
         <Link to="/dashboard" className="btn btn-primary">
           Open the demo
@@ -44,11 +87,12 @@ export function Landing() {
       </header>
 
       <section className="landing__hero">
+        <p className="landing__eyebrow mono">For billing operations and compliance teams at Canadian portfolio managers</p>
         <h1 className="landing__headline">Bill what the contract says.</h1>
         <p className="landing__subhead">
           Ledger Assistant reads your investment advisory agreements, answers questions with the clause cited, and
-          reconciles each fee schedule against what billing actually charges. When they disagree, it proposes the exact
-          correcting entry, and it posts only after a person approves it, logged the moment they do.
+          checks each fee schedule against what your billing schedule would charge. When they disagree, it proposes a
+          correcting entry that posts only after a person approves it.
         </p>
         <div className="landing__hero-actions">
           <Link to="/dashboard" className="btn btn-primary">
@@ -76,7 +120,7 @@ export function Landing() {
             </p>
           </div>
           <div className="landing__pillar landing__pillar--governance">
-            <span className="landing__pillar-eyebrow">Chain of custody</span>
+            <span className="landing__pillar-eyebrow">Decision log</span>
             <div className="landing__pillar-title">
               <LockIcon size={16} className="landing__pillar-icon" />
               Governance
@@ -87,7 +131,7 @@ export function Landing() {
             </p>
           </div>
           <div className="landing__pillar landing__pillar--audit">
-            <span className="landing__pillar-eyebrow">Cryptographic audit</span>
+            <span className="landing__pillar-eyebrow">Reproducible export</span>
             <div className="landing__pillar-title">
               <CheckIcon size={16} className="landing__pillar-icon" />
               Audit
@@ -98,19 +142,6 @@ export function Landing() {
             </p>
           </div>
         </div>
-      </section>
-
-      <section className="landing__section" id="how-it-works">
-        <h2 className="landing__section-title">How it works</h2>
-        <ol className="landing__steps">
-          {STEPS.map((step, index) => (
-            <li key={step.title} className="landing__step">
-              <span className="landing__step-number mono">{index + 1}</span>
-              <h3>{step.title}</h3>
-              <p>{step.body}</p>
-            </li>
-          ))}
-        </ol>
       </section>
 
       <section className="landing__section landing__section--split" id="guarantees">
@@ -130,6 +161,73 @@ export function Landing() {
         </ul>
       </section>
 
+      <section className="landing__section" id="proof">
+        <h2 className="landing__section-title">Measured, with the source</h2>
+        <p className="landing__section-lede">
+          Each result below is copied from a report in the repository, so you can check it.
+        </p>
+        <table className="landing__proof">
+          <thead>
+            <tr>
+              <th scope="col">Claim</th>
+              <th scope="col">Measured</th>
+              <th scope="col">Source</th>
+              <th scope="col">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PROOF.map((row) => (
+              <tr key={row.claim}>
+                <th scope="row">{row.claim}</th>
+                <td className="landing__proof-measured mono">{row.measured}</td>
+                <td className="landing__proof-source mono">{row.source}</td>
+                <td className="landing__proof-source mono">{row.date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="landing__section" id="how-it-works">
+        <h2 className="landing__section-title">How it works</h2>
+        <ol className="landing__steps">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="landing__step">
+              <span className="landing__step-number mono">{index + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="landing__section" id="limits">
+        <h2 className="landing__section-title">Before you rely on it</h2>
+        <div className="landing__trust">
+          <div>
+            <h3 className="landing__trust-title">How your data is handled</h3>
+            <ul className="landing__facts">
+              {DATA_HANDLING.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="landing__trust-title">Limits of this demo</h3>
+            <ul className="landing__facts">
+              {DEMO_LIMITS.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p className="landing__note">
+          The decision log records the tool, model, prompt version, inputs and approver for every AI action, in line
+          with the transparency and accountability themes of CSA Staff Notice 11-348 on AI in capital markets. This
+          demo has not been assessed for compliance with any regulation.
+        </p>
+      </section>
+
       <section className="landing__stack">
         <p className="mono">
           <SparkleIcon size={12} /> Docling and Presidio run locally · Postgres full-text + Pinecone retrieval · OpenAI via
@@ -143,7 +241,11 @@ export function Landing() {
           Ledger Assistant
         </div>
         <span className="landing__footer-copy">A working demo: fee-contract reconciliation and a governed AI, on a double-entry ledger.</span>
-        <Link to="/dashboard">Open the demo →</Link>
+        <div className="landing__footer-links">
+          <a href={REPO_URL} target="_blank" rel="noreferrer">Source on GitHub</a>
+          <a href={REPORTS_URL} target="_blank" rel="noreferrer">Evaluation reports</a>
+          <Link to="/dashboard">Open the demo →</Link>
+        </div>
       </footer>
     </div>
   );

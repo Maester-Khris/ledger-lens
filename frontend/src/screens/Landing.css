@@ -58,6 +58,16 @@
   text-align: center;
 }
 
+.landing__eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary-dark);
+  max-width: 60ch;
+  text-wrap: balance;
+  margin-bottom: var(--space-3);
+}
+
 .landing__headline {
   font-size: clamp(2.5rem, 6vw, 4rem);
   font-weight: 500;
@@ -264,6 +274,92 @@
   flex-shrink: 0;
 }
 
+/* Proof: a ledger-style table, one row per measured claim with its source. */
+.landing__proof {
+  width: 100%;
+  margin-top: var(--space-4);
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.landing__proof thead th {
+  padding: 0 var(--space-2) var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.landing__proof tbody th,
+.landing__proof tbody td {
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: baseline;
+  line-height: 1.5;
+}
+
+.landing__proof tbody th {
+  font-weight: 500;
+  max-width: 34ch;
+}
+
+.landing__proof-measured {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.landing__proof-source {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Data handling and limits: two plain lists and one note. */
+.landing__trust {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.landing__trust-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.landing__facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.landing__facts li {
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.landing__note {
+  margin-top: var(--space-4);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-accent);
+  max-width: 80ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.landing__footer-links {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .landing__stack {
   max-width: 1080px;
   margin: var(--space-section) auto 0;
@@ -316,6 +412,34 @@
 
   .landing__pillars-inner {
     grid-template-columns: 1fr;
+  }
+
+  .landing__trust {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  /* The proof table stacks: each row becomes a block, each cell its own line. */
+  .landing__proof thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .landing__proof tbody tr {
+    display: block;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .landing__proof tbody th,
+  .landing__proof tbody td {
+    display: block;
+    padding: 2px 0;
+    border-bottom: none;
+    max-width: none;
   }
 
   .landing__section {
