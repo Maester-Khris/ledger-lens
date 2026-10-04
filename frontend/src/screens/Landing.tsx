@@ -11,42 +11,49 @@ const REPORTS_URL = `${REPO_URL}/tree/preview/backend/reports`;
 const STEPS = [
   {
     title: 'Read the agreement',
+    stage: 'Ingestion',
     body: 'Upload an investment advisory agreement as a PDF. It is parsed and tokenized before anything reaches a model: names, emails, phone and account numbers are replaced with tokens, and the fee schedule is extracted together with the clause it came from.',
   },
   {
     title: 'Reconcile it with billing',
+    stage: 'Comparison',
     body: 'Ask about any contract in plain language. Answers cite the clause and page, and billing reconciliation is computed in code from your billing schedule. The model never does the arithmetic.',
   },
   {
     title: 'Approve the correction',
+    stage: 'Approval',
     body: 'When the contract and billing disagree, the assistant proposes a balanced journal entry, logged in the AI decision audit trail with its model, inputs and citations. It reaches the ledger only after a person approves it, and it posts exactly once.',
   },
 ];
 
 const GUARANTEES = [
-  'Tools take document IDs, and code computes every fee. The model never supplies an amount.',
-  'Every number in an answer traces to the page and clause that state it, never asserted without a citation.',
-  "A field the extractor couldn't confirm sits in the extraction anomaly queue until a person resolves it; the assistant won't use it.",
-  'The ledger is append-only. A mistake is undone with a reversal, never an edit.',
+  { label: 'Computation invariant', text: 'Tools take document IDs, and code computes every fee. The model never supplies an amount.' },
+  { label: 'Citation check', text: 'Every number in an answer traces to the page and clause that state it, never asserted without a citation.' },
+  { label: 'Extraction review', text: "A field the extractor couldn't confirm sits in the extraction anomaly queue until a person resolves it; the assistant won't use it." },
+  { label: 'Ledger immutability', text: 'The ledger is append-only. A mistake is undone with a reversal, never an edit.' },
 ];
 
 // Every figure here is copied from a report in the repository; the source column names it.
-const PROOF = [
+// tone: 'ok' is a clean result, 'warn' one that is not perfect on every run.
+const PROOF: { claim: string; measured: string; tone: 'ok' | 'warn'; source: string; date: string }[] = [
   {
     claim: 'No duplicate postings under load',
     measured: '0 of 500 concurrent requests',
+    tone: 'ok',
     source: 'reports/concurrency.json',
     date: '2026-09-23',
   },
   {
     claim: 'Answerable questions answered with the right numbers and a citation',
     measured: '27 to 28 of 28, across three runs',
+    tone: 'warn',
     source: 'reports/eval-5bfdd62942f4*.json',
     date: '2026-10-02',
   },
   {
     claim: 'Unanswerable questions refused or sent back for clarification',
     measured: '21 of 21, across three runs',
+    tone: 'ok',
     source: 'reports/eval-5bfdd62942f4*.json',
     date: '2026-10-02',
   },
@@ -144,28 +151,41 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="landing__section landing__section--split" id="guarantees">
-        <div>
-          <h2 className="landing__section-title">What it will not do</h2>
+      <section className="landing__section" id="guarantees">
+        <div className="landing__section-head">
+          <div>
+            <p className="landing__kicker mono">Deterministic constraints</p>
+            <h2 className="landing__section-title">What it will not do</h2>
+          </div>
           <p className="landing__section-lede">
             The assistant is built for review, not autopilot. These rules are enforced in code and in the database, not
             in the prompt.
           </p>
         </div>
         <ul className="landing__guarantees">
-          {GUARANTEES.map((line) => (
-            <li key={line}>
-              <CheckIcon size={14} className="landing__check" /> {line}
+          {GUARANTEES.map((item) => (
+            <li key={item.label} className="landing__card">
+              <span className="landing__check"><CheckIcon size={14} /></span>
+              <div>
+                <span className="landing__guarantee-label mono">{item.label}</span>
+                <p>{item.text}</p>
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="landing__section" id="proof">
-        <h2 className="landing__section-title">Measured, with the source</h2>
-        <p className="landing__section-lede">
-          Each result below is copied from a report in the repository, so you can check it.
-        </p>
+        <div className="landing__section-head">
+          <div>
+            <p className="landing__kicker mono">Load test and eval results</p>
+            <h2 className="landing__section-title">Measured, with the source</h2>
+            <p className="landing__section-lede">
+              Each result below is copied from a report in the repository, so you can check it.
+            </p>
+          </div>
+        </div>
+        <div className="landing__card landing__card--flush">
         <table className="landing__proof">
           <thead>
             <tr>
@@ -179,21 +199,32 @@ export function Landing() {
             {PROOF.map((row) => (
               <tr key={row.claim}>
                 <th scope="row">{row.claim}</th>
-                <td className="landing__proof-measured mono">{row.measured}</td>
+                <td className="landing__proof-measured mono">
+                  <span className={`landing__pill landing__pill--${row.tone}`}>{row.measured}</span>
+                </td>
                 <td className="landing__proof-source mono">{row.source}</td>
                 <td className="landing__proof-source mono">{row.date}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       <section className="landing__section" id="how-it-works">
-        <h2 className="landing__section-title">How it works</h2>
+        <div className="landing__section-head">
+          <div>
+            <p className="landing__kicker mono">Workflow</p>
+            <h2 className="landing__section-title">How it works</h2>
+          </div>
+        </div>
         <ol className="landing__steps">
           {STEPS.map((step, index) => (
-            <li key={step.title} className="landing__step">
-              <span className="landing__step-number mono">{index + 1}</span>
+            <li key={step.title} className="landing__step landing__card">
+              <div className="landing__step-top">
+                <span className="landing__step-number mono">{index + 1}</span>
+                <span className="landing__step-stage mono">Stage: {step.stage}</span>
+              </div>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
             </li>
@@ -202,7 +233,13 @@ export function Landing() {
       </section>
 
       <section className="landing__section" id="limits">
-        <h2 className="landing__section-title">Before you rely on it</h2>
+        <div className="landing__section-head">
+          <div>
+            <p className="landing__kicker mono">Data handling and limits</p>
+            <h2 className="landing__section-title">Before you rely on it</h2>
+          </div>
+        </div>
+        <div className="landing__card">
         <div className="landing__trust">
           <div>
             <h3 className="landing__trust-title">How your data is handled</h3>
@@ -213,7 +250,7 @@ export function Landing() {
             </ul>
           </div>
           <div>
-            <h3 className="landing__trust-title">Limits of this demo</h3>
+            <h3 className="landing__trust-title landing__trust-title--muted">Limits of this demo</h3>
             <ul className="landing__facts">
               {DEMO_LIMITS.map((line) => (
                 <li key={line}>{line}</li>
@@ -226,6 +263,7 @@ export function Landing() {
           with the transparency and accountability themes of CSA Staff Notice 11-348 on AI in capital markets. This
           demo has not been assessed for compliance with any regulation.
         </p>
+        </div>
       </section>
 
       <section className="landing__stack">
