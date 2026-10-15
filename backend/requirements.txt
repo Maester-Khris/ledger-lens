@@ -17,3 +17,4 @@ langgraph==1.2.12
 pinecone==10.0.0
 langfuse==3.15.0
 sentry-sdk[fastapi]==2.60.0
+redis==5.3.1

@@ -129,6 +129,12 @@ CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
 CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
 CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
 
+# Shared rate-limit windows (N5). Set = the limiter lives in Redis, correct across workers and replicas; unset = in
+# process memory (local development, single process). Short timeouts: a Redis outage must fail fast (and open).
+REDIS_URL = os.environ.get("REDIS_URL") or None
+TEST_REDIS_URL = os.environ.get("TEST_REDIS_URL", "redis://localhost:6379/15")
+REDIS_TIMEOUT_SECONDS = _float("REDIS_TIMEOUT_SECONDS", 0.5)
+
 # Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-10-01 on the demo corpus with scripts/calibrate_relevance.py
 # (reports/relevance-bd36247ba3f7.json); chosen inside the empty band 0.452–0.484 between the highest gateable junk and
 # the lowest answerable.
