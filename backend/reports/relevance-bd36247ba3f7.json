@@ -1,0 +1,212 @@
+{
+  "configured": 0.43,
+  "suggested": 0.474,
+  "margin": 0.01,
+  "junk_gated": 17,
+  "junk_total": 21,
+  "cases": [
+    {
+      "id": "fee-schedule",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.484040141
+    },
+    {
+      "id": "termination",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.534471333
+    },
+    {
+      "id": "governing-law",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.497941941
+    },
+    {
+      "id": "calamos-top-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.649027228
+    },
+    {
+      "id": "aim-first-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.703565836
+    },
+    {
+      "id": "management-fee-unscoped",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.61889255
+    },
+    {
+      "id": "leakage",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": false,
+      "best_dense_score": 0.362437665
+    },
+    {
+      "id": "fund-not-comparable",
+      "category": "explained",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.59769094
+    },
+    {
+      "id": "not-in-corpus",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.356797159
+    },
+    {
+      "id": "ooc-performance-fee",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.444784045
+    },
+    {
+      "id": "ooc-hurdle-rate",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.620672703
+    },
+    {
+      "id": "ooc-arbitration",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.485298276
+    },
+    {
+      "id": "ooc-minimum-account",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.413266659
+    },
+    {
+      "id": "fp-calamos-increase",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.642138779
+    },
+    {
+      "id": "fp-crypto-surcharge",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.445263445
+    },
+    {
+      "id": "fp-soft-dollar-rebate",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.344598532
+    },
+    {
+      "id": "fp-maryland-office",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.584538102
+    },
+    {
+      "id": "under-allowed",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.260195136
+    },
+    {
+      "id": "under-how-much",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.270068735
+    },
+    {
+      "id": "under-change-it",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.288342476
+    },
+    {
+      "id": "under-other-one",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.27224496
+    },
+    {
+      "id": "nonsense-keys",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.221193895
+    },
+    {
+      "id": "nonsense-purple",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.15795818
+    },
+    {
+      "id": "nonsense-keywords",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.452207863
+    },
+    {
+      "id": "nonsense-marks",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.385891616
+    },
+    {
+      "id": "off-weather",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.291885167
+    },
+    {
+      "id": "off-poem",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.135234639
+    },
+    {
+      "id": "off-world-cup",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.12791
+    },
+    {
+      "id": "off-capital",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.166103244
+    }
+  ]
+}

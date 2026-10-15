@@ -1,0 +1,19 @@
+# graphify-specific excludes — merged with .gitignore automatically,
+# so build/dep/env noise already covered there (node_modules/, .venv/,
+# __pycache__, dist/, etc.) isn't repeated here.
+
+# Third-party skill docs, not part of this project's domain knowledge
+docs/superpowers/
+
+# Claude Code tooling config/worktrees, not project knowledge
+.claude/commands/
+.claude/worktrees/
+
+# Generated frontend build output not already covered above
+frontend/public/
+
+# Design-reference screenshots (candidate UI research, not product/codebase
+# knowledge) — each image costs its own vision-extraction subagent. Re-add
+# with `/graphify <path> --update` later if design-research reasoning is
+# ever worth graphing alongside code.
+artifacts/ui-research/screenshots/

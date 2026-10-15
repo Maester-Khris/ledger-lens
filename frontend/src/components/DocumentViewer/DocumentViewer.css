@@ -1,0 +1,127 @@
+.doc-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-bg-subtle);
+}
+
+.doc-viewer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-wrap: wrap;
+}
+
+.doc-viewer__title {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.doc-viewer__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-viewer__btn {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.doc-viewer__btn:hover:not(:disabled) {
+  border-color: var(--color-text-secondary);
+}
+
+.doc-viewer__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.doc-viewer__page {
+  font-size: 12px;
+  min-width: 52px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.doc-viewer__link {
+  font-size: 12px;
+  margin: 0 6px;
+}
+
+.doc-viewer__canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-2);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.doc-viewer__canvas {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.doc-viewer__message {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-4);
+}
+
+.viewer-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(760px, 100vw);
+  z-index: var(--z-sheet);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -4px 0 8px var(--color-shadow);
+  background: var(--color-bg-subtle);
+}
+
+.viewer-sheet__loading {
+  padding: var(--space-3);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viewer-sheet {
+    animation: viewer-sheet-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes viewer-sheet-in {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .viewer-sheet {
+    bottom: 64px;
+  }
+}
