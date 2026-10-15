@@ -6,6 +6,9 @@
 # BOX=<vcpus>:<memory>:<workers> confines the API (only) to a cgroup shaped like a deployed box, e.g. BOX=1:1G:1
 # (Railway Hobby, MediCoord staging) or BOX=2:2G:2. Postgres, the mock and k6 stay outside: in a deployment they are
 # a managed service, the provider and the client. Unset = the whole machine.
+# PROFILE=1 starts the API under py-spy and writes <label>.profile.txt (collapsed stacks, 100 Hz, all workers, only
+# the thread holding the GIL: Python CPU work, not waits). Summarise with scripts/load/profile_top.py. py-spy runs
+# inside any BOX and takes CPU from it, so profile without BOX: proportions do not depend on the box.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -20,6 +23,8 @@ MOCK_PORT=8090
 PYDEV="${PYDEV:-$(grep -E '^PYDEV=' .env 2>/dev/null | cut -d= -f2- || true)}"
 OUT="reports/load/$(date +%Y-%m-%d)-$LABEL"
 mkdir -p reports/load
+PROFILER=()
+[ -n "${PROFILE:-}" ] && PROFILER=("$PYDEV/bin/py-spy" record --gil --format raw --rate 100 --subprocesses -o "$OUT.profile.txt" --)
 grep -qE '^PINECONE_INDEX=contract-demo' .env && { echo "backend/.env points at the demo index; refusing." >&2; exit 1; }
 
 "$PYDEV/bin/python" -c "import json; g = json.load(open('tests/eval/golden.json'));
@@ -30,11 +35,11 @@ MOCK_LLM_MEAN_S=1.25 MOCK_LLM_SIGMA=0.55 "$PYDEV/bin/uvicorn" scripts.load.mock_
 MOCK=$!
 env -u ENV_FILE OPENAI_BASE_URL="http://127.0.0.1:$MOCK_PORT/v1" OPENAI_API_KEY=mock LOADTEST_STUB_VECTORS=1 \
   DEMO_MODE= LANGFUSE_PUBLIC_KEY= LANGFUSE_SECRET_KEY= SENTRY_DSN= \
-  "${CONFINE[@]}" "$PYDEV/bin/uvicorn" app.main:app --host 127.0.0.1 --port "$API_PORT" --workers "${BOX_WORKERS:-1}" \
+  "${CONFINE[@]}" "${PROFILER[@]}" "$PYDEV/bin/uvicorn" app.main:app --host 127.0.0.1 --port "$API_PORT" --workers "${BOX_WORKERS:-1}" \
   --log-level warning > "$OUT.api.log" 2>&1 &
 API=$!
 SAMPLER=
-trap 'kill $API $MOCK $SAMPLER 2>/dev/null || true' EXIT
+trap 'pkill -P $API 2>/dev/null; kill $API $MOCK $SAMPLER 2>/dev/null || true' EXIT
 for _ in $(seq 60); do curl -sf "http://127.0.0.1:$API_PORT/health" > /dev/null && break; sleep 1; done
 curl -s -X POST "http://127.0.0.1:$MOCK_PORT/stats/reset" > /dev/null
 
@@ -68,5 +73,6 @@ docker run --rm -i --network host --user "$(id -u):$(id -g)" \
   grafana/k6 run /scripts/chat.js --summary-export "/out/$(basename "$OUT").k6.json" \
   --out "csv=/out/$(basename "$OUT").k6.csv" 2>&1 | tail -40
 curl -s "http://127.0.0.1:$MOCK_PORT/stats" > "$OUT.mock-stats.json"
+if [ -n "${PROFILE:-}" ]; then kill -INT $API; wait $API 2>/dev/null; fi  # py-spy writes its file on SIGINT
 grep -ciE "error|exception|timeout" "$OUT.api.log" | xargs echo "api log lines with error/exception/timeout:"
 echo "written $OUT.*"

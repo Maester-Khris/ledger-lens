@@ -4,3 +4,4 @@ docling==2.130.0
 presidio-analyzer==2.2.364
 pytest
 httpx
+py-spy==0.4.2  # load-test profiling (scripts/load/run_chat.sh PROFILE=1)

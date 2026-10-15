@@ -113,6 +113,15 @@ after it, write-up only.
       like. Two cores with two workers give about 1.9x one core at flat latency: the first measured version of
       MediCoord's unmeasured "1.5 to 2x one box" estimate.
 
+      **Where the CPU per turn goes** (2026-10-15, `backend/reports/load/2026-10-15-profile-gil-40.md`): py-spy, GIL
+      holder only, 40 conversations on the final code, about 90 ms of Python CPU per turn (MediCoord: about 16 ms, a
+      lighter turn). Inclusive shares: tool calls 38%, of which **`list_documents` 15.5%** (4 queries per document in
+      `documents.dao._row`, about 409 queries per call on 102 documents, where the tool needs only id, key and title)
+      and search 14%; **PII tokenising 15%** (an HMAC per 1-4 word window per entity type, question and tool
+      arguments); **graph rebuilt and compiled every turn 9.5%**; the OpenAI client, pydantic and typing about 19% (large
+      request bodies: the 102-title list and history). Next candidates, in that order; each to be measured on the
+      1 vCPU box like changes 1 and 2. Limit: one run; the stub index skips the Pinecone client's own CPU.
+
       Change 2 prediction held: DB connections no longer follow turns in flight (6 at 20 conversations, 14 at 40) and
       the bend moved to CPU. The run stopped itself at 160 conversations on p95 over 15 s, with no failed turn
       (1,954 served). **Golden gate after change 2 passed** at 0.43, the threshold of the three baseline runs (same config
