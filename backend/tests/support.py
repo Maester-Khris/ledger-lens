@@ -1,8 +1,10 @@
 import uuid
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, TypeVar
 
 from alembic.config import Config
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session
 
 from app.ledger.models import Account, Entry, Posting, Tenant
@@ -135,3 +137,21 @@ def build_fee_scenario(session: Session, tenant_id: uuid.UUID) -> FeeScenario:
         session, household_id=household.id, schedule_id=schedule.id, valid_from=date(2026, 1, 1), valid_until=None
     )
     return FeeScenario(household.id, (first.id, second.id), revenue.id, schedule.id)
+
+
+T = TypeVar("T")
+
+
+def record_statements(session: Session, work: Callable[[], T]) -> tuple[T, list[tuple[str, Any]]]:
+    """Run `work` and return its result with every SQL statement (and its parameters) it sent through `session`."""
+    seen: list[tuple[str, Any]] = []
+
+    def record(conn, cursor, statement, parameters, context, executemany) -> None:
+        seen.append((statement, parameters))
+
+    engine = session.get_bind()
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        return work(), seen
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
