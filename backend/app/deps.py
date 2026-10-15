@@ -11,7 +11,7 @@ from app.assistant import dao as assistant_dao
 from app.errors import GuestRequired, RateLimited
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
-from app.rate_limit import SlidingWindowLimiter, admit
+from app.rate_limit import RedisWindowLimiter, SlidingWindowLimiter, admit
 
 # ponytail: no authentication yet; the acting user is fixed. Replace with the authenticated principal.
 DECIDED_BY = "demo_user"
@@ -65,11 +65,29 @@ def require_overlay_guest(guest_id: Annotated[uuid.UUID | None, Depends(get_gues
     return guest_id
 
 
-# Public demo (P3): one pair of chat windows per process, per guest and per client IP. Tests replace it.
-chat_limits = (
-    SlidingWindowLimiter(config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
-    SlidingWindowLimiter(config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
-)
+def build_chat_limits() -> tuple[RedisWindowLimiter, RedisWindowLimiter] | tuple[SlidingWindowLimiter, SlidingWindowLimiter]:
+    """Public demo (P3, N5): one pair of chat windows, per guest and per client IP; in Redis when REDIS_URL is set
+    (shared by every worker and replica), else in this process."""
+    if config.REDIS_URL:
+        # Only a deployment with Redis needs the client.
+        import redis
+
+        client = redis.Redis.from_url(
+            config.REDIS_URL,
+            socket_timeout=config.REDIS_TIMEOUT_SECONDS,
+            socket_connect_timeout=config.REDIS_TIMEOUT_SECONDS,
+        )
+        return (
+            RedisWindowLimiter(client, "chat:guest", config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
+            RedisWindowLimiter(client, "chat:ip", config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
+        )
+    return (
+        SlidingWindowLimiter(config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
+        SlidingWindowLimiter(config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
+    )
+
+
+chat_limits = build_chat_limits()  # tests replace it
 
 
 def client_ip(request: Request) -> str:
