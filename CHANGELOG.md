@@ -105,6 +105,11 @@ after it, write-up only.
       |---|---|---|---|---|---|
       | Baseline | 2.98 at 20 | 8.01 s | 29 at 80 | threads (12 calls in flight), then DB pool (15) | `2026-10-15-baseline-1cpu-1g.steps.md` |
       | Change 1, async model calls (`2e73ab4`) | **3.80 at 20** (+28%) | 6.48 s | 41 at 80 | DB pool (15); calls in flight up to 37 | `2026-10-15-n4-async-llm.steps.md` |
+      | Change 2, short DB sessions off the loop (`f1b10db`) | **7.75 at 40** flat latency (2.6x); peak **10.07 at 80** (3.4x) | 6.51 s at 40; 12.67 s at 80 | **0 in the whole run** | CPU: 87% of the core at 40, 100% at 80 | `2026-10-15-n4-short-sessions.steps.md` |
+
+      Change 2 prediction held: DB connections no longer follow turns in flight (6 at 20 conversations, 14 at 40) and
+      the bend moved to CPU. The run stopped itself at 160 conversations on p95 over 15 s, with no failed turn
+      (1,954 served).
 
       Change 1 prediction held: the 12-call thread cap is gone and the DB pool is the limit (p95 33 s at 40 while turns
       wait for a connection). **Golden gate after change 1 failed at the demo threshold 0.46** (run `n4-async-r1`,
