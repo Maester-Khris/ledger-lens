@@ -136,6 +136,7 @@ def _close_turn(
     overlay_guest: uuid.UUID | None,
     vault_key: str,
 ) -> TurnEnd:
+    """Everything after the graph that reads the database, in one short session: notices, clarification, reveal."""
     answer = state["answer"]
     events = list(_unvalidated_events(session, tenant_id, state.get("unvalidated", []), overlay_guest))
     input_tokens, output_tokens = _usage(state.get("messages", []))
