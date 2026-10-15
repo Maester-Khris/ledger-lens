@@ -24,12 +24,21 @@ after it, write-up only.
 
 ### Scope — Now (blocks the goal, in order)
 
-- [ ] `documents` — **N0** corpus volume on the type the pipeline already handles: about 50 SEC EDGAR investment
+- [x] `documents` — **N0** corpus volume on the type the pipeline already handles: about 50 SEC EDGAR investment
       advisory agreements (fund-level, exhibit (d) to Form N-1A / 485BPOS) through `scripts/prepare_samples.py` and the
       ingestion worker, into the local database and a **local** Pinecone index (never `contract-demo`). Trial on 5
       documents first. Done when: corpus count, extraction accepted / needs_review counts and ingestion time and $ per
       document are recorded → **Not epic-tracked** (mentor review 2026-10-09: four documents is too small; sourcing in
       `artifacts/research/2026-10-09-client-onboarding-documents-wealth.md`)
+      **Done 2026-10-15 (local):** 102 documents, all extracted, 0 failed: 101 real EDGAR filings (89 advisory, 8
+      sub-advisory, 4 unlabelled trial filings) and 1 synthetic. Target raised from 50 to 100 on 2026-10-15. Discovery
+      by EDGAR full-text search (485BPOS exhibit (d), 2020-01-01 to 2026-10-15), one filing per fund family, kept only
+      with a single fee schedule (1 to 12 rate figures): 94 kept of 151 families checked. A 5-document trial ran first
+      with no code fix needed. Ingestion: 93 documents in 36.6 min on one local worker (about 24 s each). Extraction:
+      859 fields accepted, 758 routed to review (53% accepted); fee schedule valid on 18 of 102. Flat fees (one rate
+      on all assets, the usual ETF shape) are now accepted when the band says what the rate applies to. One command:
+      `backend/scripts/corpus_build.sh <discover> <upload>`; report `backend/reports/corpus-2026-10-15.json`. Limit:
+      one document type, fund-level agreements (not retail client agreements), US only, local only until X0.
 - [ ] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 answerable, 21 junk). Done when: a report
       under `backend/reports/` names the corpus size it ran on. A drop is reported, not hidden → **Not epic-tracked**
 - [ ] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
@@ -70,6 +79,13 @@ after it, write-up only.
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
       one replica stopped → **Not epic-tracked**
+
+### Deferred
+
+- `contracts` — fee schedules still fail validation on most new filings (fee-schedule bands accepted: 23 of 152).
+  77 are flat fees where the model leaves the band text empty (kept in review on purpose: an empty band could be one
+  row of a multi-fund table); 47 are tiered schedules worded "up to $X" or "between $X and $Y", which the parser
+  does not read. Fix with the extraction prompt or the parser, then re-extract; belongs with X1 → **Not epic-tracked**
 
 ### Numbers this sprint must produce (source of the README section "Measured numbers")
 
