@@ -9,6 +9,7 @@ from typing import Annotated, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
@@ -79,20 +80,31 @@ def route_tool_choice(question: str, registered: set[str]) -> str | None:
     return FORCED_TOOL if FORCED_TOOL in registered and CALCULATION_PATTERN.search(question) else None
 
 
-def build_graph(
-    chat_model: BaseChatModel,
-    tools: Sequence[ToolSpec],
-    ctx: ToolContext,
-    open_session: Callable[[], AbstractContextManager[Session]] | None = None,
-):
-    """Build the assistant state graph.
+def _turn_inputs(config: RunnableConfig) -> tuple[ToolContext, Callable[[], AbstractContextManager[Session]]]:
+    """Per-turn inputs come through the run config, so one compiled graph serves every turn."""
+    ctx = config["configurable"]["ctx"]
+    open_session = config["configurable"].get("open_session")
+    if open_session is None:
+        open_session = lambda: nullcontext(ctx.session)
+    return ctx, open_session
 
-    open_session opens a short database session for each tool call, keeping DB connections
-    unheld while waiting on model calls. If None, tools use ctx.session via nullcontext.
+
+def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnable:
+    """The graph is compiled once per runtime; each run passes
+    config={"configurable": {"ctx": ToolContext, "open_session": callable | None}};
+    open_session opens a short DB session per tool call so no connection is held
+    while waiting on the model, and without it tools use ctx.session.
     """
     by_name = {spec.name: spec for spec in tools}
     schemas = [spec.schema() for spec in tools]
-    session_opener = open_session if open_session is not None else lambda: nullcontext(ctx.session)
+    structured = chat_model.with_structured_output(Answer, method="json_schema", include_raw=True)
+    tool_models: dict[str, Runnable] = {}
+
+    # ponytail: unsynchronised cache; two turns racing on a new choice bind it twice, harmlessly
+    def with_tools(choice: str) -> Runnable:
+        if choice not in tool_models:
+            tool_models[choice] = chat_model.bind_tools(schemas, tool_choice=choice)
+        return tool_models[choice]
 
     def route(state: TurnState) -> dict:
         question = next(m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
@@ -101,10 +113,11 @@ def build_graph(
 
     async def agent(state: TurnState) -> dict:
         [choice, *rest] = state.get("forced_tools") or ["auto"]
-        reply = await chat_model.bind_tools(schemas, tool_choice=choice).ainvoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
+        reply = await with_tools(choice).ainvoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
         return {"messages": [reply], "forced_tools": rest}
 
-    def run_tools(state: TurnState) -> dict:
+    def run_tools(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, open_session = _turn_inputs(config)
         last = state["messages"][-1]
         messages, sources, citations, retrieved = [], {}, {}, []
         unvalidated, notices = [], []
@@ -113,7 +126,7 @@ def build_graph(
             if spec is None:
                 messages.append(ToolMessage(f"Unknown tool {call['name']}", tool_call_id=call["id"]))
                 continue
-            with session_opener() as session:
+            with open_session() as session:
                 outcome = execute(spec, dataclasses.replace(ctx, session=session), call["args"])
             messages.append(ToolMessage(outcome.content, tool_call_id=call["id"]))
             sources |= outcome.sources
@@ -128,7 +141,7 @@ def build_graph(
         if state.get("violations"):
             feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
                                      + ". Fix it using only cited sources, or refuse.")]
-        result = await chat_model.with_structured_output(Answer, method="json_schema", include_raw=True).ainvoke(
+        result = await structured.ainvoke(
             [SystemMessage(ANSWER_PROMPT), *state["messages"], *feedback]
         )
         return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}

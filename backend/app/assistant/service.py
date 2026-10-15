@@ -6,11 +6,13 @@ from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from functools import cached_property
 from typing import Literal, TypeVar
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables import Runnable
 from langgraph.errors import GraphRecursionError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -50,6 +52,11 @@ class AssistantRuntime:
     embeddings: Embeddings
     vector_index: VectorIndex
     tools: list[ToolSpec]
+
+    @cached_property
+    def graph(self) -> Runnable:
+        """Compiled once per runtime (once per process in the API); each turn's inputs go in its run config."""
+        return build_graph(self.chat_model, self.tools)
 
 
 def _usage(messages: list) -> tuple[int, int]:
@@ -213,12 +220,11 @@ async def run_turn(
                       embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                       model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
                       document_id=document_id, overlay_guest=overlay_guest, question=question)
-    graph = build_graph(runtime.chat_model, runtime.tools, ctx, open_session=session_factory)
     state: dict = {}
 
     handler = get_tracing_handler()
 
-    run_config = {"recursion_limit": RECURSION_LIMIT}
+    run_config = {"recursion_limit": RECURSION_LIMIT, "configurable": {"ctx": ctx, "open_session": session_factory}}
     if handler:
         run_config["callbacks"] = [handler]
         run_config["metadata"] = {
@@ -233,9 +239,9 @@ async def run_turn(
         async with asyncio.timeout(config.CHAT_TURN_TIMEOUT_SECONDS):
             # Model calls are coroutines, so the turn timeout cancels them; tools and checks stay sync and run in
             # LangGraph's thread pool. ponytail: a timed-out tool call keeps running in its thread until it returns.
-            async for mode, data in graph.astream({"messages": [*history, HumanMessage(question)]},
-                                                  config=run_config,
-                                                  stream_mode=["updates", "values"]):
+            async for mode, data in runtime.graph.astream({"messages": [*history, HumanMessage(question)]},
+                                                          config=run_config,
+                                                          stream_mode=["updates", "values"]):
                 if mode == "values":
                     state = data
                 else:
