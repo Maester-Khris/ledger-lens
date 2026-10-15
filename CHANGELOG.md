@@ -39,12 +39,31 @@ after it, write-up only.
       on all assets, the usual ETF shape) are now accepted when the band says what the rate applies to. One command:
       `backend/scripts/corpus_build.sh <discover> <upload>`; report `backend/reports/corpus-2026-10-15.json`. Limit:
       one document type, fund-level agreements (not retail client agreements), US only, local only until X0.
-- [ ] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 cases: 28 answerable including 12 re-asked scoped to their document, 21 junk). Done when: a report
+- [x] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 cases: 28 answerable including 12 re-asked scoped to their document, 21 junk). Done when: a report
       under `backend/reports/` names the corpus size it ran on. A drop is reported, not hidden → **Not epic-tracked**
+      **Done 2026-10-15 (local, 102 documents, threshold 0.43):** passed 3 of 3 runs (`20261015-r1` to `r3`): answerable
+      28/28 on behaviour, citation and numbers, over-refusal 0, junk 21/21, no provider retries; turn time median
+      3.7 to 4.2 s, p95 6.0 to 7.3 s. Reports `backend/reports/eval-8e192f7302ee-20261015-r{1,2,3}.json`; resumable
+      runner `backend/scripts/gate_runs.sh <runs>`. Limit: the local `.env` sets the threshold to 0.43 (an older
+      calibration); the demo and the code default use 0.46. A stricter threshold can only refuse more, so junk holds;
+      answerable cases at 0.46 are not measured yet. Golden questions name the original 4 documents.
 - [ ] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
       confirmed): golden set replayed 3 times on the expanded corpus, local Langfuse project. Done when: median and p95
       $ per answer and per session, steps per answer and the most expensive step are recorded, cross-checked against
       the token counts in `chat_turns` → **Epic 2.3**
+      **Partial 2026-10-15:** measured from the token counts stored per turn (`chat_turns`), priced at gpt-4.1 list
+      price ($2 in / $8 out per million tokens): per answer median **$0.037**, p95 $0.054, max $0.099 (150 turns);
+      per session median $0.037, p95 $0.056 (147 sessions); $1.19 to $1.30 per 49-case run; median 18,391 input and
+      85 output tokens per turn. Same prompt and graph version (`a4782adc4015`, v3) on the 4-document corpus
+      (2026-10-03): median 2,952 input tokens and $0.0067 per turn, so **cost per answer rose 5.3x with the corpus**.
+      Ingestion: $1.32 for 98 extraction calls (median $0.012, p95 $0.022 per document; Langfuse); embeddings about
+      $0.003 (estimate). **Open:** steps per answer and the most expensive step need Langfuse traces, which the runs
+      did not send (see Deferred).
+      **Cross-check against the OpenAI balance:** $10.00 of credit before the N0 ingestion, $7.46 after N0 and the
+      three N0.1 runs, so $2.54 was billed against about $5.06 computed at list price ($1.32 extraction + $3.74 chat).
+      Not resolved yet; likely causes are OpenAI's automatic prompt caching (repeated prefixes such as the system
+      prompt and the document list are billed at a discount, and the stored token counts include cached tokens) and
+      the balance updating with a delay. The traced re-run records cached tokens per call and should settle it.
 - [ ] `ops` — **N2** the replayed LLM responses saved as fixtures; a provider mock built from them that reproduces
       their response times (OpenAI chat completions with tool calls and structured output, embeddings). Done when: mock
       mean and p95 turn time are within 10% of the real replay (MediCoord Sprint 22 method) → **Not epic-tracked**
@@ -82,6 +101,12 @@ after it, write-up only.
 
 ### Deferred
 
+- `assistant` — the document list is re-sent on every model call within a chat turn: `list_documents` returns all
+  102 titles and the tool result stays in the turn's message history. Likely cause of the 5.3x cost per answer
+  (N1). To analyse, fix, then re-measure cost, if time allows after the Now items → **Not epic-tracked**
+- `ops` — Langfuse tracing for the golden runs: `tests/conftest.py` turns tracing off for every test not marked
+  `enable_tracing`, so the N0.1 runs sent no traces. Mark the golden test, re-run, then report steps per answer and
+  the most expensive step with `backend/scripts/cost_report.py` → **Epic 2.3**
 - `contracts` — fee schedules still fail validation on most new filings (fee-schedule bands accepted: 23 of 152).
   77 are flat fees where the model leaves the band text empty (kept in review on purpose: an empty band could be one
   row of a multi-fund table); 47 are tiered schedules worded "up to $X" or "between $X and $Y", which the parser
