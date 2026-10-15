@@ -93,7 +93,7 @@ after it, write-up only.
       `ps %cpu`, a lifetime average, and is withdrawn; the sampler now uses CPU time per 5 s interval from `/proc`.
       Limit: local, one machine; a cgroup quota approximates a vCPU; DB latency is local, not a private network;
       the mock reproduces golden-set timing, not provider latency or limits.
-- [ ] `api` — **N4** fix the first bottleneck N3 shows, then re-run for before/after. Suspects in order: blocking calls
+- [x] `api` — **N4** fix the first bottleneck N3 shows, then re-run for before/after. Suspects in order: blocking calls
       on the event loop (`run_turn` does sync DB work on it), the DB and thread pools, OpenAI SDK connection limits,
       LLM timeouts (already set: 30 s per call, 60 s per turn). Done when: the same ladder is re-run and both results
       are recorded → **Not epic-tracked**
@@ -109,7 +109,13 @@ after it, write-up only.
 
       Change 2 prediction held: DB connections no longer follow turns in flight (6 at 20 conversations, 14 at 40) and
       the bend moved to CPU. The run stopped itself at 160 conversations on p95 over 15 s, with no failed turn
-      (1,954 served).
+      (1,954 served). **Golden gate after change 2 passed** at 0.43, the threshold of the three baseline runs (same config
+      hash `8e192f7302ee`; run `n4-sessions-043-r1`, `backend/reports/eval-8e192f7302ee-n4-sessions-043-r1.json`):
+      answerable 28/28, over-refusal 0, junk 21/21. Real turns were slower in that run (median 5.05 s, p95 9.6 s,
+      against 3.7 to 4.2 s and 6.0 to 7.3 s before); the mock run shows no change at low load (5 conversations: p50
+      3.93 s against 3.99 s), so the difference is OpenAI's latency at that hour, not the code. **Done 2026-10-15:** on
+      one 1 vCPU / 1 GB instance the chat path went from 2.98 to 7.75 turns/s at flat latency and 10.07 turns/s peak,
+      with 0 failed turns; the next limit is CPU per turn. Limit: local, one run per change, mock timing.
 
       Change 1 prediction held: the 12-call thread cap is gone and the DB pool is the limit (p95 33 s at 40 while turns
       wait for a connection). **Golden gate after change 1 failed at the demo threshold 0.46** (run `n4-async-r1`,
