@@ -1,7 +1,9 @@
+import dataclasses
 import hashlib
 import operator
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Annotated, TypedDict
 
@@ -10,6 +12,7 @@ from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemM
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app import config
 from app.assistant.citations import compose_sections, verify_answer, verify_sections
@@ -76,9 +79,20 @@ def route_tool_choice(question: str, registered: set[str]) -> str | None:
     return FORCED_TOOL if FORCED_TOOL in registered and CALCULATION_PATTERN.search(question) else None
 
 
-def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolContext):
+def build_graph(
+    chat_model: BaseChatModel,
+    tools: Sequence[ToolSpec],
+    ctx: ToolContext,
+    open_session: Callable[[], AbstractContextManager[Session]] | None = None,
+):
+    """Build the assistant state graph.
+
+    open_session opens a short database session for each tool call, keeping DB connections
+    unheld while waiting on model calls. If None, tools use ctx.session via nullcontext.
+    """
     by_name = {spec.name: spec for spec in tools}
     schemas = [spec.schema() for spec in tools]
+    session_opener = open_session if open_session is not None else lambda: nullcontext(ctx.session)
 
     def route(state: TurnState) -> dict:
         question = next(m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
@@ -99,7 +113,8 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
             if spec is None:
                 messages.append(ToolMessage(f"Unknown tool {call['name']}", tool_call_id=call["id"]))
                 continue
-            outcome = execute(spec, ctx, call["args"])
+            with session_opener() as session:
+                outcome = execute(spec, dataclasses.replace(ctx, session=session), call["args"])
             messages.append(ToolMessage(outcome.content, tool_call_id=call["id"]))
             sources |= outcome.sources
             citations |= outcome.citations

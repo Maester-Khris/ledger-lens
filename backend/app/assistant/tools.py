@@ -19,7 +19,7 @@ RESULT_KEY = "@result"  # placeholder a tool uses for its own result; execute() 
 
 @dataclass
 class ToolContext:
-    session: Session
+    session: Session | None  # set per tool call by the graph (graph.run_tools); a test may pass one shared session
     tenant_id: uuid.UUID
     session_id: str
     turn_id: uuid.UUID
