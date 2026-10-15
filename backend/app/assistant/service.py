@@ -71,8 +71,7 @@ def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: li
 
 def _clarifying_question(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID | None) -> str:
     """P4: the model only decides to ask; the wording is fixed (it left the text empty 5 times in 6 in the eval)."""
-    titles = sorted(r.document.title for r in documents_dao.list_documents(session, tenant_id)
-                    if document_id is None or r.document.id == document_id)[:MAX_CLARIFY_TITLES]
+    titles = sorted(r.title for r in documents_dao.document_titles(session, tenant_id, document_id))[:MAX_CLARIFY_TITLES]
     if not titles:
         return CLARIFY_NO_DOCUMENTS
     if document_id is not None:

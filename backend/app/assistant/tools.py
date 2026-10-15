@@ -78,10 +78,9 @@ class SearchArgs(BaseModel):
 
 
 def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
-    rows = [r for r in documents_dao.list_documents(ctx.session, ctx.tenant_id) if ctx.document_id is None or r.document.id == ctx.document_id]
+    rows = documents_dao.document_titles(ctx.session, ctx.tenant_id, ctx.document_id)
     return ToolOutcome(json.dumps([
-        {"document_id": str(r.document.id), "document_key": r.document.document_key, "title": r.document.title}
-        for r in rows
+        {"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in rows
     ]))
 
 

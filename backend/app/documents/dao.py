@@ -187,6 +187,21 @@ def list_documents(session: Session, tenant_id: uuid.UUID) -> list[DocumentRow]:
     return [_row(session, document) for document in documents]
 
 
+@dataclass(frozen=True)
+class DocumentTitle:
+    id: uuid.UUID
+    document_key: str
+    title: str
+
+
+def document_titles(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID | None = None) -> list[DocumentTitle]:
+    """Id, key and title only, in one query: what the chat needs (list_documents loads versions, events and counts)."""
+    query = select(Document.id, Document.document_key, Document.title).where(Document.tenant_id == tenant_id)
+    if document_id is not None:
+        query = query.where(Document.id == document_id)
+    return [DocumentTitle(*row) for row in session.execute(query.order_by(Document.created_at.desc()))]
+
+
 def get_document_row(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> DocumentRow:
     document = session.get(Document, document_id)
     if document is None or document.tenant_id != tenant_id:
