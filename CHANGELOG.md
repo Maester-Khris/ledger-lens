@@ -106,6 +106,12 @@ after it, write-up only.
       | Baseline | 2.98 at 20 | 8.01 s | 29 at 80 | threads (12 calls in flight), then DB pool (15) | `2026-10-15-baseline-1cpu-1g.steps.md` |
       | Change 1, async model calls (`2e73ab4`) | **3.80 at 20** (+28%) | 6.48 s | 41 at 80 | DB pool (15); calls in flight up to 37 | `2026-10-15-n4-async-llm.steps.md` |
       | Change 2, short DB sessions off the loop (`f1b10db`) | **7.75 at 40** flat latency (2.6x); peak **10.07 at 80** (3.4x) | 6.51 s at 40; 12.67 s at 80 | **0 in the whole run** | CPU: 87% of the core at 40, 100% at 80 | `2026-10-15-n4-short-sessions.steps.md` |
+      | Second profile: 2 vCPU / 2 GB, 2 workers, final code | **14.73 at 80** flat latency (1.9x the 1 vCPU final) | 7.12 s | **0**; full ladder ran | CPU: 200% (both cores) at 80 | `2026-10-15-n4-2cpu-2g.steps.md` |
+      | Control: baseline code re-run at the end (1 vCPU) | 2.95 at 20 (**-1%** vs 2.98) | 7.86 s | stopped at 80 on failures, as before | threads (12), DB pool (15) | `2026-10-15-baseline-control.steps.md` |
+
+      The control reproduces the first baseline within 1% at the bend, so the before/after rows compare like with
+      like. Two cores with two workers give about 1.9x one core at flat latency: the first measured version of
+      MediCoord's unmeasured "1.5 to 2x one box" estimate.
 
       Change 2 prediction held: DB connections no longer follow turns in flight (6 at 20 conversations, 14 at 40) and
       the bend moved to CPU. The run stopped itself at 160 conversations on p95 over 15 s, with no failed turn
