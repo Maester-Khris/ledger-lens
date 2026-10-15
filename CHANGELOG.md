@@ -78,24 +78,21 @@ after it, write-up only.
 - [x] `ops` — **N3** k6 baseline, one instance, provider mock: ramp until turn p95 bends. Done when: break point,
       turns/s there, error rate and what saturated first (CPU, DB pool, thread pool) are recorded. A bad baseline is
       expected → **Not epic-tracked** (backlog X4, small load test)
-      **Done 2026-10-15 (local):** one API process (8 cores, 15 GB), provider mock and stub index, 2 golden questions
-      per conversation, 1 min per level. Throughput bends at **about 3 turns/s from 20 concurrent conversations**
-      (p50 5.5 s, p95 7.7 s); at 40, same throughput with p50 11.9 s and p95 15.2 s; at 80 the run stopped itself
-      with 5.9% of turns failed (37 of 627). First saturated: **the thread pool**, 12
-      model calls in flight and never more (the sync graph nodes run in Python's default executor, min(32, cores+4)
-      = 12; 12 threads / 1.25 s per call / 3.2 calls per turn = 3.0 turns/s). Second: **the DB pool**, 15 connections
-      (SQLAlchemy default 5 + 10), each held for a whole turn by `run_turn`; the failures at 80 are its 30 s
-      timeouts. Model calls already have timeouts (30 s per call, 60 s per turn). One command:
-      `backend/scripts/load/run_chat.sh <label>`; table `backend/reports/load/2026-10-15-baseline.steps.md`.
-      Limit: local, k6 shares the machine; mock reproduces golden-set timing, not provider limits.
-      **Official "before", 1 vCPU / 1 GB (2026-10-15):** the whole machine overstates one deployed instance, so the
-      API alone now runs in a cgroup shaped like Railway Hobby and MediCoord staging (`BOX=1:1G:1`; Postgres, mock,
-      stub index and k6 outside it). Bends at the same point: **2.98 turns/s at 20 conversations** (p50 5.6 s, p95
-      8.0 s); at 40 throughput falls to 1.88 turns/s (p50 11.4 s, p95 13.9 s); at 80 the run stopped with 5.16% failed
-      (29 of 562). **API CPU peaked at 24% of the one core**, so CPU is not the limit even on 1 vCPU: the 12-thread
-      pool and the 15-connection DB pool are. Table `backend/reports/load/2026-10-15-baseline-1cpu-1g.steps.md`.
-      **Correction:** the first run's CPU column used `ps %cpu`, a lifetime average, and is not reported; the sampler
-      now uses CPU time per 5 s interval from `/proc`.
+      **Done 2026-10-15 (local, 1 vCPU / 1 GB):** the API alone runs in a cgroup shaped like Railway Hobby and
+      MediCoord staging (`BOX=1:1G:1`, one uvicorn worker); Postgres, the provider mock, the stub index and k6 stay
+      outside it, as a managed database, the provider and the client would be. 2 golden questions per conversation,
+      1 s reading pause, 1 min per level. Throughput bends at **2.98 turns/s at 20 concurrent conversations** (p50
+      5.6 s, p95 8.0 s); at 40 it falls to 1.88 turns/s (p50 11.4 s, p95 13.9 s); at 80 the run stopped itself with
+      5.16% of turns failed (29 of 562). **API CPU peaked at 24% of the one core**, so CPU is not the limit. First
+      saturated: **the thread pool**, 12 model calls in flight and never more (the sync graph nodes run in Python's
+      default executor, min(32, cores + 4) = 12 on the host; 12 threads / 1.25 s per call / about 3.2 calls per turn
+      = 3.0 turns/s). Second: **the DB pool**, 15 connections (SQLAlchemy default 5 + 10), each held for a whole turn
+      by `run_turn`; the failures at 80 are its 30 s timeouts. Model calls already have timeouts (30 s per call, 60 s
+      per turn). One command: `BOX=1:1G:1 backend/scripts/load/run_chat.sh <label>`; table
+      `backend/reports/load/2026-10-15-baseline-1cpu-1g.steps.md`. **Correction:** an earlier CPU reading used
+      `ps %cpu`, a lifetime average, and is withdrawn; the sampler now uses CPU time per 5 s interval from `/proc`.
+      Limit: local, one machine; a cgroup quota approximates a vCPU; DB latency is local, not a private network;
+      the mock reproduces golden-set timing, not provider latency or limits.
 - [ ] `api` — **N4** fix the first bottleneck N3 shows, then re-run for before/after. Suspects in order: blocking calls
       on the event loop (`run_turn` does sync DB work on it), the DB and thread pools, OpenAI SDK connection limits,
       LLM timeouts (already set: 30 s per call, 60 s per turn). Done when: the same ladder is re-run and both results
