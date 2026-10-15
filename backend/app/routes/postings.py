@@ -27,6 +27,7 @@ from app.ledger.models import Posting
 from app.ledger.types import Direction, PostingSource
 
 router = APIRouter(prefix="/postings", tags=["postings"])
+write_router = APIRouter(prefix="/postings", tags=["postings"])  # not mounted in the public demo (DEMO_MODE)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
@@ -134,7 +135,7 @@ def _respond(session: Session, response: Response, result: PostingResult) -> Pos
     return posting_out(result.posting, reversed_by, _labels_for(session, [result.posting]))
 
 
-@router.post("", status_code=201, response_model=PostingOut)
+@write_router.post("", status_code=201, response_model=PostingOut)
 def create_posting_endpoint(
     body: PostingIn,
     response: Response,
@@ -156,7 +157,7 @@ def create_posting_endpoint(
     return _respond(session, response, result)
 
 
-@router.post("/{posting_id}/reversal", status_code=201, response_model=PostingOut)
+@write_router.post("/{posting_id}/reversal", status_code=201, response_model=PostingOut)
 def reverse_posting_endpoint(
     posting_id: uuid.UUID,
     response: Response,

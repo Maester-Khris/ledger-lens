@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { type TermFieldDto, type TermsDto, documentPageUrl, getTerms } from '../../api';
 import { LockIcon } from '../Icons';
 
@@ -23,13 +23,20 @@ interface ContractProfileProps {
 }
 
 function display(value: unknown): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '-';
   if (typeof value === 'object') {
     const band = value as { band_text?: string; rate_text?: string };
     if (band.band_text || band.rate_text) return [band.band_text, band.rate_text].filter(Boolean).join(' · ');
     return JSON.stringify(value);
   }
   return String(value);
+}
+
+// Presidio tokens (<PERSON_ab12…>) read as identifiers, so they are set in the mono accent style.
+function withTokens(text: string): ReactNode {
+  return text.split(/(<[A-Z_]+_[0-9a-f]+>)/).map((part, i) => (
+    i % 2 ? <span key={i} className="ws-token">{part}</span> : part
+  ));
 }
 
 export function ContractProfile({ documentId, onOpenPage }: ContractProfileProps) {
@@ -48,7 +55,9 @@ export function ContractProfile({ documentId, onOpenPage }: ContractProfileProps
   const fields = terms.extraction.fields;
   return (
     <div className="ws-profile">
-      <p className="ws-reason">Every field here traces to a page in the source agreement.</p>
+      <div className="ws-pane__intro">
+        <p className="ws-pane__desc">Every field here traces to a page in the source agreement.</p>
+      </div>
       {GROUPS.map((group) => {
         const rows = fields.filter((f) => f.group === group.id);
         if (rows.length === 0) return null;
@@ -58,9 +67,12 @@ export function ContractProfile({ documentId, onOpenPage }: ContractProfileProps
             <dl>
               {rows.map((f) => (
                 <div key={f.path} className="ws-field">
-                  <dt className="ws-field__label">{f.label} <span className={`ws-badge ws-badge--${f.status}`}>{STATUS_LABEL[f.status]}</span></dt>
+                  <dt className="ws-field__label">
+                    <span>{f.label}</span>
+                    <span className={`ws-badge ws-badge--dot ws-badge--${f.status}`}>{STATUS_LABEL[f.status]}</span>
+                  </dt>
                   <dd className="ws-field__value">
-                    <span className="ws-field__value-text">{display(f.value)}</span>
+                    <span className="ws-field__value-text">{withTokens(display(f.value))}</span>
                     {f.reason && <p className="ws-field__reason">{f.reason}</p>}
                     {f.page !== null && (
                       onOpenPage ? (

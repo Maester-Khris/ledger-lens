@@ -24,6 +24,7 @@ def test_unconfirmed_fields_are_announced_before_the_final_event(client, session
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": "get_contract_fields", "args": {"document_id": str(document_id)}, "id": "c1"}]),
         AIMessage(content="done"),
+        Answer(text="Not available.", citations=[], refused=True),
     ])
     _override(client, _runtime(model), session_factory)
     events = _events(client.post("/chat", json={"session_id": "uv-1", "message": "What are the fees?"}))
@@ -40,6 +41,7 @@ def test_not_comparable_refusal_becomes_a_system_notice(client, session_factory,
         AIMessage(content="", tool_calls=[{"name": "list_documents", "args": {}, "id": "c0"}]),
         AIMessage(content="", tool_calls=[{"name": "compare_contract_to_billing", "args": {"document_id": str(document_id)}, "id": "c1"}]),
         AIMessage(content="done"),
+        Answer(text="Not available.", citations=[], refused=True),
     ])
     _override(client, _runtime(model), session_factory)
     kind, data = _events(client.post("/chat", json={"session_id": "uv-2", "message": "Compare this contract with billing"}))[-1]

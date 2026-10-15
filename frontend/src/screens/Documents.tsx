@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { useDemoMode } from '../lib/useDemoMode';
 import { Link } from 'react-router';
 import {
   type DocumentDetail,
@@ -103,6 +104,7 @@ function UsedBy({ invocations }: UsedByProps) {
 }
 
 export function Documents() {
+  const demoMode = useDemoMode();
   const [filter, setFilter] = useState<Filter>('all');
   const [summaries, setSummaries] = useState<DocumentSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -188,7 +190,7 @@ export function Documents() {
           <div>
             <h1 className="documents__title">Documents</h1>
             <p className="documents__subtitle">
-              Every uploaded contract and its ingestion pipeline — parse, tokenise, index, extract. Answers in Chat cite
+              Every uploaded contract and its ingestion pipeline - parse, tokenise, index, extract. Answers in Chat cite
               these chunks by page and section.
             </p>
             <p className="documents__stack mono">
@@ -196,24 +198,30 @@ export function Documents() {
               text-embedding-3-small
             </p>
           </div>
-          <div className="documents__upload">
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={(e) => void onUpload(e.target.files?.[0])}
-            />
-            <button type="button" className="btn btn-primary" onClick={() => fileInput.current?.click()}>
-              <UploadIcon size={14} /> Upload document
-            </button>
-            <span className="mono">PDF with a text layer · scanned files are rejected</span>
-            {error && (
-              <span className="mono documents__status-note--error" role="alert">
-                {error}
-              </span>
-            )}
-          </div>
+          {demoMode ? (
+            <div className="documents__upload">
+              <span className="mono">Uploads are off in the public demo.</span>
+            </div>
+          ) : (
+            <div className="documents__upload">
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/pdf"
+                hidden
+                onChange={(e) => void onUpload(e.target.files?.[0])}
+              />
+              <button type="button" className="btn btn-primary" onClick={() => fileInput.current?.click()}>
+                <UploadIcon size={14} /> Upload document
+              </button>
+              <span className="mono">PDF with a text layer · scanned files are rejected</span>
+              {error && (
+                <span className="mono documents__status-note--error" role="alert">
+                  {error}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="documents__filters">
@@ -261,10 +269,11 @@ export function Documents() {
                         <div className="documents__name" title={doc.title}>
                           {doc.title}
                         </div>
+                        {doc.description && <div className="documents__description">{doc.description}</div>}
                         <div className="documents__id mono">{doc.id}</div>
                       </td>
                       <td className="num">{doc.page_count}</td>
-                      <td className="num">{doc.element_count || '—'}</td>
+                      <td className="num">{doc.element_count || '-'}</td>
                       <td className="mono documents__uploaded">{formatUtc(doc.uploaded_at)}</td>
                       <td>
                         <StatusCell doc={doc} />
@@ -303,7 +312,7 @@ export function Documents() {
                 <dt>Pages</dt>
                 <dd className="mono">{current.page_count}</dd>
                 <dt>Chunks</dt>
-                <dd className="mono">{current.element_count || '—'}</dd>
+                <dd className="mono">{current.element_count || '-'}</dd>
                 <dt>Uploaded</dt>
                 <dd className="mono">{formatUtcFull(current.uploaded_at)}</dd>
                 <dt>Size</dt>

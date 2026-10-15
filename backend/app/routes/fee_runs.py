@@ -14,7 +14,7 @@ from app.ranges import range_end_inclusive
 from app.routes.postings import mark_replay
 
 router = APIRouter(tags=["billing"])
-
+write_router = APIRouter(tags=["billing"])  # not mounted in the public demo (DEMO_MODE)
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
 
@@ -68,7 +68,7 @@ def _out(calculation: FeeCalculation) -> FeeCalculationOut:
     )
 
 
-@router.post("/fee-runs", status_code=201, response_model=FeeCalculationOut)
+@write_router.post("/fee-runs", status_code=201, response_model=FeeCalculationOut)
 def run_fee(body: FeeRunIn, response: Response, session: SessionDep, tenant_id: TenantDep) -> FeeCalculationOut:
     result = run_household_fee(
         session, tenant_id=tenant_id, household_id=body.household_id,

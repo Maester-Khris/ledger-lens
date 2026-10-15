@@ -86,3 +86,13 @@ def test_original_file_is_cached_as_immutable(client):
     response = client.get(f"/documents/{body['document_id']}/versions/1/file")
     assert response.status_code == 200
     assert response.headers["cache-control"] == "private, max-age=31536000, immutable"
+
+
+def test_the_list_and_the_detail_carry_the_description_when_there_is_one(client, db_session):
+    from app.documents.models import DocumentDescription
+    document_id = _post(client).json()["document_id"]
+    assert client.get("/documents").json()[0]["description"] is None
+    db_session.add(DocumentDescription(document_id=uuid.UUID(document_id), description="A household agreement."))
+    db_session.commit()
+    assert client.get("/documents").json()[0]["description"] == "A household agreement."
+    assert client.get(f"/documents/{document_id}").json()["description"] == "A household agreement."

@@ -1,4 +1,4 @@
-/* Tool-call card — visually distinct from a retrieval answer */
+/* Tool-call card - visually distinct from a retrieval answer */
 .tool-card {
   background: var(--color-surface);
   border: 1px solid rgba(59, 130, 246, 0.35);

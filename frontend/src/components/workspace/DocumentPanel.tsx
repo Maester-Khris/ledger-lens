@@ -18,16 +18,18 @@ export function DocumentPanel({ tabs }: DocumentPanelProps) {
     <aside className="ws-panel" aria-label="Document details">
       <div className="ws-panel__head">
         <label className="ws-panel__select-label" htmlFor="ws-panel-select">Viewing</label>
-        <select
-          id="ws-panel-select"
-          className="ws-panel__select"
-          value={active.id}
-          onChange={(event) => setActiveId(event.target.value)}
-        >
-          {tabs.map((t) => (
-            <option key={t.id} value={t.id}>{t.label}</option>
-          ))}
-        </select>
+        <div className="ws-panel__select-wrapper">
+          <select
+            id="ws-panel-select"
+            className="ws-panel__select"
+            value={active.id}
+            onChange={(event) => setActiveId(event.target.value)}
+          >
+            {tabs.map((t) => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="ws-pane">
         {active.content}

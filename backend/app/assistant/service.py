@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app import config
 from app.assistant import dao
-from app.assistant.graph import GRAPH_VERSION, RECURSION_LIMIT, build_graph, prompt_version
+from app.assistant.graph import (FAILED_VERIFICATION_MESSAGE, GRAPH_VERSION, NO_EVIDENCE_MESSAGE, RECURSION_LIMIT, build_graph, prompt_version)
 from app.assistant.models import ChatOutcome, ChatTurn
 from app.assistant.tools import ToolContext, ToolSpec
 from app.contracts import dao as contracts_dao
@@ -30,11 +30,17 @@ HISTORY_TURNS = 4
 PROGRESS = {"agent": "thinking", "tools": "searching", "answer": "writing", "verify": "checking citations"}
 SYSTEM_CITATION_ID = "system"
 NOT_COMPARABLE_TEXT = "I can't compare this contract with billing: {reason}"
+NO_SUPPORT_DETAIL = "No passage in the indexed contracts supports an answer to this question."
+CLARIFY_UNSCOPED = ("I need a little more to go on. Which contract do you mean, and what would you like to know "
+                    "about it? Indexed contracts: {titles}.")
+CLARIFY_SCOPED = "I need a little more to go on. What would you like to know about {title}?"
+CLARIFY_NO_DOCUMENTS = "I need a little more to go on. What would you like to know?"
+MAX_CLARIFY_TITLES = 4
 
 
 @dataclass(frozen=True)
 class TurnEvent:
-    type: Literal["progress", "answer", "refused", "error", "unvalidated"]
+    type: Literal["progress", "answer", "refused", "clarify", "error", "unvalidated"]
     data: dict
 
 
@@ -51,10 +57,10 @@ def _usage(messages: list) -> tuple[int, int]:
     return sum(u["input_tokens"] for u in usage), sum(u["output_tokens"] for u in usage)
 
 
-def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str]) -> list[TurnEvent]:
+def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: list[str], overlay_guest: uuid.UUID | None) -> list[TurnEvent]:
     events = []
     for document_id in dict.fromkeys(document_ids):  # once per document, in order
-        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today())
+        view = contracts_dao.terms_view(session, tenant_id, uuid.UUID(document_id), date.today(), overlay_guest)
         if view is None:
             continue
         fields = [{"path": f.path, "label": f.label, "reason": f.reason} for f in view.fields if f.status in ("needs_review", "rejected")]
@@ -63,10 +69,25 @@ def _unvalidated_events(session: Session, tenant_id: uuid.UUID, document_ids: li
     return events
 
 
+def _clarifying_question(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID | None) -> str:
+    """P4: the model only decides to ask; the wording is fixed (it left the text empty 5 times in 6 in the eval)."""
+    titles = sorted(r.document.title for r in documents_dao.list_documents(session, tenant_id)
+                    if document_id is None or r.document.id == document_id)[:MAX_CLARIFY_TITLES]
+    if not titles:
+        return CLARIFY_NO_DOCUMENTS
+    if document_id is not None:
+        return CLARIFY_SCOPED.format(title=titles[0])
+    return CLARIFY_UNSCOPED.format(titles="; ".join(titles))
+
+
+def _no_support_citation() -> dict:
+    return {"id": SYSTEM_CITATION_ID, "kind": "system", "source": "indexed contracts", "detail": NO_SUPPORT_DETAIL}
+
+
 async def run_turn(
     *, session_factory: sessionmaker, runtime: AssistantRuntime, tenant_id: uuid.UUID, session_id: str,
     message: str, hmac_key: str, vault_key: str,
-    guest_id: uuid.UUID | None = None, document_id: uuid.UUID | None = None,
+    guest_id: uuid.UUID | None = None, document_id: uuid.UUID | None = None, overlay_guest: uuid.UUID | None = None,
 ) -> AsyncIterator[TurnEvent]:
     started = time.perf_counter()
     model_id = getattr(runtime.chat_model, "model_name", None) or config.CHAT_MODEL
@@ -82,10 +103,14 @@ async def run_turn(
             history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
         turn_id = uuid.uuid4()
         record["id"] = turn_id
+
+        def final(kind: Literal["answer", "refused", "clarify"], text: str, citations: list[dict]) -> TurnEvent:
+            """The event that ends a turn. It names the turn so the client can attach feedback to it (spec P5 D5)."""
+            return TurnEvent(kind, {"text": text, "citations": citations, "turn_id": str(turn_id)})
         ctx = ToolContext(session=session, tenant_id=tenant_id, session_id=session_id, turn_id=turn_id,
                           embeddings=runtime.embeddings, vector_index=runtime.vector_index,
                           model=ModelConfig("openai", model_id, record["prompt_version"], Decimal(0)), hmac_key=hmac_key, vault_key=vault_key,
-                          document_id=document_id)
+                          document_id=document_id, overlay_guest=overlay_guest, question=question)
         graph = build_graph(runtime.chat_model, runtime.tools, ctx)
         state: dict = {}
         
@@ -115,7 +140,7 @@ async def run_turn(
                         for node in data:
                             yield TurnEvent("progress", {"step": PROGRESS.get(node, "thinking")})
             answer = state["answer"]
-            for event in _unvalidated_events(session, tenant_id, state.get("unvalidated", [])):
+            for event in _unvalidated_events(session, tenant_id, state.get("unvalidated", []), overlay_guest):
                 yield event
             notices = state.get("system_notices", [])
             if answer.refused and notices:
@@ -124,21 +149,38 @@ async def run_turn(
                               retrieved=state.get("retrieved", []))
                 record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
                 outcome = ChatOutcome.refused
-                yield TurnEvent("refused", {"text": NOT_COMPARABLE_TEXT.format(reason=notices[-1]), "citations": [citation]})
+                yield final("refused", NOT_COMPARABLE_TEXT.format(reason=notices[-1]), [citation])
+                return
+            record["retrieved"] = state.get("retrieved", [])
+            record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
+            if answer.refused:
+                # P4: every refusal but N11 is fixed text plus a system reason; the model's own wording is never shown.
+                text = FAILED_VERIFICATION_MESSAGE if answer.text == FAILED_VERIFICATION_MESSAGE else NO_EVIDENCE_MESSAGE
+                citation = _no_support_citation()
+                record.update(answer_redacted=text, citations=[citation])
+                outcome = ChatOutcome.refused
+                yield final("refused", text, [citation])
+                return
+            if answer.clarification:
+                text = _clarifying_question(session, tenant_id, document_id)
+                record.update(answer_redacted=text, citations=[])
+                outcome = ChatOutcome.clarified
+                yield final("clarify", text, [])
                 return
             cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
-            record.update(answer_redacted=answer.text, citations=cited, retrieved=state.get("retrieved", []))
-            record["input_tokens"], record["output_tokens"] = _usage(state.get("messages", []))
-            outcome = ChatOutcome.refused if answer.refused else ChatOutcome.answered
+            record.update(answer_redacted=answer.text, citations=cited)
+            outcome = ChatOutcome.answered
             [text, *quotes] = documents_dao.reveal(session, tenant_id, [answer.text, *(c.get("quote", "") for c in cited)], vault_key)
             shown = [c | ({"quote": q} if "quote" in c else {}) for c, q in zip(cited, quotes)]
-            yield TurnEvent("refused" if answer.refused else "answer", {"text": text, "citations": shown})
+            yield final("answer", text, shown)
         except TimeoutError:
             outcome = ChatOutcome.timed_out
-            yield TurnEvent("refused", {"text": "That took too long; please try a narrower question.", "citations": []})
+            record["citations"] = [_no_support_citation()]
+            yield final("refused", "That took too long; please try a narrower question.", record["citations"])
         except GraphRecursionError:
             outcome = ChatOutcome.refused
-            yield TurnEvent("refused", {"text": "I couldn't settle on an answer within my step limit.", "citations": []})
+            record["citations"] = [_no_support_citation()]
+            yield final("refused", "I couldn't settle on an answer within my step limit.", record["citations"])
         except Exception:  # the client gets a generic error; the details stay in the logs and the audit row
             logger.exception("chat turn failed")
             outcome = ChatOutcome.error

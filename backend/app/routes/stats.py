@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app.assistant.graph import eval_config_hash
-from app.deps import get_session, get_tenant_id
-from app.reporting.dashboard import cached_dashboard_stats
+from app.deps import get_overlay_guest, get_session, get_tenant_id
+from app.reporting.dashboard import cached_dashboard_stats, with_guest_queues
 
 router = APIRouter(tags=["stats"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -71,6 +71,7 @@ class ConfigOut(BaseModel):
     vector_store: str
     retrieval: RetrievalConfigOut
     eval_config_hash: str
+    demo_mode: bool = False
 
 
 def _etag(body: BaseModel, exclude: set[str] | None = None) -> str:
@@ -82,8 +83,10 @@ def _not_modified(etag: str, cache_control: str) -> Response:
 
 
 @router.get("/stats", response_model=StatsOut)
-def get_stats(response: Response, session: SessionDep, tenant_id: TenantDep, if_none_match: IfNoneMatch = None):
-    s = cached_dashboard_stats(session, tenant_id)
+def get_stats(response: Response, session: SessionDep, tenant_id: TenantDep,
+              overlay_guest: Annotated[uuid.UUID | None, Depends(get_overlay_guest)],
+              if_none_match: IfNoneMatch = None):
+    s = with_guest_queues(cached_dashboard_stats(session, tenant_id), session, tenant_id, overlay_guest)
     body = StatsOut(
         documents=DocumentStatsOut(total=s.documents_total, indexed=s.documents_indexed,
                                    processing=s.documents_processing, failed=s.documents_failed,
@@ -122,7 +125,7 @@ def _config_out() -> ConfigOut:
 
 @router.get("/config", response_model=ConfigOut)
 def get_config(response: Response, if_none_match: IfNoneMatch = None):
-    body = _config_out()
+    body = _config_out().model_copy(update={"demo_mode": config.DEMO_MODE})  # outside the lru_cache: read per request
     etag = _etag(body)
     if if_none_match == etag:
         return _not_modified(etag, CONFIG_CACHE_CONTROL)

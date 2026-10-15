@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.assistant.models import ChatTurn, Guest
+from app.assistant.models import ChatFeedback, ChatTurn, Guest, ChatTurnTiming
 
 
 def save_turn(session: Session, turn: ChatTurn) -> None:
@@ -64,3 +65,36 @@ def register_guest(session: Session, tenant_id: uuid.UUID, known_id: uuid.UUID |
     session.add(guest)
     session.commit()
     return guest.id
+
+
+def stale_guest_ids(session: Session, tenant_id: uuid.UUID, *, before: datetime) -> list[uuid.UUID]:
+    """Guests not seen since `before`. Their overlay decisions are purged; the guest rows stay (chat turns reference them)."""
+    return list(session.scalars(select(Guest.id).where(Guest.tenant_id == tenant_id, Guest.last_seen_at < before)))
+
+
+def find_turn(session: Session, tenant_id: uuid.UUID, turn_id: uuid.UUID) -> ChatTurn | None:
+    turn = session.get(ChatTurn, turn_id)
+    return turn if turn is not None and turn.tenant_id == tenant_id else None
+
+
+def count_feedback(session: Session, guest_id: uuid.UUID, turn_id: uuid.UUID) -> int:
+    return session.scalar(select(func.count()).select_from(ChatFeedback).where(
+        ChatFeedback.guest_id == guest_id, ChatFeedback.turn_id == turn_id))
+
+
+def add_feedback(session: Session, feedback: ChatFeedback) -> uuid.UUID:
+    session.add(feedback)
+    session.commit()
+    return feedback.id
+
+
+def add_timing(session: Session, row: ChatTurnTiming) -> bool:
+    result = session.execute(
+        insert(ChatTurnTiming)
+        .values(tenant_id=row.tenant_id, turn_id=row.turn_id, guest_id=row.guest_id, ttfb_ms=row.ttfb_ms)
+        .on_conflict_do_nothing(index_elements=["turn_id"])
+        .returning(ChatTurnTiming.id)
+    )
+    inserted = result.first() is not None
+    session.commit()  # the session dependency only closes; every DAO write commits itself, as add_feedback does
+    return inserted

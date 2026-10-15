@@ -13,9 +13,15 @@ from app.ledger.models import Base
 class ChatOutcome(str, enum.Enum):
     answered = "answered"
     refused = "refused"
+    clarified = "clarified"
     timed_out = "timed_out"
     cancelled = "cancelled"
     error = "error"
+
+
+class FeedbackRating(str, enum.Enum):
+    up = "up"
+    down = "down"
 
 
 class Guest(Base):
@@ -48,4 +54,28 @@ class ChatTurn(Base):
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+
+class ChatFeedback(Base):
+    """A guest's opinion of one reply. Insert-only: the latest row per guest and turn wins (spec P5 D1)."""
+    __tablename__ = "chat_feedback"
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    turn_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chat_turns.id"), nullable=False)
+    guest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("guests.id"), nullable=False)
+    rating: Mapped[FeedbackRating] = mapped_column(SAEnum(FeedbackRating, name="feedback_rating", native_enum=True), nullable=False)
+    comment_redacted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+
+class ChatTurnTiming(Base):
+    __tablename__ = "chat_turn_timing"
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    turn_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chat_turns.id"), nullable=False, unique=True)
+    guest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("guests.id"), nullable=False)
+    ttfb_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())

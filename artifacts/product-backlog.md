@@ -429,23 +429,50 @@ service in the same Railway project. This replaces "Aurora for the demo" (Epic 1
 non-demo deploy). CLAUDE.md's stack row and Current Scope are updated when the sprint lands.
 Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo versions match.
 
-> **⚠ OPEN DECISION — guest approvals (settle at the start of the NEXT sprint, before public launch).**
-> Approvals are permanent and global today: `field_reviews` and `tool_invocation_decisions` are
-> append-only (triggers, SELECT/INSERT only, one decision per field or invocation), and everything is
-> scoped to the single `DEMO_TENANT_ID`. One guest's approval changes the answers and citations every
-> other guest gets, empties the review queue for them, and (for tool invocations) writes a permanent
-> ledger posting. A revert at session end is not viable (needs the triggers off, no reliable
-> session-end signal, overlapping guests break each other, a reversed posting leaves a pair behind).
-> **Leading option:** a disposable per-guest overlay table (TTL, not append-only; precedent:
-> `element_search` DELETE grant), reads = baseline reviews + this guest's overlay through
-> `served_fields` / `pending_reviews` / `count_pending` / dashboard stats; in demo mode an approved
-> invocation runs `create_posting` in a rolled-back transaction so the guest sees the exact entries
-> and balance check while the real ledger stays untouched; UI labels it "demo decision, expires".
-> Alternatives weighed: per-guest sandbox tenant (clones documents and vectors, too heavy), dry-run
-> only (loses N13/N14), nightly reseed (fallback, doesn't fix concurrent guests). Before the spec,
-> check whether retrieval or citation chips read reviews directly and how the dashboard cache is keyed.
-> **Interim rule until settled:** the deployed build does not accept public approvals (keep it private,
-> or disable Approve and field review); do not announce the demo publicly.
+> **✅ DECIDED 2026-09-29 — guest decisions go to a per-guest overlay; built this sprint as P9.**
+> **Problem.** Decisions are permanent and global today: `field_reviews` and `tool_invocation_decisions`
+> are append-only (triggers, SELECT/INSERT only, one decision per field or invocation) and everything is
+> scoped to the single `DEMO_TENANT_ID`. One guest's field review changes every guest's answers,
+> citations, billing gap and review queue (readers: `served_fields`, `terms_view`, `pending_reviews`,
+> `runs_with_reviews`). Tool proposals are already per chat session, but an approval writes a real
+> posting to the shared ledger (visible on Ledger/dashboard, one extra posting per approving guest), and
+> `count_pending` / `invocations_for_document` are tenant-wide. Answers don't depend on postings
+> (`compare_contract_to_billing` reads the fee schedule).
+> **Rejected: commit, then revert at session end (inactivity timeout).** The leak happens while the
+> session is alive: a committed posting is visible to every guest until the revert lands, so a better
+> end-of-session signal doesn't help. A revert on an append-only ledger is a reversal pair that stays
+> forever. A timeout guesses wrong both ways (an idle tab returns to find its approval gone) and needs a
+> scheduler that never misses. Revert racing a returning guest makes answers timing-dependent.
+> **Also rejected:** a separate guest-aware chat route (duplicates the agent, tools and prompt path; every
+> fix twice, golden set covers one copy); a per-guest sandbox tenant (clones documents and Pinecone
+> vectors); nightly reseed (doesn't fix concurrent guests); field reviews only with approvals disabled
+> (kept as the fallback, loses the governance story).
+> **Decision.** Guest decisions never enter shared state. Two disposable overlay tables keyed by guest
+> (not append-only, `ledger_app` gets DELETE like `element_search`), merged over the real tables at read
+> time through one helper per package, gated by the P2 `DEMO_MODE` flag. Without a guest or with the flag
+> off the code path is today's, so production is unchanged.
+> - **Phase 1, field reviews (carries the demo):** `guest_field_reviews` (PK `guest_id, run_id,
+>   field_path`); the four readers take an optional `guest_id`; the tool context carries it. *Amended
+>   2026-09-30:* no re-decide or reset; a guest's decisions are final, as in the real system (a decision is
+>   recorded once; a posting is only corrected by a compensating reversal). `field_status` stays the single status rule.
+> - **Phase 2, tool approvals (carries the governance story):** `guest_tool_decisions`; approve runs
+>   the ledger's own validation read-only (`check_posting`: the same account load and `_validate` that
+>   `create_posting` runs first), so nothing is written or visible to others. *Amended 2026-09-30:* a
+>   rolled-back `create_posting` would need INSERT on the ledger for the demo role, which P2 forbids;
+>   the DB balance trigger stays covered by tests and the N15 local run; the guest's own Ledger and timeline show the
+>   simulated entries (from `tool_invocations.proposed_entries`) labelled "demo posting, not recorded".
+> - **Cleanup:** an inactivity TTL purges both overlays. Timing only reclaims storage, because the rows
+>   are invisible to other guests; it is never what keeps data hidden.
+> - **Dashboard:** aggregate tiles show real data only; the pending counts include the guest's own overlay.
+> **DDIA lens:** the append-only tables stay the system of record; the overlay is per-guest derived state
+> with read-your-writes (same Postgres, no cache in the path) and no cross-guest conflicts (guest in the PK).
+> **Honesty cost:** public guests never write real ledger rows; the posting path is proven by tests and
+> the N15 local run, and the UI label says so.
+> **Guard:** a test where two guests make opposite decisions on the same field and get different served
+> values and answers. **Fallback if time runs short:** ship Phase 1, show Approve as disabled in the
+> public demo. Spec and plan are not written yet; brainstorm them when P9 starts.
+> **Rule until P9 lands:** the deployed build does not accept public decisions (keep it private, or
+> disable Approve and field review); do not announce the demo publicly.
 
 **Now — blocks launch:**
 - [ ] **P1** **Deploy skeleton first (tracer bullet).** Railway API + Postgres, Vercel frontend,
@@ -457,9 +484,15 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
       upload routes, and the demo API's DB role has no INSERT on document/extraction tables (it writes
       only what chat needs: chat turns, guests, tool invocations, decisions, feedback, events). Test: in
       demo mode every ingestion route returns 404, and a direct insert as the demo role is rejected.
+- [ ] **P9** **Per-guest decision overlay** (decision above). Phase 1: `guest_field_reviews` merged into
+      `served_fields` / `terms_view` / `pending_reviews` / `runs_with_reviews`. Phase 2:
+      `guest_tool_decisions` + rolled-back `create_posting` + the guest's simulated entries in Ledger
+      and timeline. TTL purge; dashboard shows real data plus the guest's own pending counts. Right
+      after P2 because it reuses `DEMO_MODE` and the demo role's grants (DELETE on the overlays only).
 - [ ] **P3** **Per-guest rate limit + hard spend caps.** Rate limit per `X-Guest-Id` and per IP on the
       chat/agent endpoints; provider-side caps on OpenAI and Pinecone; a Railway usage limit.
-      (The guest-approval design is split out into the open decision above.)
+      Also CORS: `CORSMiddleware` allowing only `FRONTEND_URL` (the Vercel origin, with `https://`, no
+      trailing slash) and the `X-Guest-Id` header. Without it the deployed frontend cannot call the API.
 - [ ] **P4** **Retrieval edge cases.** Send disabled on an empty message; when retrieval scores fall
       below threshold, or the query is vague, nonsense or unrelated, show an explicit "no supporting
       passage found" answer (system-credited like N11) instead of a weak or empty answer. Tune the
@@ -475,10 +508,12 @@ Railway Postgres supports PG 18 (confirmed 2026-09-29), so the dev and demo vers
       that matters (share of guest sessions that reach a cited answer) and for the latency figure.
 - [ ] **P8** **Document context for guests.** A list of the demo documents with a one-line description
       each (from `documents` metadata), plus 3–4 clickable starter questions on the chat screen. Reuses
-      N12 (chat scoped to a document) and the selected-document context.
+      N12 (chat scoped to a document) and the selected-document context. Also: the "Open page →" link on a chat citation opens
+      the PDF in a new browser tab; make it open the in-app `DocumentViewer` the screen already has.
 
-**Order:** P1 → P2 → P3 → P4 → (P5, P6, P7 together, one migration) → P8. Then a smoke run on the
-deployed environment: ingestion 404s, the rate limit trips, Sentry receives a forced error.
+**Order:** P1 → P2 → P9 (Phase 1, then Phase 2) → P3 → P4 → (P5, P6, P7 together, one migration) → P8.
+Then a smoke run on the deployed environment: ingestion 404s, the rate limit trips, Sentry receives a
+forced error, and two guests with opposite decisions see different answers.
 
 **Line in the sand (set before launch, adjust the numbers):** in the first 10 real guest sessions, at
 least 60% reach a cited answer and at least 5 submit feedback. Under 30% reaching a cited answer: fix
@@ -499,6 +534,14 @@ rate, so the number can't be raised by weakening answers.
 - [ ] **X3** Latency and usage view: p50/p95, cohorts by day (feeds D8).
 - [ ] **X4** Small load test (~15 min) against the demo config with P3 on. Record the ceiling and check
       that pools and timeouts fail cleanly. The likely limit is LLM rate limits, not Railway workers.
+- [ ] **X5** Occasional refusal of an answerable question (found 2026-10-02, cause not traced: `calamos-first-tier`
+      with no document selected, 1 refusal in 2 gate runs, 10 of 10 when traced). Record each turn's tool calls and
+      verification result so a refusal can be explained afterwards; act only if guest feedback or the usage log shows
+      it matters.
+- [ ] **X6** A multi-contract answer that drops a section which failed verification does not tell the guest which
+      contract is missing. Add a fixed system line naming it (title from the record, not from the model).
+- [ ] **X7** A retry that ends in a refusal after sources were found says "I can't find that in the indexed
+      contracts". It should say the answer could not be verified.
 
 **Cut:** **C1** A/B testing (no traffic for significance; revisit at hundreds of sessions per week).
 **C2** Node-vs-Python throughput comparison (not the workload's bottleneck). **C3** A separate deployable

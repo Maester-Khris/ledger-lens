@@ -147,3 +147,4 @@ backend/var/
 
 # playwright-cli page snapshots from UI test runs
 .playwright-cli/
+.vercel

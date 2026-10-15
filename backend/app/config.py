@@ -5,8 +5,12 @@ from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
-# backend/.env, wherever the command runs from. Real environment variables win over the file.
-load_dotenv(BACKEND_DIR / ".env")
+# backend/.env (or the file named by ENV_FILE, e.g. ENV_FILE=.env.demo), wherever the command runs from.
+# Real environment variables win over the file. An optional "<file>.local" (e.g. .env.demo.local) is loaded
+# first, so its values win over the file itself.
+_ENV_FILE = os.environ.get("ENV_FILE", ".env")
+load_dotenv(BACKEND_DIR / f"{_ENV_FILE}.local")
+load_dotenv(BACKEND_DIR / _ENV_FILE)
 
 
 def _int(name: str, default: int) -> int:
@@ -41,6 +45,12 @@ TEST_OWNER_DATABASE_URL = os.environ.get(
     f"postgresql+psycopg://ledger_owner:localdev@{_LOCAL}/ledger_test",
 )
 
+# The public demo's API role (grants in migration 0013), used by tests/test_demo_role.py.
+TEST_DEMO_DATABASE_URL = os.environ.get(
+    "TEST_DEMO_DATABASE_URL",
+    f"postgresql+psycopg://ledger_demo:localdev@{_LOCAL}/ledger_test",
+)
+
 MIGRATION_ROUNDTRIP_DATABASE_URL = os.environ.get(
     "MIGRATION_ROUNDTRIP_DATABASE_URL",
     f"postgresql+psycopg://ledger_owner:localdev@{_LOCAL}/ledger_migration_test",
@@ -61,6 +71,10 @@ def require(name: str) -> str:
         raise RuntimeError(f"{name} is not set; see backend/.env.example")
     return value
 
+
+# Errors (Sentry). No DSN means Sentry stays off, as in tests and local runs.
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "local")
 
 # Tracing
 LANGFUSE_PUBLIC_KEY = os.environ.get("LANGFUSE_PUBLIC_KEY")
@@ -92,9 +106,34 @@ PINECONE_CLOUD = os.environ.get("PINECONE_CLOUD", "aws")
 PINECONE_REGION = os.environ.get("PINECONE_REGION", "us-east-1")
 PINECONE_TIMEOUT_SECONDS = _float("PINECONE_TIMEOUT_SECONDS", 10)
 
-# Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-09-24 on the golden set (see .env.example).
+
+def parse_frontend_origins(raw: str | None) -> list[str]:
+    """FRONTEND_URL: comma-separated browser origins allowed to call the API. A scheme is required."""
+    origins = [part.strip().rstrip("/") for part in (raw or "").split(",") if part.strip()]
+    for origin in origins:
+        if not origin.startswith(("https://", "http://")):
+            raise ValueError(f"FRONTEND_URL entry {origin!r} needs a scheme, e.g. https://example.com")
+    return origins
+
+
+# Unset (local dev uses the Vite /api proxy, same origin) means no CORS middleware is installed.
+FRONTEND_ORIGINS = parse_frontend_origins(os.environ.get("FRONTEND_URL"))
+
+# Public demo (docs/superpowers/specs/2026-09-30-demo-mode-and-guest-overlay-design.md): the write routes that change
+# shared state are not mounted, and guest decisions go to per-guest overlays. Off unless set to 1, true or yes.
+DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
+
+# Public demo chat rate limits (P3), each a sliding window: per guest, and per client IP so a script that registers
+# a new guest for every request is still capped. Each chat turn is an LLM call, so these bound the spend.
+CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
+CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
+CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
+
+# Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-10-01 on the demo corpus with scripts/calibrate_relevance.py
+# (reports/relevance-bd36247ba3f7.json); chosen inside the empty band 0.452–0.484 between the highest gateable junk and
+# the lowest answerable.
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
-MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.43)
+MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.46)
 
 # Ingestion
 MAX_UPLOAD_BYTES = _int("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)

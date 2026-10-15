@@ -4,7 +4,7 @@ import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, fileUrl, listDocuments, streamChat, listToolInvocations } from '../api';
+import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, listDocuments, streamChat, listToolInvocations } from '../api';
 import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
@@ -14,15 +14,11 @@ import { AuditLog } from '../components/workspace/AuditLog';
 import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import { DocumentViewer } from '../components/DocumentViewer';
+import { startersFor } from '../lib/starters';
+import { citationTarget, type ViewerTarget } from '../lib/viewer';
+import { FeedbackControl } from '../components/FeedbackControl';
 import '../components/workspace/Workspace.css';
 import './Chat.css';
-
-const SUGGESTED_QUESTIONS = [
-  'What is the fee schedule in the Tremblay agreement?',
-  'How much notice is needed to terminate the Tremblay agreement?',
-  'Which law governs the Tremblay agreement?',
-  'What is the Calamos fund’s rate in excess of $26 billion?',
-];
 
 interface AssistantHeadProps {
   label: string;
@@ -43,18 +39,20 @@ function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
 type Turn = {
   question: string;
   step: string | null;
-  outcome: 'pending' | 'answer' | 'refused' | 'error';
+  outcome: 'pending' | 'answer' | 'refused' | 'clarify' | 'error';
   text: string;
   citations: Citation[];
   unvalidated: UnvalidatedDto[];
+  turnId: string | null;
 };
 
 interface CitationCardProps {
   citation: Citation;
+  onOpen(target: ViewerTarget): void;
 }
 
-function CitationCard({ citation }: CitationCardProps) {
-  const href = fileUrl(citation);
+function CitationCard({ citation, onOpen }: CitationCardProps) {
+  const target = citationTarget(citation);
   return (
     <div className="citation-card">
       <div className="citation-card__head">
@@ -74,10 +72,10 @@ function CitationCard({ citation }: CitationCardProps) {
       {citation.detail && <p className="mono citation-card__excerpt">{citation.detail}</p>}
       <div className="citation-card__foot">
         <span className="mono">{citation.id}</span>
-        {href && (
-          <a href={href} target="_blank" rel="noreferrer">
+        {target && (
+          <button type="button" className="citation-card__open" onClick={() => onOpen(target)}>
             Open page →
-          </a>
+          </button>
         )}
       </div>
     </div>
@@ -104,13 +102,14 @@ export function Chat() {
   const [cardsOpen, setCardsOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const scoped = documents.find((d) => d.id === scopeId) ?? null;
+  const starters = startersFor(documents, scopeId);
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState(newSessionId);
   const [auditKey, setAuditKey] = useState(0);
   const [ledgerKey, setLedgerKey] = useState(0);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [indexedCount, setIndexedCount] = useState<number | null>(null);
-  const [viewer, setViewer] = useState<{ documentId: string; version: number; page: number; title: string } | null>(null);
+  const [viewer, setViewer] = useState<ViewerTarget | null>(null);
 
   const tabs: PanelTab[] = [
     ...(scopeId ? [
@@ -167,12 +166,12 @@ export function Chat() {
     if (!question.trim() || busy) return;
     setInputValue('');
     setCardsOpen(false);
-    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [] }]);
+    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [], turnId: null }]);
     const onEvent = (event: ChatEvent) => {
       if (event.type === 'progress') updateLast({ step: event.data.step });
       else if (event.type === 'unvalidated') setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, unvalidated: [...t.unvalidated, event.data] } : t)));
       else if (event.type === 'error') updateLast({ outcome: 'error', text: event.data.text });
-      else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations });
+      else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations, turnId: event.data.turn_id });
     };
     try {
       await streamChat(sessionId, question, onEvent, { documentId: scopeId ?? undefined });
@@ -218,11 +217,11 @@ export function Chat() {
               ) : (
                 <ScopeChip title={scoped?.title ?? null} onOpen={() => { setCardsOpen(true); setPanelOpen(true); }} onClear={() => startConversation(null)} />
               )}
-              {turns.length === 0 && (
+              {turns.length === 0 && starters.length > 0 && (
                 <div className="chat__prompts">
                   <span className="chat__prompts-label">Suggested questions</span>
                   <div className="chat__prompt-chips">
-                    {SUGGESTED_QUESTIONS.map((question) => (
+                    {starters.map((question) => (
                       <button type="button" className="chat__prompt-chip" key={question} onClick={() => void ask(question)}>
                         {question}
                       </button>
@@ -248,10 +247,16 @@ export function Chat() {
                         {turn.citations.length > 0 && (
                           <div className="chat__citations">
                             {turn.citations.map((c) => (
-                              <CitationCard key={c.id} citation={c} />
+                              <CitationCard key={c.id} citation={c} onOpen={setViewer} />
                             ))}
                           </div>
                         )}
+                      </>
+                    )}
+                    {turn.outcome === 'clarify' && (
+                      <>
+                        <AssistantHead label="Clarifying question" variant="neutral" />
+                        <Markdown className="chat__prose" text={turn.text} />
                       </>
                     )}
                     {(turn.outcome === 'refused' || turn.outcome === 'error') && (
@@ -261,12 +266,13 @@ export function Chat() {
                         {turn.citations.length > 0 && (
                           <div className="chat__citations">
                             {turn.citations.map((c) => (
-                              <CitationCard key={c.id} citation={c} />
+                              <CitationCard key={c.id} citation={c} onOpen={setViewer} />
                             ))}
                           </div>
                         )}
                       </>
                     )}
+                    {turn.turnId && <FeedbackControl key={turn.turnId} turnId={turn.turnId} />}
                   </div>
                 </div>
               ))}
@@ -309,7 +315,7 @@ export function Chat() {
                 </button>
               </div>
               <div className="chat__composer-foot">
-                Every number in an answer traces to the page it's cited from, checked before you see it — and the
+                Every number in an answer traces to the page it's cited from, checked before you see it - and the
                 assistant says so when it can't find one.
               </div>
             </form>

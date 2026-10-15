@@ -77,3 +77,11 @@ class PiiToken(Base):
     entity_type: Mapped[str] = mapped_column(Text, nullable=False)
     value_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     created_at: Mapped[datetime] = _created_at()
+
+
+class DocumentDescription(Base):
+    """One line saying what a document is. Beside documents, not on it: documents is append-only (spec P8 D9)."""
+    __tablename__ = "document_descriptions"
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), primary_key=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = _created_at()

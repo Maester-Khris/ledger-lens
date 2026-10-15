@@ -12,15 +12,15 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel
 
 from app import config
-from app.assistant.citations import verify_answer
+from app.assistant.citations import compose_sections, verify_answer, verify_sections
 from app.assistant.tools import ToolContext, ToolSpec, execute
 
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v2"
-# route + 2 tool rounds + 2 answer attempts, with headroom
-RECURSION_LIMIT = 12
+GRAPH_VERSION = "v3"
+# route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
+RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
 LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
@@ -29,10 +29,19 @@ NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't gu
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
 
 
+class ContractSection(BaseModel):
+    """What one contract says, citing that contract only."""
+    text: str
+    citations: list[str]
+
+
 class Answer(BaseModel):
     text: str
     citations: list[str]
     refused: bool
+    clarification: bool = False
+    # An answer covering several contracts: one entry each, instead of one text. The service adds the headings.
+    sections: list[ContractSection] = []
 
 
 def _merge(left: dict, right: dict) -> dict:
@@ -50,6 +59,7 @@ class TurnState(TypedDict, total=False):
     answer_attempts: int
     unvalidated: Annotated[list[str], operator.add]  # document ids with fields the agent may not use
     system_notices: Annotated[list[str], operator.add]
+    partial: Answer | None  # the sections of a per-contract answer that passed, kept in case the retry ends in a refusal
 
 
 def prompt_version() -> str:
@@ -58,7 +68,7 @@ def prompt_version() -> str:
 
 def eval_config_hash() -> str:
     """Identifies the chat configuration a golden-set report was produced with (see tests/eval/test_golden.py)."""
-    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}".encode()).hexdigest()[:12]
+    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}|{config.MIN_DENSE_SIMILARITY}".encode()).hexdigest()[:12]
 
 
 def route_tool_choice(question: str, registered: set[str]) -> str | None:
@@ -99,8 +109,6 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
         return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
     def answer(state: TurnState) -> dict:
-        if not state.get("sources"):
-            return {"answer": Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True), "violations": []}
         feedback = []
         if state.get("violations"):
             feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
@@ -112,10 +120,29 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]
-        return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused)}
+        if reply.refused and state.get("partial") is not None:
+            return {"violations": [], "answer": state["partial"]}  # the retry gave up: answer what was verified
+        if reply.sections and not reply.refused and not reply.clarification:
+            sections = [(section.text, section.citations) for section in reply.sections]
+            sources, cited = state.get("sources", {}), state.get("citations", {})
+            contracts = {k: v.get("document_id") for k, v in cited.items()}
+            violations = verify_sections(sections, sources, contracts)
+            if violations:
+                # One contract's section failing must not cost the guest the others: only verified sections are kept,
+                # so nothing unverified is ever shown. ponytail: the dropped contract is not named to the guest.
+                sections = [section for section in sections if not verify_sections([section], sources, contracts)]
+            if not sections:
+                return {"violations": violations}
+            text, ids = compose_sections(sections, {k: v.get("document_title") for k, v in cited.items()})
+            composed = Answer(text=text, citations=ids, refused=False)
+            return {"violations": violations, "partial": composed} if violations else {"violations": [], "answer": composed}
+        return {"violations": verify_answer(reply.text, reply.citations, state.get("sources", {}), reply.refused, reply.clarification)}
 
-    def refuse(_state: TurnState) -> dict:
-        return {"answer": Answer(text=FAILED_VERIFICATION_MESSAGE, citations=[], refused=True)}
+    def refuse(state: TurnState) -> dict:
+        if state.get("partial") is not None:
+            return {"answer": state["partial"]}
+        text = FAILED_VERIFICATION_MESSAGE if state.get("sources") else NO_EVIDENCE_MESSAGE
+        return {"answer": Answer(text=text, citations=[], refused=True)}
 
     def after_agent(state: TurnState) -> str:
         last = state["messages"][-1]

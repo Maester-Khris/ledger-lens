@@ -1,0 +1,14 @@
+.feedback { margin-top: var(--space-2); display: flex; flex-direction: column; gap: 6px; }
+.feedback__row { display: flex; align-items: center; gap: 6px; }
+.feedback__label, .feedback__status { font-size: 12px; color: var(--color-text-secondary); }
+.feedback__status--failed { color: var(--color-text-primary); font-weight: 500; }
+.feedback__thumb { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface);
+  color: var(--color-text-secondary); cursor: pointer; }
+.feedback__thumb:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+.feedback__thumb[aria-pressed='true'] { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-tint); }
+.feedback__thumb:disabled { cursor: default; opacity: 0.6; }
+.feedback__comment { display: flex; gap: 6px; max-width: 520px; }
+.feedback__input { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid var(--color-border);
+  border-radius: var(--radius-card); background: var(--color-surface); color: var(--color-text-primary); font-size: 12px; }
+.feedback__send { font-size: 12px; }

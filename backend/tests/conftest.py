@@ -90,3 +90,12 @@ def disable_tracing(monkeypatch, request):
     monkeypatch.setattr("app.tracing.flush_tracing", lambda: None)
     monkeypatch.setattr("app.assistant.service.get_tracing_handler", lambda: None, raising=False)
     monkeypatch.setattr("app.contracts.extract.get_tracing_handler", lambda: None, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def dense_floor_off(monkeypatch, request):
+    """Unit tests use 8-dimension fake embeddings whose cosine scores mean nothing, so the dense floor is off, except in
+    the gate tests (which set it) and in the eval (real embeddings, real threshold)."""
+    if "eval" in request.keywords:
+        return
+    monkeypatch.setattr(config, "MIN_DENSE_SIMILARITY", -1.0)

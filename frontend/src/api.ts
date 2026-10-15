@@ -1,4 +1,8 @@
-export const API_BASE: string = import.meta.env.VITE_API_BASE ?? '/api';
+// VITE_API_BASE is the deployed API origin (set in Vercel, baked in at build time); unset means the local Vite /api proxy.
+export function normalizeApiBase(raw: string | undefined): string {
+  return (raw ?? '/api').replace(/\/+$/, '');
+}
+export const API_BASE: string = normalizeApiBase(import.meta.env.VITE_API_BASE);
 export const LANGFUSE_URL: string | undefined = import.meta.env.VITE_LANGFUSE_URL;
 
 export type DocumentStatus = 'processing' | 'ready' | 'failed';
@@ -23,6 +27,7 @@ export interface DocumentSummary {
   element_count: number;
   status: DocumentStatus;
   status_note: string | null;
+  description: string | null;
   events: DocumentEvent[];
 }
 
@@ -42,6 +47,7 @@ export interface DocumentDetail extends DocumentSummary {
 export interface Citation {
   id: string;
   kind: 'element' | 'tool' | 'system';
+  document_id?: string;
   document_title?: string;
   version?: number;
   page?: number;
@@ -61,7 +67,7 @@ export interface UnvalidatedDto {
 
 export type ChatEvent =
   | { type: 'progress'; data: { step: string } }
-  | { type: 'answer' | 'refused'; data: { text: string; citations: Citation[] } }
+  | { type: 'answer' | 'refused' | 'clarify'; data: { text: string; citations: Citation[]; turn_id: string } }
   | { type: 'error'; data: { text: string } }
   | { type: 'unvalidated'; data: UnvalidatedDto };
 
@@ -90,6 +96,11 @@ export function guestId(): Promise<string> {
 
 export async function guestHeaders(): Promise<Record<string, string>> {
   try { return { 'X-Guest-Id': await guestId() }; } catch { return {}; }
+}
+
+/** GET with the guest header: in the public demo the API merges this guest's own decisions into the answer. */
+async function getWithGuest<T>(url: string): Promise<T> {
+  return fetch(url, { headers: await guestHeaders() }).then((r) => json<T>(r));
 }
 
 async function json<T>(response: Response): Promise<T> {
@@ -126,16 +137,24 @@ export interface StreamChatOptions { documentId?: string }
 export async function streamChat(
   sessionId: string, message: string, onEvent: (event: ChatEvent) => void, options: StreamChatOptions = {},
 ): Promise<void> {
+  const t0 = performance.now();
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
     body: JSON.stringify({ session_id: sessionId, message, ...(options.documentId ? { document_id: options.documentId } : {}) }),
   });
-  if (!response.ok || !response.body) throw new Error(`Chat failed (${response.status})`);
+  if (!response.ok || !response.body) {
+    // problem+json detail when the API sends one (e.g. the public demo's 429 "try again in N seconds")
+    const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(problem?.detail ?? `Chat failed (${response.status})`);
+  }
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
+  let t1: number | undefined;
+  let turnId: string | undefined;
   for (;;) {
     const { value, done } = await reader.read();
+    if (value && t1 === undefined) t1 = performance.now();
     if (done) break;
     buffer += value;
     let boundary = buffer.indexOf('\n\n');
@@ -143,9 +162,39 @@ export async function streamChat(
       const block = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
       const fields = Object.fromEntries(block.split('\n').map((line) => [line.slice(0, line.indexOf(': ')), line.slice(line.indexOf(': ') + 2)]));
-      if (fields.event && fields.data) onEvent({ type: fields.event, data: JSON.parse(fields.data) } as ChatEvent);
+      if (fields.event && fields.data) {
+        const parsedData = JSON.parse(fields.data);
+        if ('turn_id' in parsedData) turnId = parsedData.turn_id;
+        onEvent({ type: fields.event, data: parsedData } as ChatEvent);
+      }
       boundary = buffer.indexOf('\n\n');
     }
+  }
+  if (turnId && t1 !== undefined) void sendTiming(turnId, Math.round(t1 - t0));
+}
+
+export type FeedbackRating = 'up' | 'down';
+
+/** One row per call: a thumb, then optionally the same thumb with a comment. The latest row is the guest's feedback. */
+export async function sendFeedback(turnId: string, rating: FeedbackRating, comment?: string): Promise<{ id: string }> {
+  const response = await fetch(`${API_BASE}/chat/turns/${turnId}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
+    body: JSON.stringify(comment ? { rating, comment } : { rating }),
+  });
+  return json<{ id: string }>(response);
+}
+
+/** Fire-and-forget: a lost timing row is acceptable, a visible error for the guest is not. */
+export async function sendTiming(turnId: string, ttfbMs: number): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/chat/turns/${turnId}/timing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await guestHeaders()) },
+      body: JSON.stringify({ ttfb_ms: ttfbMs }),
+    });
+  } catch {
+    // ignored on purpose: see the comment above
   }
 }
 
@@ -196,6 +245,7 @@ export interface ToolDecisionDto {
   reason: string | null;
   decided_at: string;
   posting_id: string | null;
+  recorded: boolean;
 }
 
 export interface ToolInvocationDto {
@@ -295,7 +345,7 @@ export function listToolInvocations(options: ListInvocationsOptions = {}): Promi
     limit: options.limit,
     session_id: options.sessionId,
   });
-  return fetch(url).then((r) => json<ToolInvocationDto[]>(r));
+  return getWithGuest<ToolInvocationDto[]>(url);
 }
 
 export function decideToolInvocation(
@@ -309,7 +359,7 @@ export function decideToolInvocation(
 }
 
 export function listReviews(): Promise<ReviewItemDto[]> {
-  return fetch(`${API_BASE}/reviews`).then((r) => json<ReviewItemDto[]>(r));
+  return getWithGuest<ReviewItemDto[]>(`${API_BASE}/reviews`);
 }
 
 export function submitReview(input: ReviewSubmission): Promise<void> {
@@ -345,6 +395,7 @@ export type ConfigDto = {
   vector_store: string;
   retrieval: { search_candidates: number; min_dense_similarity: number };
   eval_config_hash: string;
+  demo_mode: boolean;
 };
 export type StatsDto = {
   documents: { total: number; indexed: number; processing: number; failed: number; indexed_chunks: number };
@@ -358,7 +409,7 @@ export type StatsDto = {
 };
 
 export async function getStats(): Promise<StatsDto> {
-  return fetch(`${API_BASE}/stats`).then((r) => json<StatsDto>(r));
+  return getWithGuest<StatsDto>(`${API_BASE}/stats`);
 }
 
 let cachedConfig: Promise<ConfigDto> | null = null;
@@ -388,17 +439,17 @@ export interface TermsDto {
 }
 
 export function getTerms(documentId: string): Promise<TermsDto> {
-  return fetch(`${API_BASE}/documents/${documentId}/terms`).then((r) => json<TermsDto>(r));
+  return getWithGuest<TermsDto>(`${API_BASE}/documents/${documentId}/terms`);
 }
 
 export interface TimelineItemDto {
   at: string;
   kind: 'ingested' | 'extracted' | 'reviewed' | 'ai_proposed' | 'decided' | 'posted';
   title: string;
-  detail: { entries?: { account: string; direction: 'debit' | 'credit'; amount_minor: number; currency: string }[] } & Record<string, unknown>;
+  detail: { entries?: { account: string; direction: 'debit' | 'credit'; amount_minor: number; currency: string }[]; recorded?: boolean } & Record<string, unknown>;
   links: { ledger?: string };
 }
 
 export function getTimeline(documentId: string): Promise<TimelineItemDto[]> {
-  return fetch(`${API_BASE}/documents/${documentId}/timeline`).then((r) => json<TimelineItemDto[]>(r));
+  return getWithGuest<TimelineItemDto[]>(`${API_BASE}/documents/${documentId}/timeline`);
 }

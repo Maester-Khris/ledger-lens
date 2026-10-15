@@ -55,13 +55,13 @@ def _contract_terms(served: dao.ServedTerms) -> tuple[FeeMethod, str, tuple[Tier
     return FeeMethod(served.fields["fee_method"].value), served.fields["currency"].value, tiers, cited
 
 
-def compare_contract_to_billing(session: Session, *, tenant_id: uuid.UUID, document_id: uuid.UUID, as_of: date | None = None) -> Comparison:
+def compare_contract_to_billing(session: Session, *, tenant_id: uuid.UUID, document_id: uuid.UUID, as_of: date | None = None, overlay_guest: uuid.UUID | None = None) -> Comparison:
     document = documents_dao.find_document(session, tenant_id, document_id)
     if document is None:
         raise ContractNotComparable(f"Document {document_id} does not exist.")
     if document.household_id is None:
         raise ContractNotComparable("This contract is not linked to a billing household (fund-level agreement).")
-    served = dao.served_fields(session, tenant_id, document_id)
+    served = dao.served_fields(session, tenant_id, document_id, overlay_guest)
     if served is None:
         raise ContractNotComparable("This contract hasn't been extracted yet.")
     method, currency, contract_tiers, cited = _contract_terms(served)

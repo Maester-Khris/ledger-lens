@@ -437,3 +437,6 @@
   text-align: center;
   padding: var(--space-4) var(--space-2);
 }
+
+.ledger__demo-postings { padding: var(--space-4); margin-bottom: var(--space-4); }
+.ledger__demo-postings caption { text-align: left; padding: var(--space-2) 0; }

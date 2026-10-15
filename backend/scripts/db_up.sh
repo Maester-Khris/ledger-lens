@@ -14,7 +14,7 @@ env_or() {
 CONTAINER_NAME="$(env_or PG_CONTAINER_NAME fintech-ledger-db)"
 PG_IMAGE="$(env_or PG_IMAGE postgres:18)"
 PG_PASSWORD="localdev"
-ROLE_PASSWORD="localdev" # dev-only password shared by ledger_owner and ledger_app
+ROLE_PASSWORD="localdev" # dev-only password shared by ledger_owner, ledger_app and ledger_demo
 PG_PORT="$(env_or PG_PORT 5432)" # keep in sync with the port in the *DATABASE_URL values
 DATABASES="ledger_dev ledger_test ledger_migration_test"
 
@@ -57,7 +57,7 @@ psql_admin() {
   docker exec "$CONTAINER_NAME" psql -U postgres -v ON_ERROR_STOP=1 -tAc "$1"
 }
 
-for role in ledger_owner ledger_app; do
+for role in ledger_owner ledger_app ledger_demo; do
   if [ "$(psql_admin "SELECT 1 FROM pg_roles WHERE rolname='${role}'")" != "1" ]; then
     echo "Creating role ${role}..."
     psql_admin "CREATE ROLE ${role} LOGIN PASSWORD '${ROLE_PASSWORD}'"

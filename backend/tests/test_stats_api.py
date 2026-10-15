@@ -59,12 +59,22 @@ def test_stats_are_cached_for_the_ttl(db_session, tenant_id):
 
 def test_eval_summary_reads_only_the_report_for_the_running_config(tmp_path):
     (tmp_path / "eval-abc123.json").write_text(json.dumps({
-        "config_hash": "abc123", "chat_model": "gpt-x",
-        "metrics": {"numbers_ok": 1.0, "refusal_ok": 0.875, "citation_hit": 0.875}, "results": [{}] * 8,
+        "config_hash": "abc123", "chat_model": "gpt-x", "results": [{}] * 30,
+        "summary": {"answerable": {"behaviour_ok": 1.0, "citation_hit": 0.875, "numbers_ok": 1.0},
+                    "over_refusal": 0.0, "junk_acceptable": 0.95, "junk_by_category": {}},
     }))
     summary = dashboard.eval_summary(tmp_path, "abc123")
-    assert (summary.cases, summary.numbers_ok, summary.refusal_ok, summary.citation_hit) == (8, 1.0, 0.875, 0.875)
+    # the dashboard's "refusals" figure is the share of junk questions handled acceptably
+    assert (summary.cases, summary.numbers_ok, summary.refusal_ok, summary.citation_hit) == (30, 1.0, 0.95, 0.875)
     assert dashboard.eval_summary(tmp_path, "other") is None
+
+
+def test_an_unreadable_eval_report_never_breaks_the_dashboard(tmp_path):
+    (tmp_path / "eval-old.json").write_text(json.dumps({  # the pre-P4 report format
+        "config_hash": "old", "chat_model": "gpt-x", "metrics": {"numbers_ok": 1.0}, "results": []}))
+    (tmp_path / "eval-broken.json").write_text("{not json")
+    assert dashboard.eval_summary(tmp_path, "old") is None
+    assert dashboard.eval_summary(tmp_path, "broken") is None
 
 
 def test_config_is_cacheable_and_revalidates(client):

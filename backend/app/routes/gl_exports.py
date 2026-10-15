@@ -13,7 +13,7 @@ from app.reporting.dao import SETTLE_MARGIN, create_gl_export, export_csv
 from app.reporting.models import GlExport
 
 router = APIRouter(prefix="/gl-exports", tags=["reporting"])
-
+write_router = APIRouter(prefix="/gl-exports", tags=["reporting"])  # not mounted in the public demo (DEMO_MODE)
 SessionDep = Annotated[Session, Depends(get_session)]
 TenantDep = Annotated[uuid.UUID, Depends(get_tenant_id)]
 
@@ -58,7 +58,7 @@ def _out(export: GlExport) -> GlExportOut:
     )
 
 
-@router.post("", status_code=201, response_model=GlExportOut)
+@write_router.post("", status_code=201, response_model=GlExportOut)
 def create_export(
     body: GlExportIn,
     session: SessionDep,

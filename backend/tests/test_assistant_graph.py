@@ -4,7 +4,7 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy import select
 
-from app.assistant.graph import Answer, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
+from app.assistant.graph import Answer, ContractSection, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
 from app.assistant.tools import ToolContext, default_tools
 from app.governance.dao import ModelConfig
 from app.governance.models import ToolInvocation
@@ -69,11 +69,11 @@ def test_uncited_number_is_retried_then_refused(db_session, tenant_id, indexed):
     assert "0.9" in model.prompts[-1]  # the retry was told which number failed
 
 
-def test_no_evidence_refuses_without_answer_call(db_session, tenant_id):
-    model = ScriptedChatModel(replies=[_search_call("charitable donations"), AIMessage(content="done")])
+def test_with_no_evidence_only_a_refusal_or_a_clarification_gets_through(db_session, tenant_id):
+    stated = Answer(text="It is 30 days.", citations=[], refused=False)
+    model = ScriptedChatModel(replies=[_search_call("charitable donations"), AIMessage(content="done"), stated, stated])
     state = _run(model, _ctx(db_session, tenant_id, RecordingEmbeddings(), InMemoryVectorIndex()), "Donations?")
-    assert state["answer"] == Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True)
-    assert model.replies == []  # no structured answer was requested
+    assert state["answer"] == Answer(text=NO_EVIDENCE_MESSAGE, citations=[], refused=True)  # both attempts failed the check
 
 
 def test_calculation_question_forces_the_tool_when_registered(db_session, tenant_id, indexed):
@@ -89,6 +89,7 @@ def test_calculation_question_looks_up_the_id_before_the_forced_tool(db_session,
     compare = AIMessage(content="", tool_calls=[{"name": FORCED_TOOL, "args": {"document_id": "tremblay-household"}, "id": "c2"}])
     model = ScriptedChatModel(replies=[
         AIMessage(content="", tool_calls=[{"name": LOOKUP_TOOL, "args": {}, "id": "c1"}]), compare, AIMessage(content="done"),
+        Answer(text="I can't find that contract.", citations=[], refused=True),
     ])
     graph = build_graph(model, default_tools() + contract_tools(), _ctx(db_session, tenant_id, *indexed))
     state = graph.invoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
@@ -107,3 +108,56 @@ def test_answer_retry_fits_after_two_tool_rounds(db_session, tenant_id, indexed)
     ])
     state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
     assert state["answer"].refused is False
+
+
+def test_a_refusal_after_three_tool_rounds_fits_in_the_step_budget(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    bad = Answer(text="The second tier is 0.90%.", citations=[element_id], refused=False)
+    model = ScriptedChatModel(replies=[
+        _search_call("rate"), _search_call("annual rate"), _search_call("tier"), AIMessage(content="done"), bad, bad,
+    ])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")  # no GraphRecursionError
+    assert state["answer"].refused is True
+
+
+def test_a_per_contract_answer_is_checked_section_by_section_and_rendered_by_the_service(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    numbered = Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.90%.", citations=[element_id])])  # a number the contract doesn't state
+    good = Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.85% on the next $1,500,000.", citations=[element_id])])
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), numbered, good])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")
+    assert "section 1: number 0.9" in model.prompts[-1]  # the retry was told which section failed
+    answer = state["answer"]
+    assert answer.refused is False and answer.citations == [element_id]
+    assert answer.text == "**Tremblay IMA**\n\nThe second tier is 0.85% on the next $1,500,000."
+
+
+def _mixed(element_id):
+    return Answer(text="", citations=[], refused=False, sections=[
+        ContractSection(text="The second tier is 0.85% on the next $1,500,000.", citations=[element_id]),
+        ContractSection(text="The second tier is 0.90%.", citations=[element_id])])  # not what the contract states
+
+
+def test_when_the_retry_gives_up_the_sections_that_passed_are_still_answered(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    gave_up = Answer(text="", citations=[], refused=True)
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), _mixed(element_id), gave_up])
+    answer = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"]
+    assert answer.refused is False and answer.citations == [element_id]
+    assert answer.text == "**Tremblay IMA**\n\nThe second tier is 0.85% on the next $1,500,000."  # the 0.90% section is gone
+
+
+def test_when_the_retry_fails_again_the_sections_that_passed_are_still_answered(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), _mixed(element_id), _mixed(element_id)])
+    answer = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"]
+    assert answer.refused is False and "0.90" not in answer.text and "0.85%" in answer.text
+
+
+def test_when_no_section_passes_the_answer_is_refused(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    bad = Answer(text="", citations=[], refused=False, sections=[ContractSection(text="The second tier is 0.90%.", citations=[element_id])])
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), bad, bad])
+    assert _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"].refused is True

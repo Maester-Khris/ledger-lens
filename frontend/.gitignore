@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Only .env.example is committed; every other .env file here stays local
+.env*
+!.env.example
+
+# Playwright end-to-end runs
+test-results/
+playwright-report/
