@@ -85,9 +85,9 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
         forced = route_tool_choice(question, set(by_name))
         return {"forced_tools": [LOOKUP_TOOL, forced] if forced else [], "answer_attempts": 0, "violations": []}
 
-    def agent(state: TurnState) -> dict:
+    async def agent(state: TurnState) -> dict:
         [choice, *rest] = state.get("forced_tools") or ["auto"]
-        reply = chat_model.bind_tools(schemas, tool_choice=choice).invoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
+        reply = await chat_model.bind_tools(schemas, tool_choice=choice).ainvoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
         return {"messages": [reply], "forced_tools": rest}
 
     def run_tools(state: TurnState) -> dict:
@@ -108,12 +108,12 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
             notices += [outcome.system_notice] if outcome.system_notice else []
         return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
-    def answer(state: TurnState) -> dict:
+    async def answer(state: TurnState) -> dict:
         feedback = []
         if state.get("violations"):
             feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
                                      + ". Fix it using only cited sources, or refuse.")]
-        result = chat_model.with_structured_output(Answer, method="json_schema", include_raw=True).invoke(
+        result = await chat_model.with_structured_output(Answer, method="json_schema", include_raw=True).ainvoke(
             [SystemMessage(ANSWER_PROMPT), *state["messages"], *feedback]
         )
         return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}

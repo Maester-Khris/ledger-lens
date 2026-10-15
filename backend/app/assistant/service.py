@@ -129,8 +129,8 @@ async def run_turn(
         
         try:
             async with asyncio.timeout(config.CHAT_TURN_TIMEOUT_SECONDS):
-                # Nodes are sync (DB + model calls); LangGraph runs them in a thread pool under astream.
-                # ponytail: a timed-out node keeps running in its thread until its own call timeout (30 s) ends it
+                # Model calls are coroutines, so the turn timeout cancels them; tools and checks stay sync and run in
+                # LangGraph's thread pool. ponytail: a timed-out tool call keeps running in its thread until it returns.
                 async for mode, data in graph.astream({"messages": [*history, HumanMessage(question)]},
                                                       config=run_config,
                                                       stream_mode=["updates", "values"]):

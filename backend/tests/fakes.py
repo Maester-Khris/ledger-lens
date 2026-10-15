@@ -1,3 +1,5 @@
+import asyncio
+import time
 from typing import Any
 
 from langchain_core.embeddings import DeterministicFakeEmbedding
@@ -44,6 +46,33 @@ class ScriptedChatModel(BaseChatModel):
             return {"raw": AIMessage(content=""), "parsed": parsed, "parsing_error": None} if include_raw else parsed
 
         return RunnableLambda(run)
+
+
+class SlowScriptedChatModel(ScriptedChatModel):
+    """ScriptedChatModel taking `delay` seconds per call: blocking on the sync path, awaiting on the async one."""
+
+    delay: float = 0.5
+
+    def _generate(self, messages: list[BaseMessage], stop: list[str] | None = None, run_manager: Any = None, **kwargs: Any) -> ChatResult:
+        time.sleep(self.delay)
+        return super()._generate(messages, stop, run_manager, **kwargs)
+
+    async def _agenerate(self, messages: list[BaseMessage], stop: list[str] | None = None, run_manager: Any = None, **kwargs: Any) -> ChatResult:
+        await asyncio.sleep(self.delay)
+        return super()._generate(messages, stop, run_manager, **kwargs)
+
+    def with_structured_output(self, schema: Any, include_raw: bool = False, **kwargs: Any):
+        scripted = super().with_structured_output(schema, include_raw, **kwargs)
+
+        def run(messages: list[BaseMessage]) -> Any:
+            time.sleep(self.delay)
+            return scripted.invoke(messages)
+
+        async def arun(messages: list[BaseMessage]) -> Any:
+            await asyncio.sleep(self.delay)
+            return scripted.invoke(messages)
+
+        return RunnableLambda(run, afunc=arun)
 
 
 class RecordingEmbeddings(DeterministicFakeEmbedding):

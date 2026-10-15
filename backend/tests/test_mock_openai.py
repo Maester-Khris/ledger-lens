@@ -4,6 +4,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from langchain_openai import ChatOpenAI
@@ -65,8 +66,9 @@ def test_real_graph_reaches_a_verified_cited_answer(session_factory, db_session,
                      hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)
     embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
     index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
-    model = ChatOpenAI(model="mock", api_key="mock", base_url="http://testserver/v1",
-                       http_client=TestClient(mock_openai.app), max_retries=0)
+    model = ChatOpenAI(model="mock", api_key="mock", base_url="http://testserver/v1", max_retries=0,
+                       http_client=TestClient(mock_openai.app),  # sync path
+                       http_async_client=httpx.AsyncClient(transport=httpx.ASGITransport(app=mock_openai.app)))
     runtime = AssistantRuntime(chat_model=model, embeddings=embeddings, vector_index=index, tools=default_tools())
 
     async def ask():

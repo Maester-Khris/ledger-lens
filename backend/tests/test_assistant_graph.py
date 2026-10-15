@@ -1,4 +1,7 @@
+import asyncio
 import json
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
@@ -10,7 +13,7 @@ from app.governance.dao import ModelConfig
 from app.governance.models import ToolInvocation
 from app.retrieval.index import index_version
 from app.retrieval.vector_index import InMemoryVectorIndex
-from tests.fakes import RecordingEmbeddings, ScriptedChatModel
+from tests.fakes import RecordingEmbeddings, ScriptedChatModel, SlowScriptedChatModel
 from tests.test_retrieval_index import parsed_version
 
 MODEL = ModelConfig(provider="fake", model_id="scripted", prompt_version="test", temperature=0)
@@ -29,7 +32,7 @@ def _search_call(query):
 
 def _run(model, ctx, question):
     graph = build_graph(model, default_tools(), ctx)
-    return graph.invoke({"messages": [HumanMessage(content=question)]}, config={"recursion_limit": RECURSION_LIMIT})
+    return asyncio.run(graph.ainvoke({"messages": [HumanMessage(content=question)]}, config={"recursion_limit": RECURSION_LIMIT}))
 
 
 @pytest.fixture()
@@ -92,8 +95,8 @@ def test_calculation_question_looks_up_the_id_before_the_forced_tool(db_session,
         Answer(text="I can't find that contract.", citations=[], refused=True),
     ])
     graph = build_graph(model, default_tools() + contract_tools(), _ctx(db_session, tenant_id, *indexed))
-    state = graph.invoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
-                         config={"recursion_limit": RECURSION_LIMIT})
+    state = asyncio.run(graph.ainvoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
+                                      config={"recursion_limit": RECURSION_LIMIT}))
     assert model.tool_choices == [LOOKUP_TOOL, FORCED_TOOL, "auto"]
     assert "document_id" in state["messages"][-2].content  # the invalid id went back to the model, not a crash
     assert state["answer"].refused is True
@@ -161,3 +164,46 @@ def test_when_no_section_passes_the_answer_is_refused(db_session, tenant_id, ind
     bad = Answer(text="", citations=[], refused=False, sections=[ContractSection(text="The second tier is 0.90%.", citations=[element_id])])
     model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"), bad, bad])
     assert _run(model, _ctx(db_session, tenant_id, *indexed), "What is the management fee?")["answer"].refused is True
+
+
+def test_a_turn_waiting_on_the_model_holds_no_thread(db_session, tenant_id, indexed):
+    """With one executor thread, two turns overlap only if waiting on the model does not occupy a thread."""
+    def turn_graph():
+        model = SlowScriptedChatModel(delay=0.5, replies=[
+            AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
+        return build_graph(model, default_tools(), _ctx(db_session, tenant_id, *indexed))
+
+    async def two_turns() -> float:
+        asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=1))
+        started = time.perf_counter()
+        await asyncio.gather(*(turn_graph().ainvoke({"messages": [HumanMessage("q")]},
+                                                    config={"recursion_limit": RECURSION_LIMIT}) for _ in range(2)))
+        return time.perf_counter() - started
+
+    # each turn makes two 0.5 s model calls: about 1 s if they overlap, about 2 s if they queue for the thread
+    assert asyncio.run(two_turns()) < 1.5
+
+
+def test_turn_timeout_cancels_the_model_call_and_saves_timed_out(session_factory, tenant_id, monkeypatch):
+    from app import config
+    from app.assistant import dao
+    from app.assistant.models import ChatOutcome
+    from app.assistant.service import AssistantRuntime, run_turn
+
+    model = SlowScriptedChatModel(delay=5, replies=[AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
+    runtime = AssistantRuntime(chat_model=model, embeddings=RecordingEmbeddings(), vector_index=InMemoryVectorIndex(),
+                               tools=default_tools())
+
+    async def ask():
+        return [e async for e in run_turn(session_factory=session_factory, runtime=runtime, tenant_id=tenant_id,
+                                          session_id="timeout-turn", message="What is the fee?",
+                                          hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)]
+
+    monkeypatch.setattr(config, "CHAT_TURN_TIMEOUT_SECONDS", 0.5)
+    started = time.perf_counter()
+    final = asyncio.run(ask())[-1]  # asyncio.run waits for executor threads, so a blocking call shows in `elapsed`
+    elapsed = time.perf_counter() - started
+    assert final.type == "refused" and "too long" in final.data["text"]
+    assert elapsed < 2  # the 5 s model call was cancelled, not waited out
+    with session_factory() as session:
+        assert dao.recent_turns(session, tenant_id, "timeout-turn", 1)[0].outcome is ChatOutcome.timed_out
