@@ -66,6 +66,20 @@ Every task, whoever implements it, starts with Claude's tests committed first. G
 
 Claude's own tasks are done directly on `feat/measured-evidence`, tests first.
 
+## Decision rules for each measured row
+
+- **Noise band:** a CPU change counts only if CPU per turn at 40 conversations moves by more than 5% (the control
+  reproduced the baseline within 1% on turns/s; CPU % (max) is noisier). Token-script rows are deterministic: any
+  drop is real.
+- **Keep or revert:** keep a change that improves its metric. Keep a neutral one only if it removes code or
+  complexity (C1, C2). A change that worsens a counter-metric (failed turns on the ladder, more tokens on its row) is
+  reported to the owner with a proposed revert; nothing is reverted without the owner's go.
+- **Prediction missed badly** (less than half the predicted gain): stop, find out why (profile or inspect the
+  request bodies), and report before the next task.
+- **Checkpoints with the owner:** after Task 4 (profile: is CPU per turn down enough, or does a new top cost deserve
+  a change before Section 2?) and after Task 9 (gate 1: quality and real tokens decide whether batch B runs as
+  planned).
+
 ## File map
 
 | File | Change | Tasks |
