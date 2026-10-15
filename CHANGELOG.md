@@ -10,6 +10,97 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
+## [Sprint — feat/measured-evidence] · Measured evidence: corpus, cost, scale, abuse — In Progress
+
+**Started — 2026-10-15 · branch: `feat/measured-evidence`.** Goal: every number we quote in a public defense
+(interview, peer or technical review) comes with its method, where it ran, sample size and limit. First use: the
+Zown round 3 interview on Mon 2026-10-19. Code is the means, not the goal. Code freeze **Sun 2026-10-18 12:00**;
+after it, write-up only.
+
+> **Order rule.** Every **Now** item must pass its "done when" check before any **Next** item starts.
+> **Line in the sand:** if N0, N0.1 and N1–N3 are not done by **Fri 2026-10-16 20:00**, N4 is dropped and we present
+> the measured baseline plus the plan. If the 5-document N0 trial needs code fixes, N0 is capped at whatever ingests
+> cleanly by Fri 12:00, and that count is what we quote.
+
+### Scope — Now (blocks the goal, in order)
+
+- [ ] `documents` — **N0** corpus volume on the type the pipeline already handles: about 50 SEC EDGAR investment
+      advisory agreements (fund-level, exhibit (d) to Form N-1A / 485BPOS) through `scripts/prepare_samples.py` and the
+      ingestion worker, into the local database and a **local** Pinecone index (never `contract-demo`). Trial on 5
+      documents first. Done when: corpus count, extraction accepted / needs_review counts and ingestion time and $ per
+      document are recorded → **Not epic-tracked** (mentor review 2026-10-09: four documents is too small; sourcing in
+      `artifacts/research/2026-10-09-client-onboarding-documents-wealth.md`)
+- [ ] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 answerable, 21 junk). Done when: a report
+      under `backend/reports/` names the corpus size it ran on. A drop is reported, not hidden → **Not epic-tracked**
+- [ ] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
+      confirmed): golden set replayed 3 times on the expanded corpus, local Langfuse project. Done when: median and p95
+      $ per answer and per session, steps per answer and the most expensive step are recorded, cross-checked against
+      the token counts in `chat_turns` → **Epic 2.3**
+- [ ] `ops` — **N2** the replayed LLM responses saved as fixtures; a provider mock built from them that reproduces
+      their response times (OpenAI chat completions with tool calls and structured output, embeddings). Done when: mock
+      mean and p95 turn time are within 10% of the real replay (MediCoord Sprint 22 method) → **Not epic-tracked**
+- [ ] `ops` — **N3** k6 baseline, one instance, provider mock: ramp until turn p95 bends. Done when: break point,
+      turns/s there, error rate and what saturated first (CPU, DB pool, thread pool) are recorded. A bad baseline is
+      expected → **Not epic-tracked** (backlog X4, small load test)
+- [ ] `api` — **N4** fix the first bottleneck N3 shows, then re-run for before/after. Suspects in order: blocking calls
+      on the event loop (`run_turn` does sync DB work on it), the DB and thread pools, OpenAI SDK connection limits,
+      LLM timeouts (already set: 30 s per call, 60 s per turn). Done when: the same ladder is re-run and both results
+      are recorded → **Not epic-tracked**
+- [ ] `docs` — **N6** one-page design for bot and agent defense: a challenge before an anonymous session, a per-guest
+      token / $ budget sized from N1, the per-IP limits already built, identified agents through an API with their own
+      quotas. Design only. Written after the freeze → **Not epic-tracked**
+- [ ] `docs` — write-up after the freeze: the before/after one-pager, proof-sheet rows, and a README section
+      "Measured numbers" filled from the table below → **Not epic-tracked**
+
+### Scope — Next (only once every Now item has passed)
+
+- [ ] `api` — **N5** chat rate limiter moved to Redis (in process memory per server today), sliding window kept;
+      allows the request if Redis is unreachable. Done when: tests pass and counts stay exact on 2 replicas in Docker
+      Compose. Until then, the cross-replica shared-state proof we quote is MediCoord's → **Not epic-tracked** (backlog P3)
+- [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
+      Pinecone index refilled. Until it lands, every corpus claim says "local" → **Epic 1.5**
+- [ ] `documents` — **X1** automated ingestion quality verification (mentor review: no check that an extracted value
+      is correct; "confidently wrong" extractions pass review today). The verifier is independent of the extractor:
+      extraction stays on the parsed text, verification reads the **page image** with a different model; a
+      disagreement routes the field to `needs_review`. Done when: per-field agreement rate on the expanded corpus, and
+      the verifier's false-pass rate against a small hand-labelled set, are recorded. Raw page images reach a vision
+      model, so the PII claim and its test are restated first
+      (`artifacts/2026-10-09-azure-multidoc-ingestion-review.md`, sections 3.1 and 3.2) → **Not epic-tracked**
+- [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
+      one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
+- [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
+      one replica stopped → **Not epic-tracked**
+
+### Numbers this sprint must produce (source of the README section "Measured numbers")
+
+Each row is quoted with all four parts or not at all. "Limit" lists what is already known; add what the run shows.
+
+| Area | Number | Method | Sample | Known limit |
+|---|---|---|---|---|
+| Corpus | Documents ingested, by type and by origin (real / synthetic) | N0 ingestion log | all documents | One type (fund-level advisory agreements, not retail client agreements); US only unless X2 lands; local unless X0 lands |
+| Corpus | Extraction accepted / needs_review per document; per-field agreement (X1) | Pipeline status; X1 verifier | all documents; hand-labelled subset for X1 | Without X1, "accepted" is the validators' verdict, not a verified correct value |
+| Corpus | Ingestion time and $ per document | N0 timings, token counts | all documents | Local machine; one model |
+| Corpus | Golden pass rate on the expanded corpus (answerable, junk) | N0.1 gate | 49 + 21 curated questions | Curated questions, not user traffic |
+| Cost | Median and p95 $ per answer and per session; steps per answer; most expensive step | N1, Langfuse cost, cross-checked with `chat_turns` tokens | 3 replays of the golden set | Curated questions, not user traffic; list prices; one model |
+| Scale | Break point (turns in flight and turns/s where p95 bends), error rate, first saturated resource | N3, k6 with the provider mock | one ladder run | One instance, local; mock reproduces golden-set timing, not live provider latency or rate limits; k6 shares the machine |
+| Scale | Before/after at the break point | N4, same ladder | two ladder runs | Same as N3 |
+| Abuse | Limiter counts exact across replicas (N5) | Docker Compose, 2 replicas | one run | Local; pass/fail correctness, not capacity |
+| Abuse | Per-guest token / $ budget | N6, derived from N1 | n/a (design) | Design only, not built |
+
+### Reference
+
+- Plan: `rx-next/agents/rx/output/screening/zown/ledgerlens-update-plan_2026-10-14.md`; probe areas:
+  `.../round3-probe-areas_2026-10-14.md`. Reordered on 2026-10-15 to put corpus volume first, since cost depends
+  on the corpus (`list_documents` and the clarifying question grow with it).
+- Load-test method, provider mock, Compose stack: MediCoord Sprint 21–22 (`medicoordai/backend/scripts/load/`,
+  `medicoordai/artifacts/perf/2026-10-13-phase5-report.md`).
+- Corpus critique and sourcing: `artifacts/2026-10-09-azure-multidoc-ingestion-review.md`,
+  `artifacts/2026-10-04-review-first-reactions.md`, `artifacts/research/2026-10-09-client-onboarding-documents-wealth.md`.
+- Cut until after Monday: multi-type ingestion (brochures, RDI, tax and identity forms), multi-region, auth, managed
+  bot control, chaos tooling, dashboards, evals in CI.
+
+---
+
 ## [Sprint — feat/pre-launch-demo] · Pre-launch demo: safe to publish, and evidence of real use — Closed
 
 **Closed — 2026-10-15.** Merged into `preview` via `/end-sprint`, then promoted to `main`. P6 (Sentry), the
