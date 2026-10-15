@@ -1,10 +1,13 @@
 import asyncio
+import dataclasses
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+import httpx
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_openai import ChatOpenAI
 from sqlalchemy import select
 
 from app.assistant.graph import Answer, ContractSection, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
@@ -14,6 +17,7 @@ from app.governance.models import ToolInvocation
 from app.retrieval.index import index_version
 from app.retrieval.vector_index import InMemoryVectorIndex
 from tests.fakes import RecordingEmbeddings, ScriptedChatModel, SlowScriptedChatModel
+from scripts.load import mock_openai
 from tests.test_retrieval_index import parsed_version
 
 MODEL = ModelConfig(provider="fake", model_id="scripted", prompt_version="test", temperature=0)
@@ -30,9 +34,13 @@ def _search_call(query):
     return AIMessage(content="", tool_calls=[{"name": "search_contracts", "args": {"query": query}, "id": "call-1"}])
 
 
+def _config(ctx):
+    return {"recursion_limit": RECURSION_LIMIT, "configurable": {"ctx": ctx}}
+
+
 def _run(model, ctx, question):
-    graph = build_graph(model, default_tools(), ctx)
-    return asyncio.run(graph.ainvoke({"messages": [HumanMessage(content=question)]}, config={"recursion_limit": RECURSION_LIMIT}))
+    graph = build_graph(model, default_tools())
+    return asyncio.run(graph.ainvoke({"messages": [HumanMessage(content=question)]}, config=_config(ctx)))
 
 
 @pytest.fixture()
@@ -94,9 +102,9 @@ def test_calculation_question_looks_up_the_id_before_the_forced_tool(db_session,
         AIMessage(content="", tool_calls=[{"name": LOOKUP_TOOL, "args": {}, "id": "c1"}]), compare, AIMessage(content="done"),
         Answer(text="I can't find that contract.", citations=[], refused=True),
     ])
-    graph = build_graph(model, default_tools() + contract_tools(), _ctx(db_session, tenant_id, *indexed))
+    graph = build_graph(model, default_tools() + contract_tools())
     state = asyncio.run(graph.ainvoke({"messages": [HumanMessage("How much would the Tremblay household pay under this contract?")]},
-                                      config={"recursion_limit": RECURSION_LIMIT}))
+                                      config=_config(_ctx(db_session, tenant_id, *indexed))))
     assert model.tool_choices == [LOOKUP_TOOL, FORCED_TOOL, "auto"]
     assert "document_id" in state["messages"][-2].content  # the invalid id went back to the model, not a crash
     assert state["answer"].refused is True
@@ -171,13 +179,13 @@ def test_a_turn_waiting_on_the_model_holds_no_thread(db_session, tenant_id, inde
     def turn_graph():
         model = SlowScriptedChatModel(delay=0.5, replies=[
             AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
-        return build_graph(model, default_tools(), _ctx(db_session, tenant_id, *indexed))
+        return build_graph(model, default_tools())
 
     async def two_turns() -> float:
         asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=1))
         started = time.perf_counter()
         await asyncio.gather(*(turn_graph().ainvoke({"messages": [HumanMessage("q")]},
-                                                    config={"recursion_limit": RECURSION_LIMIT}) for _ in range(2)))
+                                                    config=_config(_ctx(db_session, tenant_id, *indexed))) for _ in range(2)))
         return time.perf_counter() - started
 
     # each turn makes two 0.5 s model calls: about 1 s if they overlap, about 2 s if they queue for the thread
@@ -207,3 +215,50 @@ def test_turn_timeout_cancels_the_model_call_and_saves_timed_out(session_factory
     assert elapsed < 2  # the 5 s model call was cancelled, not waited out
     with session_factory() as session:
         assert dao.recent_turns(session, tenant_id, "timeout-turn", 1)[0].outcome is ChatOutcome.timed_out
+
+
+def test_one_compiled_graph_serves_turns_with_different_contexts(db_session, tenant_id):
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    scopes = [parsed_version(db_session, tenant_id, key=key).document_id for key in ("graph-a", "graph-b")]
+    lookup = AIMessage(content="", tool_calls=[{"name": "list_documents", "args": {}, "id": "c1"}])
+    refused = Answer(text="", citations=[], refused=True)
+    model = ScriptedChatModel(replies=[lookup, AIMessage(content="done"), refused, lookup, AIMessage(content="done"), refused])
+    graph = build_graph(model, default_tools())
+    listed = []
+    for scope in scopes:
+        ctx = dataclasses.replace(_ctx(db_session, tenant_id, embeddings, index), document_id=scope)
+        state = asyncio.run(graph.ainvoke({"messages": [HumanMessage("Which contracts?")]}, config=_config(ctx)))
+        listed.append([row["document_id"] for row in json.loads(state["messages"][2].content)])
+    assert listed == [[str(scopes[0])], [str(scopes[1])]]
+
+
+def test_concurrent_turns_on_one_compiled_graph_keep_their_own_scope(session_factory, db_session, tenant_id, monkeypatch):
+    # Review Focus 3
+    monkeypatch.setenv("MOCK_DELAY_SCALE", "0")
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    scopes = []
+    for key in ("graph-c", "graph-d"):
+        version = parsed_version(db_session, tenant_id, key=key)
+        index_version(db_session, version.id, embeddings=embeddings, vector_index=index)
+        scopes.append(version.document_id)
+    model = ChatOpenAI(model="mock", api_key="mock", base_url="http://testserver/v1", max_retries=0,
+                       http_async_client=httpx.AsyncClient(transport=httpx.ASGITransport(app=mock_openai.app)))
+    graph = build_graph(model, default_tools())
+
+    async def both():
+        return await asyncio.gather(*(graph.ainvoke({"messages": [HumanMessage("When are fees billed?")]}, config={
+            "recursion_limit": RECURSION_LIMIT,
+            "configurable": {"ctx": dataclasses.replace(_ctx(None, tenant_id, embeddings, index), document_id=scope),
+                             "open_session": session_factory}}) for scope in scopes))
+
+    for scope, state in zip(scopes, asyncio.run(both())):
+        assert state["citations"] and {c["document_id"] for c in state["citations"].values()} == {str(scope)}
+
+
+def test_the_runtime_compiles_its_graph_once(monkeypatch):
+    from app.assistant import service
+    built = []
+    monkeypatch.setattr(service, "build_graph", lambda *args: built.append(args) or object())
+    runtime = service.AssistantRuntime(chat_model=ScriptedChatModel(), embeddings=RecordingEmbeddings(),
+                                       vector_index=InMemoryVectorIndex(), tools=default_tools())
+    assert runtime.graph is runtime.graph and len(built) == 1
