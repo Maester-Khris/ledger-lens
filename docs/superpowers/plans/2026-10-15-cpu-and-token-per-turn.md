@@ -32,6 +32,40 @@
 4. A tool error (`{"error": ...}` or plain text) reaches every model call unchanged by `model_view`. Test in Task 8.
 5. A retry whose failed answer cites nothing valid still gets the turn's passages, so it can recover. Test in Task 11.
 
+## Execution split (claude-agy-orch)
+
+| Task | Implementer | Why |
+|---|---|---|
+| 1 C1, 3 C3a, 4 C3b, 8 T2, 10 T4, 11 T5 | Claude | Small edits (5 to 30 lines): a chunk would be as long as the code |
+| 12 T6 prompts | Claude | Wording is judgment about the P4 rules, not code |
+| 9, 14 gates; every measurement and changelog row | Claude | Needs `.env`, the box and the real provider; Gemini runs no command |
+| 2 C2 graph compiled once | Gemini | Refactor across `graph.py`, `service.py` and test call sites |
+| 5 token script | Gemini | New script of about 150 lines behind pure, tested functions |
+| 6 T1 sections once | Gemini | Four files: `search.py`, `tools.py`, the mock, two prompt lines |
+| 7 T3 document list | Gemini | Three files: `tools.py`, `graph.py`, `service.py` |
+| 13 T7 top-k | Gemini | New script plus config and hash wiring |
+
+Every task, whoever implements it, starts with Claude's tests committed first. Gemini tasks run one at a time (not
+`batch.py`), because each change is measured on `feat/measured-evidence` before the next one starts.
+
+**Workflow for a Gemini task** (Gemini never works on `feat/measured-evidence`):
+1. From the committed tip of `feat/measured-evidence`, cut a worktree outside the repository:
+   `git worktree add /home/niki/Documents/saas/fintech-prod-agy/<name> -b tmp/agy-<name>`. It has no `.env`, so no
+   secret is readable by Gemini.
+2. Claude writes and commits the task's tests there (`test(...)`).
+3. Claude writes the chunk file in the session scratchpad (what to build, interfaces, rules, allowed files; no
+   implementation pasted) and runs, from that worktree:
+   `python ~/.claude/skills/claude-agy-orch/orch.py --repo <worktree> --chunk <file> --allow <files> --model gemini-3.8-flash-high --test "cd backend && OPENAI_API_KEY=test-unused LOADTEST_STUB_VECTORS=1 /home/niki/Documents/workenv/pydev/bin/pytest -q <task tests>" --message "<plan's commit message>"`.
+4. Claude reviews `git show` of Gemini's commit. If it's wrong: one resend with a corrected chunk, then Claude fixes it
+   on the temp branch. Small fixes go straight to Claude.
+5. Full suite on the temp branch; rebase onto `feat/measured-evidence` if it moved.
+6. Claude merges after its own review (owner's standing approval, 2026-10-15): in the main checkout,
+   `git merge --ff-only tmp/agy-<name>`, then `git worktree remove` and `git branch -d tmp/agy-<name>`. The temp
+   branch is never pushed.
+7. The measurement step runs in the main checkout.
+
+Claude's own tasks are done directly on `feat/measured-evidence`, tests first.
+
 ## File map
 
 | File | Change | Tasks |
