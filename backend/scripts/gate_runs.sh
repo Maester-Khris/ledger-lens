@@ -14,5 +14,6 @@ for n in $(seq "$RUNS"); do
   echo "== run $PREFIX-r$n ($(date -Is))"
   # A failed gate is a result, not a crash: keep going to the next run.
   env -u ENV_FILE EVAL_RUN_ID="$PREFIX-r$n" EVAL_PAUSE_SECONDS="${EVAL_PAUSE_SECONDS:-15}" \
+    MIN_DENSE_SIMILARITY="${MIN_DENSE_SIMILARITY:-0.46}" \
     "${PYDEV:?set PYDEV}/bin/pytest" -m eval tests/eval/test_golden.py -s -q 2>&1 | grep -E "eval target|corpus:|answerable|over_refusal|junk|report:|passed|failed|Error" || true
 done

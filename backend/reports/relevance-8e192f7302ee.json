@@ -1,0 +1,268 @@
+{
+  "configured": 0.43,
+  "suggested": 0.436,
+  "margin": 0.01,
+  "junk_gated": 12,
+  "junk_total": 21,
+  "cases": [
+    {
+      "id": "fee-schedule",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.581277
+    },
+    {
+      "id": "termination",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.534346
+    },
+    {
+      "id": "governing-law",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.445915401
+    },
+    {
+      "id": "calamos-top-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.649695039
+    },
+    {
+      "id": "aim-first-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.703611374
+    },
+    {
+      "id": "management-fee-unscoped",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.61889255
+    },
+    {
+      "id": "repeat-in-session",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": false,
+      "best_dense_score": 0.535814643
+    },
+    {
+      "id": "leakage",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": false,
+      "best_dense_score": 0.361926168
+    },
+    {
+      "id": "fund-not-comparable",
+      "category": "explained",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.597823441
+    },
+    {
+      "id": "not-in-corpus",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.437526196
+    },
+    {
+      "id": "ooc-performance-fee",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.481568873
+    },
+    {
+      "id": "ooc-hurdle-rate",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.620677412
+    },
+    {
+      "id": "ooc-arbitration",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.487148762
+    },
+    {
+      "id": "ooc-minimum-account",
+      "category": "out_of_corpus",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.455876946
+    },
+    {
+      "id": "fp-calamos-increase",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.641950727
+    },
+    {
+      "id": "fp-crypto-surcharge",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.445318162
+    },
+    {
+      "id": "fp-soft-dollar-rebate",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.386625141
+    },
+    {
+      "id": "fp-maryland-office",
+      "category": "false_premise",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.584047318
+    },
+    {
+      "id": "under-allowed",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.287805349
+    },
+    {
+      "id": "under-how-much",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.270199776
+    },
+    {
+      "id": "under-change-it",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.300676644
+    },
+    {
+      "id": "under-other-one",
+      "category": "underspecified",
+      "expect": "clarify",
+      "retrieval": false,
+      "best_dense_score": 0.299306393
+    },
+    {
+      "id": "nonsense-keys",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.316753805
+    },
+    {
+      "id": "nonsense-purple",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.195482492
+    },
+    {
+      "id": "nonsense-keywords",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.334213912
+    },
+    {
+      "id": "nonsense-marks",
+      "category": "nonsense",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.51359123
+    },
+    {
+      "id": "off-weather",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.287928939
+    },
+    {
+      "id": "off-poem",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.217591241
+    },
+    {
+      "id": "off-world-cup",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.27301684
+    },
+    {
+      "id": "off-capital",
+      "category": "off_topic",
+      "expect": "refuse",
+      "retrieval": false,
+      "best_dense_score": 0.225739136
+    },
+    {
+      "id": "calamos-first-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.684165835
+    },
+    {
+      "id": "calamos-fee-basis",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.678986907
+    },
+    {
+      "id": "aim-termination",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.651997626
+    },
+    {
+      "id": "aim-fee-schedule",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.708173573
+    },
+    {
+      "id": "nomura-fee-schedule",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.796560466
+    },
+    {
+      "id": "nomura-top-tier",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.800597966
+    },
+    {
+      "id": "nomura-billing-frequency",
+      "category": "answerable",
+      "expect": "answer",
+      "retrieval": true,
+      "best_dense_score": 0.789608717
+    }
+  ]
+}

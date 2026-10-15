@@ -97,6 +97,23 @@ after it, write-up only.
       on the event loop (`run_turn` does sync DB work on it), the DB and thread pools, OpenAI SDK connection limits,
       LLM timeouts (already set: 30 s per call, 60 s per turn). Done when: the same ladder is re-run and both results
       are recorded → **Not epic-tracked**
+      Spec `docs/superpowers/specs/2026-10-15-chat-throughput-and-shared-limiter-design.md`, plan
+      `docs/superpowers/plans/2026-10-15-chat-throughput-and-shared-limiter.md`. One change per run, same box and ladder
+      (`BOX=1:1G:1 backend/scripts/load/run_chat.sh <label>`):
+
+      | Run (1 vCPU / 1 GB) | Bend (turns/s at conversations) | p95 at bend | Failed | First saturated | Table |
+      |---|---|---|---|---|---|
+      | Baseline | 2.98 at 20 | 8.01 s | 29 at 80 | threads (12 calls in flight), then DB pool (15) | `2026-10-15-baseline-1cpu-1g.steps.md` |
+      | Change 1, async model calls (`2e73ab4`) | **3.80 at 20** (+28%) | 6.48 s | 41 at 80 | DB pool (15); calls in flight up to 37 | `2026-10-15-n4-async-llm.steps.md` |
+
+      Change 1 prediction held: the 12-call thread cap is gone and the DB pool is the limit (p95 33 s at 40 while turns
+      wait for a connection). **Golden gate after change 1 failed at the demo threshold 0.46** (run `n4-async-r1`,
+      `backend/reports/eval-5bfdd62942f4-n4-async-r1.json`): over-refusal 7%, both `governing-law` cases refused; junk
+      21/21, numbers 100%. Cause: retrieval, not change 1. On the local 102-document index that question's best dense
+      score is 0.446, under 0.46, so the passage is dropped before the model sees it (retrieval-only calibration,
+      `backend/reports/relevance-8e192f7302ee.json`); the three earlier runs at 0.43 passed it. The calibration also
+      shows the gap between answerable and junk scores is gone on this corpus (junk at 0.445 and 0.456 sit next to
+      it; suggested floor 0.436).
 - [ ] `docs` — **N6** one-page design for bot and agent defense: a challenge before an anonymous session, a per-guest
       token / $ budget sized from N1, the per-IP limits already built, identified agents through an API with their own
       quotas. Design only. Written after the freeze → **Not epic-tracked**
@@ -124,6 +141,13 @@ after it, write-up only.
 
 ### Deferred
 
+- `retrieval` — the relevance threshold is no longer clean on the 102-document corpus: `governing-law` (answerable)
+  scores 0.446 while junk scores 0.445 and 0.456, so 0.46 refuses a real question and 0.43 relies on the model to
+  refuse two junk cases. Recalibrate on the expanded corpus (and the demo index once X0 lands) before changing the
+  demo's 0.46 → **Not epic-tracked**
+- `tests` — `tests/test_api_chat.py::test_a_blank_message_is_rejected` builds the real runtime (OpenAI and Pinecone
+  clients) to check a 422, so it fails without live keys; override the runtime dependency in that test → **Not
+  epic-tracked**
 - `assistant` — the document list is re-sent on every model call within a chat turn: `list_documents` returns all
   102 titles and the tool result stays in the turn's message history. Likely cause of the 5.3x cost per answer
   (N1). To analyse, fix, then re-measure cost, if time allows after the Now items → **Not epic-tracked**
