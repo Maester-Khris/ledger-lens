@@ -10,7 +10,10 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
-## [Sprint — feat/pre-launch-demo] · Pre-launch demo: safe to publish, and evidence of real use — In Progress
+## [Sprint — feat/pre-launch-demo] · Pre-launch demo: safe to publish, and evidence of real use — Closed
+
+**Closed — 2026-10-15.** Merged into `preview` via `/end-sprint`, then promoted to `main`. P6 (Sentry), the
+P3 spend caps, the design sprint and the Vercel Production switch moved to Deferred.
 
 **Started — 2026-09-29 · branch: `feat/pre-launch-demo`.** Hosting decided: Vercel (frontend) and Railway
 (API and Postgres 18 in one project); this replaces Aurora for the demo. Order below is the agreed
@@ -33,7 +36,7 @@ build order.
 - [x] `assistant` — P4 retrieval edge cases: send disabled on empty, explicit "no supporting passage found"  (spec `docs/superpowers/specs/2026-10-01-retrieval-edge-cases-design.md`) → **Not epic-tracked** (pre-launch triage, backlog P4) **Done 2026-10-01:** threshold 0.46 (`backend/reports/relevance-bd36247ba3f7.json`); the gate passed twice on 2026-10-01 against the demo configuration (runs `d71c6dca` and `980c4687`, `backend/reports/eval-3aabf5983b0b*.json`): over-refusal 0 of 8, answerable 100%, junk 20 of 21 (out_of_corpus 4 of 5; the one miss, `not-in-corpus`, gets a clarifying question). **Deployed 2026-10-01:** migration 0014 applied on Railway; the API rejects a blank message (422); both end-to-end tests pass on `https://ledgerlens.nknext.dev` (the approval flow, and junk never getting an answer).
 - [x] `api` — P5 thumbs up/down and comment feedback, stored per guest and chat turn → **Not epic-tracked** (pre-launch triage, backlog P5) **Done 2026-10-03** (spec `docs/superpowers/specs/2026-10-02-feedback-and-document-context-design.md`, plan `docs/superpowers/plans/2026-10-02-feedback-and-document-context.md`): thumbs up/down on every recorded reply, saved on click, optional comment, latest row wins; table `chat_feedback` (migration 0015, insert-only, `GRANT INSERT` to `ledger_demo`); `POST /chat/turns/{turn_id}/feedback`; the final chat event carries `turn_id`. **Deployed 2026-10-03:** migration 0015 applied on Railway (`./script.demo.sh check`: demo role insert `t`, update `f`); live API answers 400 without a guest, 404 for an unknown turn, 422 for a bad rating; CORS preflight allows the frontend origin. The Playwright run's thumb and comment were read back from Railway with `./script.demo.sh feedback` (latest row per guest and reply: `up`, the comment, outcome `answered`, prompt `a4782adc4015`).
 - [ ] `ops` — P6 Sentry on backend and frontend → **Epic 2.3** (backlog P6)
-- [ ] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7)
+- [x] `ops` — P7 minimal usage event log: client-measured latency, outcome, feedback → **Epic 2.3** (backlog P7) **Done 2026-10-15:** client-measured TTFB per chat turn in the insert-only `chat_turn_timing` table and the `chat_usage_daily` view (migration 0016). Railway is on `0016_chat_turn_timing`, `./script.demo.sh check` passes (demo role insert `t`, update `f`), and `./script.demo.sh usage` shows TTFB rows from live chats (2026-10-07, 2026-10-12).
 - [x] `frontend` — P8 document list with one-line descriptions and starter questions plus chat answer citations open the in-app viewer: "Open page →" in `Chat.tsx`'s `CitationCard` opens the PDF in a new browser tab today (only the contract profile panel uses the viewer, `91d7bbd`), so reuse the screen's `viewer` state and `DocumentViewer` (found in the deployed smoke test 2026-09-30) → **Not epic-tracked** (pre-launch triage, backlog P8) **Done 2026-10-03:** a one-line description per document (table `document_descriptions`, four rows on Railway) on the chat cards and the Documents screen; starter questions follow the selected document (`frontend/src/lib/starters.json`, each one a scoped golden case, checked by `backend/tests/test_starters_are_golden.py`); "Open page →" opens the in-app viewer. **Deployed 2026-10-03:** `frontend/e2e/demo-feedback.e2e.ts` passes on `https://ledgerlens.nknext.dev` (starter → cited answer → citation opens in the app, no new tab → thumbs-up and a comment), and so do both earlier end-to-end tests. Final gate under `5bfdd62942f4`: run `2269d5c1` 48 of 49, the one miss the known `calamos-first-tier` refusal (backlog X5), junk 21 of 21.
 - [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
 - [x] `chores` — fix the stale frontend test "reverses with a key derived from the posting id": `reversePosting` now awaits `guestHeaders()`, which first POSTs `/guests`, so `calls[0]` is the guest call, not the reversal. The test already failed before this sprint's frontend work; find the reversal call or seed a guest id → **Not epic-tracked** (found in the P1 review 2026-09-30) **Done 2026-10-02** (`1777c8a`): the test finds the reversal call by its URL.
@@ -194,6 +197,13 @@ causes were traced with the tool calls and the verification results logged, and 
 - **Also seen:** the OpenAI account ran out of credits during a gate run (every turn then ends in `error`). The spend
   cap and balance alert in P3 are still open.
 
+
+### Deferred
+
+- [ ] `ops` — P6 Sentry on backend and frontend: the code is merged and reports only when `SENTRY_DSN` / `VITE_SENTRY_DSN` are set; not yet verified on the deployed demo → **Epic 2.3** (backlog P6)
+- [ ] `api` — P3 remainder: OpenAI and Pinecone spend caps, the Railway usage limit, and the OpenAI tokens-per-minute backoff (raise the tier or show "busy, try again") → **Not epic-tracked** (backlog P3)
+- [ ] `design` — compressed 4-day design sprint on P4, P5, P8, then 5-person test of the journey map → **Not epic-tracked** (pre-launch triage)
+- [ ] `ops` — Vercel Production switch at `/promote-release` (see the scope item above) → **Not epic-tracked** (deploy note)
 
 ### Reference
 
