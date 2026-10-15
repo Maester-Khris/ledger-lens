@@ -39,7 +39,7 @@ after it, write-up only.
       on all assets, the usual ETF shape) are now accepted when the band says what the rate applies to. One command:
       `backend/scripts/corpus_build.sh <discover> <upload>`; report `backend/reports/corpus-2026-10-15.json`. Limit:
       one document type, fund-level agreements (not retail client agreements), US only, local only until X0.
-- [ ] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 answerable, 21 junk). Done when: a report
+- [ ] `assistant` — **N0.1** golden gate re-run on the expanded corpus (49 cases: 28 answerable including 12 re-asked scoped to their document, 21 junk). Done when: a report
       under `backend/reports/` names the corpus size it ran on. A drop is reported, not hidden → **Not epic-tracked**
 - [ ] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
       confirmed): golden set replayed 3 times on the expanded corpus, local Langfuse project. Done when: median and p95
@@ -96,7 +96,7 @@ Each row is quoted with all four parts or not at all. "Limit" lists what is alre
 | Corpus | Documents ingested, by type and by origin (real / synthetic) | N0 ingestion log | all documents | One type (fund-level advisory agreements, not retail client agreements); US only unless X2 lands; local unless X0 lands |
 | Corpus | Extraction accepted / needs_review per document; per-field agreement (X1) | Pipeline status; X1 verifier | all documents; hand-labelled subset for X1 | Without X1, "accepted" is the validators' verdict, not a verified correct value |
 | Corpus | Ingestion time and $ per document | N0 timings, token counts | all documents | Local machine; one model |
-| Corpus | Golden pass rate on the expanded corpus (answerable, junk) | N0.1 gate | 49 + 21 curated questions | Curated questions, not user traffic |
+| Corpus | Golden pass rate on the expanded corpus (answerable, junk) | N0.1 gate | 49 cases (28 answerable, 21 junk), 3 runs | Curated questions, not user traffic |
 | Cost | Median and p95 $ per answer and per session; steps per answer; most expensive step | N1, Langfuse cost, cross-checked with `chat_turns` tokens | 3 replays of the golden set | Curated questions, not user traffic; list prices; one model |
 | Scale | Break point (turns in flight and turns/s where p95 bends), error rate, first saturated resource | N3, k6 with the provider mock | one ladder run | One instance, local; mock reproduces golden-set timing, not live provider latency or rate limits; k6 shares the machine |
 | Scale | Before/after at the break point | N4, same ladder | two ladder runs | Same as N3 |
