@@ -135,6 +135,9 @@ CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
 MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.46)
 
+# Load tests only: serve retrieval from the stub index instead of Pinecone (scripts/load/README.md). Off unless 1.
+LOADTEST_STUB_VECTORS = os.environ.get("LOADTEST_STUB_VECTORS", "") == "1"
+
 # Ingestion
 MAX_UPLOAD_BYTES = _int("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)
 WORKER_POLL_SECONDS = _float("WORKER_POLL_SECONDS", 2.0)

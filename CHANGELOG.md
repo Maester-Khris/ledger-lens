@@ -64,9 +64,17 @@ after it, write-up only.
       Not resolved yet; likely causes are OpenAI's automatic prompt caching (repeated prefixes such as the system
       prompt and the document list are billed at a discount, and the stored token counts include cached tokens) and
       the balance updating with a delay. The traced re-run records cached tokens per call and should settle it.
-- [ ] `ops` — **N2** the replayed LLM responses saved as fixtures; a provider mock built from them that reproduces
+- [x] `ops` — **N2** the replayed LLM responses saved as fixtures; a provider mock built from them that reproduces
       their response times (OpenAI chat completions with tool calls and structured output, embeddings). Done when: mock
       mean and p95 turn time are within 10% of the real replay (MediCoord Sprint 22 method) → **Not epic-tracked**
+      **Done 2026-10-15 (local):** `backend/scripts/load/mock_openai.py` plays the agent's real path (search, stop, a
+      structured answer that quotes and cites the first passage), so citation checking passes for real; the API
+      reaches it through `OPENAI_BASE_URL`. `LOADTEST_STUB_VECTORS=1` swaps Pinecone for a read-only stub serving
+      current passages from Postgres. Calibrated with `backend/scripts/load/calibrate_mock.sh` against the 147 real
+      N0.1 turns: chat call mean 1.25 s, sigma 0.55 gives median 3.69 s vs 3.86 s real (-4.4%) and p95 6.83 s vs
+      7.11 s (-3.9%), the same in two runs of 49 turns. A test drives the real graph through the mock to a cited
+      answer. **Deviation:** no response fixtures (the real runs sent no traces), so the mock writes its own answers
+      and is matched on turn time, not per-call time. Limit: golden-set timing, not live provider latency or limits.
 - [ ] `ops` — **N3** k6 baseline, one instance, provider mock: ramp until turn p95 bends. Done when: break point,
       turns/s there, error rate and what saturated first (CPU, DB pool, thread pool) are recorded. A bad baseline is
       expected → **Not epic-tracked** (backlog X4, small load test)

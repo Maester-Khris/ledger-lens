@@ -59,6 +59,30 @@ class InMemoryVectorIndex:
             self._namespaces.get(namespace, {}).pop(record_id, None)
 
 
+class StubVectorIndex:
+    """Load tests only (LOADTEST_STUB_VECTORS): answers from real, current passages without calling Pinecone, so every
+    turn takes the full path (search, answer, citation check) while the provider mock's vectors match nothing real.
+    The pick is a deterministic function of the query vector; the score clears any relevance threshold."""
+
+    SCORE = 0.9
+
+    def __init__(self, vectors: Sequence[tuple[str, str, str]]) -> None:
+        self._vectors = list(vectors)  # (namespace, vector id, document id)
+
+    def upsert(self, namespace: str, records: Sequence[VectorRecord]) -> None:
+        raise RuntimeError("the stub index is read-only")
+
+    def query(self, namespace: str, vector: Sequence[float], top_k: int, document_ids: Sequence[str] | None) -> list[VectorMatch]:
+        pool = [vid for ns, vid, doc in self._vectors if ns == namespace and (document_ids is None or doc in document_ids)]
+        if not pool:
+            return []
+        start = int(abs(sum(vector[:8])) * 1_000_003) % len(pool)
+        return [VectorMatch(vid, self.SCORE) for vid in (pool[start:] + pool[:start])[:top_k]]
+
+    def delete(self, namespace: str, ids: Sequence[str]) -> None:
+        raise RuntimeError("the stub index is read-only")
+
+
 class PineconeVectorIndex:
     def __init__(self, api_key: str, index_name: str) -> None:
         from pinecone import Pinecone
