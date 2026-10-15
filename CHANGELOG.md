@@ -133,9 +133,20 @@ after it, write-up only.
 
 ### Scope — Next (only once every Now item has passed)
 
-- [ ] `api` — **N5** chat rate limiter moved to Redis (in process memory per server today), sliding window kept;
+- [x] `api` — **N5** chat rate limiter moved to Redis (in process memory per server today), sliding window kept;
       allows the request if Redis is unreachable. Done when: tests pass and counts stay exact on 2 replicas in Docker
       Compose. Until then, the cross-replica shared-state proof we quote is MediCoord's → **Not epic-tracked** (backlog P3)
+      **Done 2026-10-15 (local):** `RedisWindowLimiter` in `backend/app/rate_limit.py` (one atomic Lua script trims,
+      checks every key and records on all or none, on Redis's own clock; fails open with a `rate_limit_unavailable`
+      warning and a Sentry message), selected by `REDIS_URL`; `redis==5.3.1` (the plan said 5.2.1; 5.3.1 is what the
+      shared environment has). Redis container in `backend/scripts/db_up.sh`; 6 tests against it, including exactly
+      10 of 40 concurrent requests admitted. **Two-replica proof** (`backend/scripts/load/limiter_check.sh`, nginx in
+      front of 2 replicas of 1 CPU / 1 GB, limit 10 per guest, 30 requests from one guest): in-memory limiter
+      **20 admitted** (10 on each replica: the limit doubles); Redis limiter **exactly 10 admitted** (5 on each, 20
+      refused). Reports `backend/reports/load/2026-10-15-limiter-memory.json` and `...-limiter-redis.json`. Limiter
+      cost: `admit` p50 0.128 ms, p95 0.156 ms (n=1,000, local Redis). Limit: local; one client; a managed Redis adds a
+      network round trip. Also fixed on the way: `alembic/env.py` disabled every existing logger when the test suite
+      ran migrations, which silenced app warnings asserted later in the suite.
 - [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
       Pinecone index refilled. Until it lands, every corpus claim says "local" → **Epic 1.5**
 - [ ] `documents` — **X1** automated ingestion quality verification (mentor review: no check that an extracted value

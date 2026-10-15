@@ -28,3 +28,17 @@ and p95 within 10%.
 Limits: one chat call's time is drawn independently of its prompt size; turn time is matched, per-call time is not
 (no traces were recorded for the real runs); the mock reproduces golden-set timing, not live provider latency, rate
 limits or outages; the stub index skips Pinecone's network time, which the mock delay absorbs.
+
+## Two replicas, shared rate limit (N5)
+
+`compose/` runs nginx (round-robin, `X-Upstream` names the replica that answered) in front of 2 API replicas of
+1 CPU and 1 GB each, with Redis and the provider mock; the local Postgres container joins the stack's network.
+`limiter_check.sh` brings it up, sends 30 chat requests from one guest (limit 10 per guest) and tears it down.
+
+```bash
+cd backend
+scripts/load/limiter_check.sh memory   # pass = more than 10 admitted: each replica counts on its own
+scripts/load/limiter_check.sh redis    # pass = exactly 10 admitted: one window shared through Redis
+```
+
+Results land in `reports/load/<date>-limiter-<mode>.json`.

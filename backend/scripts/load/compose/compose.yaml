@@ -1,0 +1,51 @@
+# Local proof that the chat limiter holds across replicas (N5). Nothing here reaches Railway, OpenAI or Pinecone.
+# The local Postgres container (fintech-ledger-db) is attached to this network by limiter_check.sh.
+name: ledgerlens-load
+
+x-app: &app
+  build:
+    context: ../../..
+    dockerfile: scripts/load/compose/load.Dockerfile
+  image: ledgerlens-load-app
+  working_dir: /app
+  volumes:
+    - ../../..:/app:ro
+
+services:
+  api:
+    <<: *app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level warning
+    cpus: 1
+    mem_limit: 1g  # same box as the N4 runs (Railway Hobby, MediCoord staging)
+    depends_on: [redis, mock]
+    env_file: ../../../.env  # PII keys; everything that points elsewhere is overridden below
+    environment:
+      DATABASE_URL: postgresql+psycopg://ledger_app:localdev@fintech-ledger-db:5432/ledger_dev
+      DEMO_MODE: "1"
+      CHAT_LIMIT_PER_GUEST: "10"
+      CHAT_LIMIT_PER_IP: "100000"  # one client sends everything: isolate the per-guest limit
+      CHAT_LIMIT_WINDOW_SECONDS: "600"
+      REDIS_URL: ${REDIS_URL-redis://redis:6379/0}  # REDIS_URL= (empty) runs the in-memory limiter
+      OPENAI_BASE_URL: http://mock:8090/v1
+      OPENAI_API_KEY: mock
+      LOADTEST_STUB_VECTORS: "1"
+      LANGFUSE_PUBLIC_KEY: ""
+      LANGFUSE_SECRET_KEY: ""
+      SENTRY_DSN: ""
+      FRONTEND_URL: ""
+
+  mock:
+    <<: *app
+    command: uvicorn scripts.load.mock_openai:app --host 0.0.0.0 --port 8090 --log-level warning
+    environment:
+      MOCK_DELAY_SCALE: "0.05"  # the check counts admissions, not latency
+
+  redis:
+    image: redis:7-alpine
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on: [api]
+    ports: ["127.0.0.1:8088:80"]
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
