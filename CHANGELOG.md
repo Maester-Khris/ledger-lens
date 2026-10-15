@@ -162,6 +162,17 @@ after it, write-up only.
       cost: `admit` p50 0.128 ms, p95 0.156 ms (n=1,000, local Redis). Limit: local; one client; a managed Redis adds a
       network round trip. Also fixed on the way: `alembic/env.py` disabled every existing logger when the test suite
       ran migrations, which silenced app warnings asserted later in the suite.
+- [ ] `api` — **N7** CPU and tokens per chat turn: after N4, CPU is the limit on 1 vCPU; after N1, a turn costs
+      about 18.4k input tokens. Spec `docs/superpowers/specs/2026-10-15-cpu-and-token-per-turn-design.md`, plan
+      `docs/superpowers/plans/2026-10-15-cpu-and-token-per-turn.md`. One change per row; quality gated per batch
+      (2 gates, OpenAI balance). Done when: every row is filled and both gates are recorded → **Not epic-tracked**
+
+      | CPU run (1 vCPU / 1 GB) | Peak turns/s (at 80) | CPU per turn at 40 | p95 at 80 | Failed | Table |
+      |---|---|---|---|---|---|
+      | Before: N4 change 2 (`f1b10db`) | 10.07 | about 112 ms (87% at 7.75 turns/s) | 12.67 s | 0 | `2026-10-15-n4-short-sessions.steps.md` |
+      | C1, document list in one query (`4ae5b83`) | **13.22** (+31%) | **about 78 ms** (61% at 7.80), -30% | 7.50 s | 0 | `2026-10-15-c1-document-titles.steps.md` |
+
+      CPU per turn = API CPU % (max) at 40 conversations x 10 / turns/s. Limit: local, one run per change, mock timing.
 - [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
       Pinecone index refilled. Until it lands, every corpus claim says "local" → **Epic 1.5**
 - [ ] `documents` — **X1** automated ingestion quality verification (mentor review: no check that an extracted value
