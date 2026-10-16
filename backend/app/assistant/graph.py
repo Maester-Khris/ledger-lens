@@ -112,15 +112,17 @@ def _hits_only(content: str) -> str:
 
 
 def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"]) -> list[AnyMessage]:
-    """What one model call is sent; the turn's state keeps every message as it was. A document list that a later
-    model reply has already used becomes a placeholder (spec T3), and agent calls see search hits without their
-    section text (spec T2). Every tool message stays in place, so its tool call keeps a result, as OpenAI requires."""
+    """What one model call is sent; the turn's state keeps every message as it was. For agent calls, a document list
+    that a later model reply has already used becomes a placeholder (spec T3), and search hits come without their
+    section text (spec T2). The answer call sees both in full: with the list cleared there, an unscoped per-contract
+    answer came back refused (gate 1, batch-a-r1). Every tool message stays in place, so its tool call keeps a
+    result, as OpenAI requires."""
     names = {c["id"]: c["name"] for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
     last_reply = max((i for i, m in enumerate(messages) if isinstance(m, AIMessage)), default=-1)
     view = []
     for position, message in enumerate(messages):
         name = names.get(message.tool_call_id) if isinstance(message, ToolMessage) else None
-        if name == LOOKUP_TOOL and position < last_reply:
+        if name == LOOKUP_TOOL and call == "agent" and position < last_reply:
             message = message.model_copy(update={"content": LIST_CLEARED})
         elif name == SEARCH_TOOL and call == "agent":
             message = message.model_copy(update={"content": _hits_only(message.content)})
