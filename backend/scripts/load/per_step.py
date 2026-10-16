@@ -33,17 +33,20 @@ def main() -> None:
             per[step]["served"] += 1
 
     box = list(csv.DictReader(open(f"{base}.box.tsv"), delimiter="\t"))
-    print("| Conversations | Turns/s | Turn p50 | Turn p95 | Failed | API CPU % (max) | DB connections (max) | Mock in flight (max) |")
+    print("| Conversations | Turns/s | Turn p50 | Turn p95 | Failed | API CPU % (median) | DB connections (max) | Mock in flight (max) |")
     print("|---|---|---|---|---|---|---|---|")
     for step, level in enumerate(steps):
         data = per.get(step)
         if not data or not data["durations"]:
             continue
         lo, hi = step * (RAMP_SECONDS + hold) + RAMP_SECONDS, (step + 1) * (RAMP_SECONDS + hold)
-        window = box[lo // 5 + 1: hi // 5 + 1]  # one sample every 5 s from the start of the run
+        # One sample every 5 s from the start of the run. The window stops before the sample at `hi`: that one is
+        # already the ramp to the next level, and as a max it once stood in for the whole hold (corrected 2026-10-15).
+        window = box[lo // 5 + 1: hi // 5]
         top = lambda key: max((float(b[key]) for b in window if b[key]), default=float("nan"))
+        middle = lambda key: statistics.median([float(b[key]) for b in window if b[key]] or [float("nan")])
         print(f"| {level} | {data['served'] / hold:.2f} | {statistics.median(data['durations']):.2f} s "
-              f"| {p95(data['durations']):.2f} s | {data['failed']} | {top('api_cpu_pct'):.0f} "
+              f"| {p95(data['durations']):.2f} s | {data['failed']} | {middle('api_cpu_pct'):.0f} "
               f"| {top('db_connections'):.0f} | {top('mock_in_flight'):.0f} |")
 
 
