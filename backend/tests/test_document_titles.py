@@ -25,13 +25,6 @@ def _three_documents(db_session, tenant_id) -> list[uuid.UUID]:
     return [parsed_version(db_session, tenant_id, key=f"titles-{n}").document_id for n in range(3)]
 
 
-def _old_tool_json(db_session, tenant_id, document_id=None) -> str:
-    """The list_documents tool's output before C1, built from the full listing."""
-    rows = [r for r in documents_dao.list_documents(db_session, tenant_id) if document_id is None or r.document.id == document_id]
-    return json.dumps([{"document_id": str(r.document.id), "document_key": r.document.document_key, "title": r.document.title}
-                       for r in rows])
-
-
 def test_document_titles_match_the_full_listing_in_order(db_session, tenant_id):
     _three_documents(db_session, tenant_id)
     titles = documents_dao.document_titles(db_session, tenant_id)
@@ -47,10 +40,11 @@ def test_document_titles_filter_to_the_scoped_document_and_the_tenant(db_session
     assert documents_dao.document_titles(db_session, make_tenant(db_session)) == []
 
 
-def test_list_documents_tool_output_is_unchanged(db_session, tenant_id):
+def test_list_documents_tool_returns_ids_and_titles_only(db_session, tenant_id):
     ids = _three_documents(db_session, tenant_id)
-    assert LIST_TOOL.run(_ctx(db_session, tenant_id), NoArgs()).content == _old_tool_json(db_session, tenant_id)
-    assert LIST_TOOL.run(_ctx(db_session, tenant_id, ids[0]), NoArgs()).content == _old_tool_json(db_session, tenant_id, ids[0])
+    rows = json.loads(LIST_TOOL.run(_ctx(db_session, tenant_id), NoArgs()).content)
+    assert rows == [{"document_id": str(t.id), "title": t.title} for t in documents_dao.document_titles(db_session, tenant_id)]
+    assert [r["document_id"] for r in json.loads(LIST_TOOL.run(_ctx(db_session, tenant_id, ids[0]), NoArgs()).content)] == [str(ids[0])]
 
 
 def test_list_documents_tool_runs_one_statement(db_session, tenant_id):

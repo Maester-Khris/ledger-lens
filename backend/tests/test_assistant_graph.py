@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from app.assistant.graph import Answer, ContractSection, NO_EVIDENCE_MESSAGE, build_graph, RECURSION_LIMIT
 from app.assistant.tools import ToolContext, default_tools
+from app.documents import dao as documents_dao
 from app.governance.dao import ModelConfig
 from app.governance.models import ToolInvocation
 from app.retrieval.index import index_version
@@ -274,3 +275,17 @@ def test_an_answer_citing_a_section_ref_is_retried_and_never_shown(db_session, t
     state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
     assert state["answer"].citations == [element_id]
     assert "citation S1 was not retrieved" in model.prompts[-1]
+
+
+def test_a_scoped_calculation_skips_the_lookup_and_names_its_document(db_session, tenant_id, indexed):
+    from app.assistant.contract_tools import contract_tools
+    from app.assistant.graph import FORCED_TOOL
+    scoped = documents_dao.document_titles(db_session, tenant_id)[0]
+    ctx = dataclasses.replace(_ctx(db_session, tenant_id, *indexed), document_id=scoped.id, document_title=scoped.title)
+    compare = AIMessage(content="", tool_calls=[{"name": FORCED_TOOL, "args": {"document_id": str(scoped.id)}, "id": "c1"}])
+    model = ScriptedChatModel(replies=[compare, AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
+    graph = build_graph(model, default_tools() + contract_tools())
+    asyncio.run(graph.ainvoke({"messages": [HumanMessage("How much would the household pay under this contract?")]},
+                              config=_config(ctx)))
+    assert model.tool_choices == [FORCED_TOOL, "auto"]
+    assert f"system: This chat is limited to one contract: Tremblay IMA (document_id {scoped.id})." in model.prompts[0]
