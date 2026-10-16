@@ -105,7 +105,7 @@ after it, write-up only.
       |---|---|---|---|---|---|
       | Baseline | 2.98 at 20 | 8.01 s | 29 at 80 | threads (12 calls in flight), then DB pool (15) | `2026-10-15-baseline-1cpu-1g.steps.md` |
       | Change 1, async model calls (`2e73ab4`) | **3.80 at 20** (+28%) | 6.48 s | 41 at 80 | DB pool (15); calls in flight up to 37 | `2026-10-15-n4-async-llm.steps.md` |
-      | Change 2, short DB sessions off the loop (`f1b10db`) | **7.75 at 40** flat latency (2.6x); peak **10.07 at 80** (3.4x) | 6.51 s at 40; 12.67 s at 80 | **0 in the whole run** | CPU: 87% of the core at 40, 100% at 80 | `2026-10-15-n4-short-sessions.steps.md` |
+      | Change 2, short DB sessions off the loop (`f1b10db`) | **7.75 at 40** flat latency (2.6x); peak **10.07 at 80** (3.4x) | 6.51 s at 40; 12.67 s at 80 | **0 in the whole run** | CPU: 47% of the core at 40 (median over the hold; 87% was a misread, see N7), 100% at 80 | `2026-10-15-n4-short-sessions.steps.md` |
       | Second profile: 2 vCPU / 2 GB, 2 workers, final code | **14.73 at 80** flat latency (1.9x the 1 vCPU final) | 7.12 s | **0**; full ladder ran | CPU: 200% (both cores) at 80 | `2026-10-15-n4-2cpu-2g.steps.md` |
       | Control: baseline code re-run at the end (1 vCPU) | 2.95 at 20 (**-1%** vs 2.98) | 7.86 s | stopped at 80 on failures, as before | threads (12), DB pool (15) | `2026-10-15-baseline-control.steps.md` |
 
@@ -122,7 +122,7 @@ after it, write-up only.
       request bodies: the 102-title list and history). Next candidates, in that order; each to be measured on the
       1 vCPU box like changes 1 and 2. Limit: one run; the stub index skips the Pinecone client's own CPU.
 
-      Change 2 prediction held: DB connections no longer follow turns in flight (6 at 20 conversations, 14 at 40) and
+      Change 2 prediction held: DB connections no longer follow turns in flight (5 at 20 conversations, 6 at 40; 14 was a misread, see N7) and
       the bend moved to CPU. The run stopped itself at 160 conversations on p95 over 15 s, with no failed turn
       (1,954 served). **Golden gate after change 2 passed** at 0.43, the threshold of the three baseline runs (same config
       hash `8e192f7302ee`; run `n4-sessions-043-r1`, `backend/reports/eval-8e192f7302ee-n4-sessions-043-r1.json`):
@@ -169,11 +169,21 @@ after it, write-up only.
 
       | CPU run (1 vCPU / 1 GB) | Peak turns/s (at 80) | CPU per turn at 40 | p95 at 80 | Failed | Table |
       |---|---|---|---|---|---|
-      | Before: N4 change 2 (`f1b10db`) | 10.07 | about 112 ms (87% at 7.75 turns/s) | 12.67 s | 0 | `2026-10-15-n4-short-sessions.steps.md` |
-      | C1, document list in one query (`4ae5b83`) | **13.22** (+31%) | **about 78 ms** (61% at 7.80), -30% | 7.50 s | 0 | `2026-10-15-c1-document-titles.steps.md` |
-      | C2, graph compiled once (`931d946`) | **14.20** (+7%) | **about 70 ms** (54% at 7.77), -11% | 7.09 s | 0 | `2026-10-15-c2-graph-once.steps.md` |
+      | Before: N4 change 2 (`f1b10db`) | 10.07 | about 61 ms (47% at 7.75 turns/s) | 12.67 s | 0 | `2026-10-15-n4-short-sessions.steps.md` |
+      | C1, document list in one query (`4ae5b83`) | **13.22** (+31%) | **about 53 ms** (41% at 7.80), -13% | 7.50 s | 0 | `2026-10-15-c1-document-titles.steps.md` |
+      | C2, graph compiled once (`931d946`) | **14.20** (+7%) | **about 46 ms** (36% at 7.77), -13% | 7.09 s | 0 | `2026-10-15-c2-graph-once.steps.md` |
+      | C3a, vault lookup with one array parameter (`e1f303c`) | 14.65 (+3%) | about 47 ms (36% at 7.73), +2%: **inconclusive** (-11% at 20) | 7.04 s | 0 | `2026-10-15-c3a-vault-any.steps.md` |
 
-      CPU per turn = API CPU % (max) at 40 conversations x 10 / turns/s. Limit: local, one run per change, mock timing.
+      CPU per turn = API CPU % (median over the hold) at 40 conversations x 10 / turns/s. Limit: local, one run per
+      change, mock timing. C3a is kept on the owner's decision (two lines, no failure, better at 20 and at peak) but
+      not claimed as a gain.
+      **Correction (2026-10-15):** CPU per turn was first read as the max CPU sample of the step, and
+      `scripts/load/per_step.py` took that max over a window holding one sample past the hold: the ramp to the next
+      level. So it read that spike (87% for N4 change 2 at 40, against a hold median of 47%) and overstated C1's gain
+      (-30% first recorded, -13% measured). `per_step.py` now reports the median over the hold, and the N4 change 2,
+      C1, C2 and C3a tables were regenerated. The same edge sample inflated N4's DB connections at 40 (14, now 6). The
+      turns/s, latency and failure figures come from k6 and are unaffected; the other N3/N4 tables keep their max
+      column and none of their conclusions rests on it.
 - [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
       Pinecone index refilled. Until it lands, every corpus claim says "local" → **Epic 1.5**
 - [ ] `documents` — **X1** automated ingestion quality verification (mentor review: no check that an extracted value
