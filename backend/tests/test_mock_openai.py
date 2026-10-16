@@ -40,7 +40,9 @@ def test_forced_tool_is_called():
 
 
 def test_answer_quotes_and_cites_the_first_passage_or_refuses():
-    hit = [{"role": "user", "content": "q"}, {"role": "tool", "content": json.dumps([{"id": "e1", "text": "Fee 0.5%"}])}]
+    hit = [{"role": "user", "content": "q"},
+           {"role": "tool", "content": json.dumps({"sections": {"S1": {"document": "d", "section": "s", "text": "Fee 0.5%"}},
+                                                   "hits": [{"id": "e1", "section": "S1", "page": 1, "text": "Fee 0.5%"}]})}]
     answer = json.loads(mock_openai.reply({"messages": hit, "response_format": {"type": "json_schema"}})["content"])
     assert answer["citations"] == ["e1"] and "0.5%" in answer["text"] and not answer["refused"]
     empty = json.loads(mock_openai.reply({"messages": hit[:1], "response_format": {"type": "json_schema"}})["content"])
