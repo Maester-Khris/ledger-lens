@@ -40,10 +40,12 @@ def test_document_titles_filter_to_the_scoped_document_and_the_tenant(db_session
     assert documents_dao.document_titles(db_session, make_tenant(db_session)) == []
 
 
-def test_list_documents_tool_returns_ids_and_titles_only(db_session, tenant_id):
+def test_list_documents_tool_returns_ids_keys_and_titles(db_session, tenant_id):
+    # The key stays: some contracts are named only there (gate 1: "Nomura Tax-Free Colorado" is in a key, not a title).
     ids = _three_documents(db_session, tenant_id)
     rows = json.loads(LIST_TOOL.run(_ctx(db_session, tenant_id), NoArgs()).content)
-    assert rows == [{"document_id": str(t.id), "title": t.title} for t in documents_dao.document_titles(db_session, tenant_id)]
+    assert rows == [{"document_id": str(t.id), "document_key": t.document_key, "title": t.title}
+                    for t in documents_dao.document_titles(db_session, tenant_id)]
     assert [r["document_id"] for r in json.loads(LIST_TOOL.run(_ctx(db_session, tenant_id, ids[0]), NoArgs()).content)] == [str(ids[0])]
 
 
