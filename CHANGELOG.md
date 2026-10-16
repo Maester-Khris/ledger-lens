@@ -227,6 +227,13 @@ after it, write-up only.
       `backend/reports/eval-4ed0f35c07d3-batch-a-r1.json`, `backend/reports/cost-2026-10-16.json`, re-runs in
       `backend/reports/eval-runs/gate1-recheck*.json` (local, untracked like every run log).
 
+      **T4 (one prompt prefix for every call): dropped** (owner's decision). For the answer call to share the agent
+      calls' prefix it must carry the same tool definitions, but langchain-openai sends every request with a
+      `response_format` through the OpenAI SDK's `parse()`, which refuses tools that are not `strict`; making them
+      strict changes the agent's own tool definitions (optional arguments become required or nullable), a behaviour
+      change too late in the sprint. Cached prompt tokens stay about 5.6% (gate 1). Other routes, not taken: strict
+      tools on every call, or sending `response_format` outside langchain and parsing the answer ourselves.
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
