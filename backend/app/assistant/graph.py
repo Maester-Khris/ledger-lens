@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable, Sequence
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import Annotated, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
@@ -22,7 +22,7 @@ from app.assistant.tools import ToolContext, ToolSpec, execute
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v3"
+GRAPH_VERSION = "v4"
 # route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
 RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
@@ -31,6 +31,8 @@ LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document
 CALCULATION_PATTERN = re.compile(r"\b(how much would|fee for|compare|leakage|difference|under this contract)\b", re.I)
 NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't guess."
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
+LIST_CLEARED = "[document list shown earlier; call list_documents again if you need it]"
+SCOPE_LINE = "This chat is limited to one contract: {title} (document_id {document_id})."
 
 
 class ContractSection(BaseModel):
@@ -89,6 +91,41 @@ def _turn_inputs(config: RunnableConfig) -> tuple[ToolContext, Callable[[], Abst
     return ctx, open_session
 
 
+def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"]) -> list[AnyMessage]:
+    """Returns what one model call is sent; the input is never mutated.
+
+    The tool message stays in place, so its tool call keeps a result, as OpenAI requires.
+    """
+    last_ai_index = -1
+    tool_names: dict[str, str] = {}
+    for i, m in enumerate(messages):
+        if isinstance(m, AIMessage):
+            last_ai_index = i
+            for tc in getattr(m, "tool_calls", None) or []:
+                call_id = tc.get("id") if isinstance(tc, dict) else getattr(tc, "id", None)
+                call_name = tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", None)
+                if call_id and call_name:
+                    tool_names[call_id] = call_name
+
+    result: list[AnyMessage] = []
+    for i, m in enumerate(messages):
+        if (
+            isinstance(m, ToolMessage)
+            and i < last_ai_index
+            and tool_names.get(m.tool_call_id) == LOOKUP_TOOL
+        ):
+            result.append(m.model_copy(update={"content": LIST_CLEARED}))
+        else:
+            result.append(m)
+    return result
+
+
+def scope_line(ctx: ToolContext) -> list[SystemMessage]:
+    if ctx.document_id is None:
+        return []
+    return [SystemMessage(SCOPE_LINE.format(title=ctx.document_title or "this contract", document_id=ctx.document_id))]
+
+
 def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnable:
     """The graph is compiled once per runtime; each run passes
     config={"configurable": {"ctx": ToolContext, "open_session": callable | None}};
@@ -106,14 +143,19 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnabl
             tool_models[choice] = chat_model.bind_tools(schemas, tool_choice=choice)
         return tool_models[choice]
 
-    def route(state: TurnState) -> dict:
+    def route(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
         question = next(m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
         forced = route_tool_choice(question, set(by_name))
-        return {"forced_tools": [LOOKUP_TOOL, forced] if forced else [], "answer_attempts": 0, "violations": []}
+        lookup = [] if ctx.document_id is not None else [LOOKUP_TOOL]  # scoped, the scope line gives the id
+        return {"forced_tools": [*lookup, forced] if forced else [], "answer_attempts": 0, "violations": []}
 
-    async def agent(state: TurnState) -> dict:
+    async def agent(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
         [choice, *rest] = state.get("forced_tools") or ["auto"]
-        reply = await with_tools(choice).ainvoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
+        reply = await with_tools(choice).ainvoke(
+            [SystemMessage(AGENT_PROMPT), *scope_line(ctx), *model_view(state["messages"], "agent")]
+        )
         return {"messages": [reply], "forced_tools": rest}
 
     def run_tools(state: TurnState, config: RunnableConfig) -> dict:
@@ -136,13 +178,14 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnabl
             notices += [outcome.system_notice] if outcome.system_notice else []
         return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
-    async def answer(state: TurnState) -> dict:
+    async def answer(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
         feedback = []
         if state.get("violations"):
             feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
                                      + ". Fix it using only cited sources, or refuse.")]
         result = await structured.ainvoke(
-            [SystemMessage(ANSWER_PROMPT), *state["messages"], *feedback]
+            [SystemMessage(ANSWER_PROMPT), *scope_line(ctx), *model_view(state["messages"], "answer"), *feedback]
         )
         return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}
 

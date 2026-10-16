@@ -29,6 +29,7 @@ class ToolContext:
     hmac_key: str
     vault_key: str
     document_id: uuid.UUID | None = None  # set = the chat is scoped to this document
+    document_title: str | None = None  # the scoped document's title, named to the model in a scoped chat (spec T3)
     overlay_guest: uuid.UUID | None = None  # public demo: this guest's own decisions apply (spec P2+P9)
     question: str | None = None  # the guest's tokenised question for this turn; search scores passages against it too
 
@@ -80,7 +81,7 @@ class SearchArgs(BaseModel):
 def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
     rows = documents_dao.document_titles(ctx.session, ctx.tenant_id, ctx.document_id)
     return ToolOutcome(json.dumps([
-        {"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in rows
+        {"document_id": str(r.id), "title": r.title} for r in rows
     ]))
 
 
