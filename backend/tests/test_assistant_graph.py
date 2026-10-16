@@ -262,3 +262,15 @@ def test_the_runtime_compiles_its_graph_once(monkeypatch):
     runtime = service.AssistantRuntime(chat_model=ScriptedChatModel(), embeddings=RecordingEmbeddings(),
                                        vector_index=InMemoryVectorIndex(), tools=default_tools())
     assert runtime.graph is runtime.graph and len(built) == 1
+
+
+def test_an_answer_citing_a_section_ref_is_retried_and_never_shown(db_session, tenant_id, indexed):
+    # Review Focus 2
+    element_id = _element_id(db_session, tenant_id, indexed)
+    text = "The second tier is 0.85% on the next $1,500,000."
+    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"),
+                                       Answer(text=text, citations=["S1"], refused=False),
+                                       Answer(text=text, citations=[element_id], refused=False)])
+    state = _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
+    assert state["answer"].citations == [element_id]
+    assert "citation S1 was not retrieved" in model.prompts[-1]
