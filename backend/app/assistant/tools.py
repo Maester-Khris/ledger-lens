@@ -81,7 +81,8 @@ class SearchArgs(BaseModel):
 def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
     rows = documents_dao.document_titles(ctx.session, ctx.tenant_id, ctx.document_id)
     return ToolOutcome(json.dumps([
-        {"document_id": str(r.id), "title": r.title} for r in rows
+        # The key stays: some contracts are named only there, not in their title (gate 1, batch-a-r1).
+        {"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in rows
     ]))
 
 
