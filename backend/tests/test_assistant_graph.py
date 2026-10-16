@@ -289,3 +289,24 @@ def test_a_scoped_calculation_skips_the_lookup_and_names_its_document(db_session
                               config=_config(ctx)))
     assert model.tool_choices == [FORCED_TOOL, "auto"]
     assert f"system: This chat is limited to one contract: Tremblay IMA (document_id {scoped.id})." in model.prompts[0]
+
+
+def test_a_retry_sees_what_failed_and_the_cited_passage_not_the_whole_turn(db_session, tenant_id, indexed):
+    element_id = _element_id(db_session, tenant_id, indexed)
+    bad = Answer(text="The second tier is 0.90%.", citations=[element_id], refused=False)
+    model = ScriptedChatModel(replies=[_search_call("rate"), AIMessage(content="done"), bad, bad])
+    _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
+    retry = model.prompts[-1]
+    assert "human: What is the second tier rate?" in retry and "0.9" in retry
+    assert element_id in retry and "On the next $1,500,000 the annual rate is 0.85%." in retry
+    assert "tool:" not in retry  # no tool result is sent again
+
+
+def test_a_retry_with_no_valid_citation_gets_every_passage(db_session, tenant_id, indexed):
+    # Review Focus 5
+    element_id = _element_id(db_session, tenant_id, indexed)
+    model = ScriptedChatModel(replies=[_search_call("rate"), AIMessage(content="done"),
+                                       Answer(text="It is 0.85%.", citations=["not-retrieved"], refused=False),
+                                       Answer(text="", citations=[], refused=True)])
+    _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
+    assert element_id in model.prompts[-1] and "tool:" not in model.prompts[-1]
