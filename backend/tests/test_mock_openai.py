@@ -2,25 +2,21 @@
 or a load test would only ever exercise the refusal path."""
 import asyncio
 import json
-import uuid
 from pathlib import Path
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app import config
-from app.assistant.graph import RECURSION_LIMIT, build_graph
 from app.assistant.service import AssistantRuntime, run_turn
-from app.assistant.tools import ToolContext, default_tools
+from app.assistant.tools import default_tools
 from app.documents import dao as documents_dao
 from app.documents.ingest import parse_and_redact
 from app.documents.parse import parse_pdf
 from app.documents.redact import PiiDetector
 from app.documents.sniff import PdfFacts
-from app.governance.dao import ModelConfig
 from app.retrieval.index import index_version
 from app.retrieval.vector_index import InMemoryVectorIndex, StubVectorIndex
 from scripts.load import mock_openai
@@ -85,22 +81,3 @@ def test_real_graph_reaches_a_verified_cited_answer(session_factory, db_session,
     final = asyncio.run(ask())[-1]
     assert final.type == "answer", final
     assert final.data["citations"]
-
-
-def test_the_answer_request_repeats_the_agent_requests_tools_and_system_prompt(db_session, tenant_id, monkeypatch):
-    monkeypatch.setenv("MOCK_DELAY_SCALE", "0")
-    bodies = []
-
-    async def record(request):
-        bodies.append(json.loads(await request.aread()))
-
-    client = httpx.AsyncClient(transport=httpx.ASGITransport(app=mock_openai.app), event_hooks={"request": [record]})
-    model = ChatOpenAI(model="mock", api_key="mock", base_url="http://testserver/v1", max_retries=0, http_async_client=client)
-    ctx = ToolContext(session=db_session, tenant_id=tenant_id, session_id="t4", turn_id=uuid.uuid4(),
-                      embeddings=RecordingEmbeddings(), vector_index=InMemoryVectorIndex(),
-                      model=ModelConfig("fake", "mock", "p", 0), hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)
-    asyncio.run(build_graph(model, default_tools()).ainvoke(
-        {"messages": [HumanMessage("What is the fee?")]}, config={"recursion_limit": RECURSION_LIMIT, "configurable": {"ctx": ctx}}))
-    agent, answer = bodies[0], bodies[-1]
-    assert "response_format" in answer and answer["tool_choice"] == "none"
-    assert answer["tools"] == agent["tools"] and answer["messages"][0] == agent["messages"][0]

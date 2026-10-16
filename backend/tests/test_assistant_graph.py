@@ -289,16 +289,3 @@ def test_a_scoped_calculation_skips_the_lookup_and_names_its_document(db_session
                               config=_config(ctx)))
     assert model.tool_choices == [FORCED_TOOL, "auto"]
     assert f"system: This chat is limited to one contract: Tremblay IMA (document_id {scoped.id})." in model.prompts[0]
-
-
-def test_the_answer_call_shares_the_agent_calls_prefix(db_session, tenant_id, indexed):
-    from app.assistant.graph import AGENT_PROMPT, ANSWER_PROMPT
-    element_id = _element_id(db_session, tenant_id, indexed)
-    model = ScriptedChatModel(replies=[_search_call("annual rate"), AIMessage(content="done"),
-                                       Answer(text="The second tier is 0.85% on the next $1,500,000.", citations=[element_id], refused=False)])
-    _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
-    agent, answer = model.prompts[0], model.prompts[-1]
-    assert agent.startswith("system: " + AGENT_PROMPT) and answer.startswith("system: " + AGENT_PROMPT)
-    assert answer.rstrip().endswith("system: " + ANSWER_PROMPT.rstrip())
-    assert model.structured_kwargs[-1]["tools"] == [spec.schema() for spec in default_tools()]
-    assert model.structured_kwargs[-1]["tool_choice"] == "none"

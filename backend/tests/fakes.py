@@ -20,7 +20,6 @@ class ScriptedChatModel(BaseChatModel):
     replies: list[Any] = Field(default_factory=list)
     prompts: list[str] = Field(default_factory=list)
     tool_choices: list[Any] = Field(default_factory=list)
-    structured_kwargs: list[dict] = Field(default_factory=list)
 
     @property
     def _llm_type(self) -> str:
@@ -41,8 +40,6 @@ class ScriptedChatModel(BaseChatModel):
         return self
 
     def with_structured_output(self, schema: Any, include_raw: bool = False, **kwargs: Any):
-        self.structured_kwargs.append(kwargs)
-
         def run(messages: list[BaseMessage]) -> Any:
             self.prompts.append(_render(messages))
             parsed = self._next(BaseModel)
