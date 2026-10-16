@@ -23,7 +23,7 @@ from app.assistant.tools import ToolContext, ToolSpec, execute
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v4"
+GRAPH_VERSION = "v5"
 # route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
 RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
@@ -35,6 +35,7 @@ NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't gu
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
 LIST_CLEARED = "[document list shown earlier; call list_documents again if you need it]"
 SCOPE_LINE = "This chat is limited to one contract: {title} (document_id {document_id})."
+RETRY_INSTRUCTION = "Your previous answer failed verification. Fix it using only these passages, or refuse."
 
 
 class ContractSection(BaseModel):
@@ -130,6 +131,18 @@ def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"])
     return view
 
 
+def retry_request(state: TurnState) -> tuple[HumanMessage, HumanMessage]:
+    """What a retry is sent instead of the whole turn (spec T5): the question, and a note with the failed answer,
+    what failed and the passages it cited, or every passage of the turn when none of its citations is valid."""
+    question = next(m for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
+    failed, sources = state["answer"], state.get("sources", {})
+    cited = [*failed.citations, *(c for section in failed.sections for c in section.citations)]
+    passages = {i: sources[i] for i in cited if i in sources} or sources
+    note = json.dumps({"failed_answer": failed.model_dump(), "violations": state["violations"],
+                       "passages": [{"id": i, "text": t} for i, t in passages.items()]})
+    return question, HumanMessage(f"{RETRY_INSTRUCTION}\n{note}")
+
+
 def scope_line(ctx: ToolContext) -> list[SystemMessage]:
     if ctx.document_id is None:
         return []
@@ -190,13 +203,12 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnabl
 
     async def answer(state: TurnState, config: RunnableConfig) -> dict:
         ctx, _ = _turn_inputs(config)
-        feedback = []
+        head = [SystemMessage(ANSWER_PROMPT), *scope_line(ctx)]
         if state.get("violations"):
-            feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
-                                     + ". Fix it using only cited sources, or refuse.")]
-        result = await structured.ainvoke(
-            [SystemMessage(ANSWER_PROMPT), *scope_line(ctx), *model_view(state["messages"], "answer"), *feedback]
-        )
+            messages = [*head, *retry_request(state)]
+        else:
+            messages = [*head, *model_view(state["messages"], "answer")]
+        result = await structured.ainvoke(messages)
         return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}
 
     def verify(state: TurnState) -> dict:
