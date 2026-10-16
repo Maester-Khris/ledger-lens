@@ -175,6 +175,10 @@ after it, write-up only.
       | C3a, vault lookup with one array parameter (`e1f303c`) | 14.65 (+3%) | about 47 ms (36% at 7.73), +2%: **inconclusive** (-11% at 20) | 7.04 s | 0 | `2026-10-15-c3a-vault-any.steps.md` |
       | C3b, HMAC keyed once (`eee7b95`) | 14.75 (+1%); full ladder ran, core 82% at 80 | **about 41 ms** (32% at 7.75), -12% | 7.03 s | 0 | `2026-10-15-c3b-hmac-once.steps.md` |
 
+      **Profile after C1-C3b** (py-spy, GIL holder, 40 conversations, `backend/reports/load/2026-10-15-profile-gil-40-after.md`):
+      about **54 ms of Python CPU per turn, against about 90 ms before (-40%)**. Left: search 22% (dense matching 12%,
+      section text reads 7%, which T1 cuts), PII tokenising 12.6% (array dumping of about 620 candidates, HMAC copies),
+      the OpenAI client and typing about 18% (shrinks with smaller requests). Limit: one run, stub index.
       CPU per turn = API CPU % (median over the hold) at 40 conversations x 10 / turns/s. Limit: local, one run per
       change, mock timing. C3a is kept on the owner's decision (two lines, no failure, better at 20 and at peak) but
       not claimed as a gain.
