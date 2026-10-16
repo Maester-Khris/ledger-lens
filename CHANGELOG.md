@@ -179,6 +179,7 @@ after it, write-up only.
       |---|---|---|---|---|---|
       | t0, before (`2e9d3d9`) | 50 | 8,703 / 17,168 | 814 / 4,006 / 3,880 / 0 | 15% | `reports/tokens/2026-10-15-t0.json` |
       | T1, each section's context once (`79315dc`) | 50 | **5,946** / 13,134 (-32% / -23%) | 832 / 2,624 / 2,491 / 0 | 19% | `reports/tokens/2026-10-15-t1-sections.json` |
+      | T3, document list smaller, skipped when scoped, cleared after use (`7223e41`) | 50 | 6,026 / **11,447** (+1% / -13%) | 832 / 2,650 / 2,134 / 0 | 15% | `reports/tokens/2026-10-15-t3-document-list.json` |
 
       Token script (`backend/scripts/token_report.py`): golden questions through the real graph and retrieval, chat
       answered by the provider mock; tiktoken o200k_base. Shared prefix: tokens a call shares with the previous call of
@@ -191,6 +192,9 @@ after it, write-up only.
       the 6.1k seen on real turns, and its 8 hits come from a median 6 distinct sections, so less context repeated. The
       real turns' larger, more repetitive results (model-rewritten queries, per-contract lookups) are judged at gate 1.
       Same outcomes (36 answered, 14 refused).
+      T3: the two calculation turns fell from about 28k to about 9.5k tokens each (**-66%**; prediction "up to about
+      25k" less): the 102-title list now goes to the call right after the lookup only. The median rose 1% (a scope line
+      of about 20 tokens on scoped turns). Same outcomes.
 
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
