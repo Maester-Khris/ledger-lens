@@ -201,6 +201,32 @@ after it, write-up only.
       **Batch A offline, t0 to T2:** per turn median 8,703 to 4,934 (**-43%**), p95 17,168 to 9,528 (**-45%**), same
       outcomes (36 answered, 14 refused).
 
+      | After the gate-1 fixes (`dc2a896`) | 50 | 4,936 / 10,009 | 832 / 1,670 / 2,518 / 0 | 18% | `reports/tokens/2026-10-15-gate1-fixes.json` |
+
+      **Gate 1 (batch A: C1-C3b, T1, T3, T2; run `batch-a-r1`, threshold 0.43, config `4ed0f35c07d3`): failed**,
+      over-refusal 11% (3 of 28 answerable refused); junk 21/21, both calculation cases and every scoped case passed.
+      Causes, from the Langfuse traces:
+      - `nomura-fee-schedule`, `nomura-billing-frequency`: T3 dropped `document_key` from the document list, and this
+        contract is named only there (its title is "Voyageur Mutual Funds II / Delaware Management — IMA (2025)"), so
+        the model found no "Nomura Tax-Free Colorado Fund" and never searched. **Fixed** (`fcfa4c1`: the key is back);
+        both answered on clean re-runs.
+      - `management-fee-unscoped` ("What is the management fee?", no contract named): **borderline, kept open** (owner's
+        decision). The agent reads the validated fields of the first 4 listed contracts, which state the fee basis but
+        no rate, and the answer call returns their 4 sections marked refused. Clean runs: 7 of 7 answered before T1,
+        2 of 10 after. With identical tool results, the passing and failing answer calls differ only in prompt and the
+        agent's own wording; the earlier "pass" stated no fee either. Not the cause, kept as harmless: the answer
+        call keeps the document list (`65fc9f3`), and the answer prompt names element ids as citable again
+        (`dc2a896`). Fix later: make the unscoped lookup prefer contracts with a validated rate, or search.
+      **Tokens on real turns:** input per turn median 18,391 to **7,346 (-60%)**, p95 10,684; $ per answer median
+      $0.037 to **$0.017 (-53%)**; the run cost $0.76 at list price (Langfuse, 50 turns, 172 calls; median 3 model calls
+      per turn, p95 5), against $1.19 to $1.30 per run before. Cached prompt tokens **5.6%** (the T4 starting point).
+      The offline token script reads about two thirds of billed tokens (T2 median 4,934 against 7,346).
+      **Measurement gap found:** `chat_turns.input_tokens` leaves out the answer call (the structured answer's message
+      is not kept in the graph state), so it reads about 1.31x low against Langfuse (275,889 against 361,327 prompt
+      tokens here); N1's 18,391 has the same gap, so the -60% compares like with like. Reports
+      `backend/reports/eval-4ed0f35c07d3-batch-a-r1.json`, `backend/reports/cost-2026-10-16.json`, re-runs in
+      `backend/reports/eval-runs/gate1-recheck*.json` (local, untracked like every run log).
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
