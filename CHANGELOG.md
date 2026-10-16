@@ -173,6 +173,7 @@ after it, write-up only.
       | C1, document list in one query (`4ae5b83`) | **13.22** (+31%) | **about 53 ms** (41% at 7.80), -13% | 7.50 s | 0 | `2026-10-15-c1-document-titles.steps.md` |
       | C2, graph compiled once (`931d946`) | **14.20** (+7%) | **about 46 ms** (36% at 7.77), -13% | 7.09 s | 0 | `2026-10-15-c2-graph-once.steps.md` |
       | C3a, vault lookup with one array parameter (`e1f303c`) | 14.65 (+3%) | about 47 ms (36% at 7.73), +2%: **inconclusive** (-11% at 20) | 7.04 s | 0 | `2026-10-15-c3a-vault-any.steps.md` |
+      | C3b, HMAC keyed once (`eee7b95`) | 14.75 (+1%); full ladder ran, core 82% at 80 | **about 41 ms** (32% at 7.75), -12% | 7.03 s | 0 | `2026-10-15-c3b-hmac-once.steps.md` |
 
       CPU per turn = API CPU % (median over the hold) at 40 conversations x 10 / turns/s. Limit: local, one run per
       change, mock timing. C3a is kept on the owner's decision (two lines, no failure, better at 20 and at peak) but
