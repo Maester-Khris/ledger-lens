@@ -204,6 +204,7 @@ after it, write-up only.
       | After the gate-1 fixes (`dc2a896`) | 50 | 4,936 / 10,009 | 832 / 1,670 / 2,518 / 0 | 18% | `reports/tokens/2026-10-15-gate1-fixes.json` |
       | T5, lean retry (`2f80236`) | 50 | 4,940 / 10,009 (no change: the mock never retries) | 832 / 1,668 / 2,518 / 0 | 18% | `reports/tokens/2026-10-15-t5-lean-retry.json` |
       | T6, shorter prompts (`1d0b676`; agent 349 to 285 tokens, answer 397 to 309) | 50 | **4,720** / 9,795 (-4.5% / -2%) | 768 / 1,607 / 2,432 / 0 | 17% | `reports/tokens/2026-10-15-t6-short-prompts.json` |
+      | T7, 5 hits per search instead of 8 (`3bafc90` + default 5) | 50 | **4,417** / **7,688** (-6% / -22%) | 768 / 1,378 / 2,128 / 0 | 20% | `reports/tokens/2026-10-15-t7-k5.json` |
 
       **Gate 1 (batch A: C1-C3b, T1, T3, T2; run `batch-a-r1`, threshold 0.43, config `4ed0f35c07d3`): failed**,
       over-refusal 11% (3 of 28 answerable refused); junk 21/21, both calculation cases and every scoped case passed.
@@ -228,6 +229,12 @@ after it, write-up only.
       tokens here); N1's 18,391 has the same gap, so the -60% compares like with like. Reports
       `backend/reports/eval-4ed0f35c07d3-batch-a-r1.json`, `backend/reports/cost-2026-10-16.json`, re-runs in
       `backend/reports/eval-runs/gate1-recheck*.json` (local, untracked like every run log).
+
+      **Top-k check (T7):** expected passage in the top 5 for 20 of 27 answerable cases, top 8 for the same 20; none
+      lost at 5 (`backend/reports/tokens/topk-check.json`; retrieval only, the question as the query). The other 7
+      (calculation, fields and history cases) are reached through other tools or the model's own query at either k.
+      Adopted: 5 hits per search. **Offline, t0 to T7:** per turn median 8,703 to 4,417 (**-49%**), p95 17,168 to
+      7,688 (**-55%**), same outcomes (36 answered, 14 refused).
 
       **T4 (one prompt prefix for every call): dropped** (owner's decision). For the answer call to share the agent
       calls' prefix it must carry the same tool definitions, but langchain-openai sends every request with a
