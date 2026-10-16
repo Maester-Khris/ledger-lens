@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
 from app.documents.models import Document, DocumentDescription, DocumentElement, DocumentVersion, PiiToken, VersionEvent
-from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token, REGEX_RECOGNIZERS
+from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, normalise_value, token_maker, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
 
@@ -233,6 +233,7 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
     the ones the vault already knows. Only values seen in an ingested document can match (by design).
     Then, apply regex recognizers to tokenise standard PII even if it wasn't seen before."""
     words = list(_WORD.finditer(text))
+    make = token_maker(tenant_id, hmac_key)
     candidates: dict[str, PiiSpan] = {}
     for i in range(len(words)):
         for n in range(1, MAX_WINDOW_WORDS + 1):
@@ -241,8 +242,9 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
             start, end = words[i].start(), words[i + n - 1].end()
             while end > start and text[end - 1] in _TRAILING_PUNCTUATION:
                 end -= 1
+            value = normalise_value(text[start:end])
             for entity_type in PII_ENTITIES:
-                candidates[make_token(tenant_id, entity_type, text[start:end], hmac_key)] = PiiSpan(start, end, entity_type, 1.0)
+                candidates[make(entity_type, value)] = PiiSpan(start, end, entity_type, 1.0)
     # One array parameter, not an IN list of hundreds of binds (621 for a 17-word question): SQLAlchemy's and psycopg's
     # cost grows with the bind count (spec C3a).
     candidate_tokens = bindparam("candidate_tokens", list(candidates), type_=ARRAY(Text))
