@@ -4,7 +4,8 @@ import pytest
 
 from app import config
 from app.documents import dao, vault
-from app.documents.redact import PiiDetector, PiiSpan, TOKEN_PATTERN, apply_redaction, make_token
+from app.documents.redact import (PII_ENTITIES, PiiDetector, PiiSpan, TOKEN_PATTERN, apply_redaction, make_token,
+                                  normalise_value, token_maker)
 
 KEY = "k" * 32
 TENANT = uuid.UUID("00000000-0000-0000-0000-00000000000a")
@@ -132,3 +133,24 @@ def test_presidio_finds_us_bank_number(monkeypatch):
     text = "Account number: 123456789012"
     spans = PiiDetector().detect(text)
     assert any(s.entity_type == "US_BANK_NUMBER" for s in spans)
+
+
+PINNED_TENANT = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+def test_the_token_format_is_pinned():
+    # The vault already stores tokens made this way: a change here orphans every stored token.
+    assert make_token(PINNED_TENANT, "PERSON", "Marie  Tremblay", "k" * 32) == "<PERSON_b40ba93abbb6>"
+    assert make_token(PINNED_TENANT, "EMAIL_ADDRESS", "marie@example.com", "k" * 32) == "<EMAIL_ADDRESS_9a17a76b1460>"
+
+
+def test_token_maker_makes_the_same_tokens_as_make_token():
+    make = token_maker(TENANT, KEY)
+    for entity_type in PII_ENTITIES:
+        for value in ("Marie Tremblay", "  MARIE   tremblay ", "514-555-0199", "Jean-Luc Côté"):
+            assert make(entity_type, normalise_value(value)) == make_token(TENANT, entity_type, value, KEY)
+
+
+def test_a_token_maker_gives_the_same_token_on_every_call():
+    make = token_maker(TENANT, KEY)  # copy() must leave the keyed state untouched
+    assert make("PERSON", "marie tremblay") == make("PERSON", "marie tremblay") == make_token(TENANT, "PERSON", "Marie Tremblay", KEY)
