@@ -21,8 +21,8 @@ from app.assistant.citations import compose_sections, verify_answer, verify_sect
 from app.assistant.tools import ToolContext, ToolSpec, execute
 
 PROMPTS = Path(__file__).parent / "prompts"
-AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
-ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
+AGENT_PROMPT = (PROMPTS / "agent_v2.md").read_text()
+ANSWER_PROMPT = (PROMPTS / "answer_v2.md").read_text()
 GRAPH_VERSION = "v5"
 # route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
 RECURSION_LIMIT = 16
