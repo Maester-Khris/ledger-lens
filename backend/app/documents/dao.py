@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import Text, any_, bindparam, func, select
+from sqlalchemy.dialects.postgresql import ARRAY, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -243,7 +243,11 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
                 end -= 1
             for entity_type in PII_ENTITIES:
                 candidates[make_token(tenant_id, entity_type, text[start:end], hmac_key)] = PiiSpan(start, end, entity_type, 1.0)
-    known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(candidates))))
+    # One array parameter, not an IN list of hundreds of binds (621 for a 17-word question): SQLAlchemy's and psycopg's
+    # cost grows with the bind count (spec C3a).
+    candidate_tokens = bindparam("candidate_tokens", list(candidates), type_=ARRAY(Text))
+    known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id,
+                                                             PiiToken.token == any_(candidate_tokens))))
     
     # First apply known values
     redacted_text = apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
