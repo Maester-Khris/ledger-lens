@@ -178,6 +178,7 @@ after it, write-up only.
       | Token change | Turns | Per turn median / p95 | Median per call: agent 1 / agent 2 / answer / retry | Shared prefix | Report |
       |---|---|---|---|---|---|
       | t0, before (`2e9d3d9`) | 50 | 8,703 / 17,168 | 814 / 4,006 / 3,880 / 0 | 15% | `reports/tokens/2026-10-15-t0.json` |
+      | T1, each section's context once (`79315dc`) | 50 | **5,946** / 13,134 (-32% / -23%) | 832 / 2,624 / 2,491 / 0 | 19% | `reports/tokens/2026-10-15-t1-sections.json` |
 
       Token script (`backend/scripts/token_report.py`): golden questions through the real graph and retrieval, chat
       answered by the provider mock; tiktoken o200k_base. Shared prefix: tokens a call shares with the previous call of
@@ -185,6 +186,11 @@ after it, write-up only.
       about half a real one (median 8.7k against 18.4k billed in N1); a gauge between changes, calibrated at gate 1.
       t0: 36 answered, 14 refused; the two calculation turns are the largest (about 28k each: the 102-title list
       re-sent on later calls).
+      T1: agent 2 and the answer call each fell about 1.4k tokens, under half the predicted 3k. Cause, measured on the
+      mock's path (the golden question as the search query): the search result before T1 is a median 3.8k tokens, not
+      the 6.1k seen on real turns, and its 8 hits come from a median 6 distinct sections, so less context repeated. The
+      real turns' larger, more repetitive results (model-rewritten queries, per-contract lookups) are judged at gate 1.
+      Same outcomes (36 answered, 14 refused).
 
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
