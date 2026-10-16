@@ -139,6 +139,7 @@ REDIS_TIMEOUT_SECONDS = _float("REDIS_TIMEOUT_SECONDS", 0.5)
 # (reports/relevance-bd36247ba3f7.json); chosen inside the empty band 0.452–0.484 between the highest gateable junk and
 # the lowest answerable.
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
+SEARCH_TOP_K = _int("SEARCH_TOP_K", 8)  # hits per search sent to the model (spec T7)
 MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.46)
 
 # Load tests only: serve retrieval from the stub index instead of Pinecone (scripts/load/README.md). Off unless 1.

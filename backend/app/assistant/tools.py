@@ -8,6 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
+from app import config
 from app.documents import dao as documents_dao
 from app.governance.dao import InvocationRecord, ModelConfig, record_invocation
 from app.retrieval.search import Evidence, search
@@ -90,7 +91,7 @@ def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, SearchArgs)
     hits = search(ctx.session, tenant_id=ctx.tenant_id, query=args.query, embeddings=ctx.embeddings,
                   vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids,
-                  question=ctx.question)
+                  question=ctx.question, k=config.SEARCH_TOP_K)
     sections: dict[str, dict[str, str]] = {}
     sec_refs: dict[tuple[uuid.UUID, tuple[str, ...]], str] = {}
     formatted_hits: list[dict[str, object]] = []
