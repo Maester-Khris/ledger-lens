@@ -1,5 +1,6 @@
 import dataclasses
 import hashlib
+import json
 import operator
 import re
 from collections.abc import Callable, Sequence
@@ -27,6 +28,7 @@ GRAPH_VERSION = "v4"
 RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
+SEARCH_TOOL = "search_contracts"
 LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
 CALCULATION_PATTERN = re.compile(r"\b(how much would|fee for|compare|leakage|difference|under this contract)\b", re.I)
 NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't guess."
@@ -91,33 +93,39 @@ def _turn_inputs(config: RunnableConfig) -> tuple[ToolContext, Callable[[], Abst
     return ctx, open_session
 
 
+def _hits_only(content: str) -> str:
+    """A search result as an agent call sees it: each hit with its document and section names, no section text.
+    The full text goes to the answer call only (spec T2). Anything else (an error) passes unchanged."""
+    try:
+        payload = json.loads(content)
+    except ValueError:
+        return content
+    if not isinstance(payload, dict) or "hits" not in payload:
+        return content
+    sections = payload.get("sections", {})
+    return json.dumps({"hits": [
+        {**{k: v for k, v in hit.items() if k != "section"},
+         "document": sections.get(hit.get("section"), {}).get("document"),
+         "section": sections.get(hit.get("section"), {}).get("section")}
+        for hit in payload["hits"]
+    ]})
+
+
 def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"]) -> list[AnyMessage]:
-    """Returns what one model call is sent; the input is never mutated.
-
-    The tool message stays in place, so its tool call keeps a result, as OpenAI requires.
-    """
-    last_ai_index = -1
-    tool_names: dict[str, str] = {}
-    for i, m in enumerate(messages):
-        if isinstance(m, AIMessage):
-            last_ai_index = i
-            for tc in getattr(m, "tool_calls", None) or []:
-                call_id = tc.get("id") if isinstance(tc, dict) else getattr(tc, "id", None)
-                call_name = tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", None)
-                if call_id and call_name:
-                    tool_names[call_id] = call_name
-
-    result: list[AnyMessage] = []
-    for i, m in enumerate(messages):
-        if (
-            isinstance(m, ToolMessage)
-            and i < last_ai_index
-            and tool_names.get(m.tool_call_id) == LOOKUP_TOOL
-        ):
-            result.append(m.model_copy(update={"content": LIST_CLEARED}))
-        else:
-            result.append(m)
-    return result
+    """What one model call is sent; the turn's state keeps every message as it was. A document list that a later
+    model reply has already used becomes a placeholder (spec T3), and agent calls see search hits without their
+    section text (spec T2). Every tool message stays in place, so its tool call keeps a result, as OpenAI requires."""
+    names = {c["id"]: c["name"] for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
+    last_reply = max((i for i, m in enumerate(messages) if isinstance(m, AIMessage)), default=-1)
+    view = []
+    for position, message in enumerate(messages):
+        name = names.get(message.tool_call_id) if isinstance(message, ToolMessage) else None
+        if name == LOOKUP_TOOL and position < last_reply:
+            message = message.model_copy(update={"content": LIST_CLEARED})
+        elif name == SEARCH_TOOL and call == "agent":
+            message = message.model_copy(update={"content": _hits_only(message.content)})
+        view.append(message)
+    return view
 
 
 def scope_line(ctx: ToolContext) -> list[SystemMessage]:
