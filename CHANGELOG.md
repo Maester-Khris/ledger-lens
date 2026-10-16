@@ -203,6 +203,7 @@ after it, write-up only.
 
       | After the gate-1 fixes (`dc2a896`) | 50 | 4,936 / 10,009 | 832 / 1,670 / 2,518 / 0 | 18% | `reports/tokens/2026-10-15-gate1-fixes.json` |
       | T5, lean retry (`2f80236`) | 50 | 4,940 / 10,009 (no change: the mock never retries) | 832 / 1,668 / 2,518 / 0 | 18% | `reports/tokens/2026-10-15-t5-lean-retry.json` |
+      | T6, shorter prompts (`1d0b676`; agent 349 to 285 tokens, answer 397 to 309) | 50 | **4,720** / 9,795 (-4.5% / -2%) | 768 / 1,607 / 2,432 / 0 | 17% | `reports/tokens/2026-10-15-t6-short-prompts.json` |
 
       **Gate 1 (batch A: C1-C3b, T1, T3, T2; run `batch-a-r1`, threshold 0.43, config `4ed0f35c07d3`): failed**,
       over-refusal 11% (3 of 28 answerable refused); junk 21/21, both calculation cases and every scoped case passed.
