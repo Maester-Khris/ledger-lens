@@ -210,7 +210,8 @@ async def run_report(label: str) -> list[dict]:
 
         turns: list[dict] = []
         for case in expand(CASES):
-            doc_id = document_ids.get(case["document_key"]) if "document_key" in case else None
+            # A scoped case whose document is missing must fail, not run unscoped and skew the counts.
+            doc_id = document_ids[case["document_key"]] if "document_key" in case else None
             for question in questions(case):
                 recorded_bodies.clear()
                 events = [
