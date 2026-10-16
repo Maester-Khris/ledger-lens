@@ -175,6 +175,17 @@ after it, write-up only.
       | C3a, vault lookup with one array parameter (`e1f303c`) | 14.65 (+3%) | about 47 ms (36% at 7.73), +2%: **inconclusive** (-11% at 20) | 7.04 s | 0 | `2026-10-15-c3a-vault-any.steps.md` |
       | C3b, HMAC keyed once (`eee7b95`) | 14.75 (+1%); full ladder ran, core 82% at 80 | **about 41 ms** (32% at 7.75), -12% | 7.03 s | 0 | `2026-10-15-c3b-hmac-once.steps.md` |
 
+      | Token change | Turns | Per turn median / p95 | Median per call: agent 1 / agent 2 / answer / retry | Shared prefix | Report |
+      |---|---|---|---|---|---|
+      | t0, before (`2e9d3d9`) | 50 | 8,703 / 17,168 | 814 / 4,006 / 3,880 / 0 | 15% | `reports/tokens/2026-10-15-t0.json` |
+
+      Token script (`backend/scripts/token_report.py`): golden questions through the real graph and retrieval, chat
+      answered by the provider mock; tiktoken o200k_base. Shared prefix: tokens a call shares with the previous call of
+      its turn (offline estimate of what can be a cache read). Limit: the mock searches once and stops, so a turn is
+      about half a real one (median 8.7k against 18.4k billed in N1); a gauge between changes, calibrated at gate 1.
+      t0: 36 answered, 14 refused; the two calculation turns are the largest (about 28k each: the 102-title list
+      re-sent on later calls).
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
