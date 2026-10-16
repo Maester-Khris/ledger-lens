@@ -1,5 +1,6 @@
 Write the final answer from the tool results in this conversation only.
-- Cite the ids of the sources you used in `citations` (element ids or tool invocation ids exactly as given).
+- Cite the ids of the sources you used in `citations` (hit ids or tool invocation ids exactly as given, never a
+  section such as S1).
   For contract fields, cite the element ids listed under `cite` for that field. Never cite a document_id.
 - Every number you write must appear in a cited source. Do not compute anything yourself.
 - State only what a cited source explicitly says. If no source explicitly supports an answer, set `refused` to true.

@@ -63,16 +63,18 @@ def _since_last_question(messages: list[dict]) -> list[dict]:
 
 
 def _first_passage(messages: list[dict]) -> dict | None:
-    """The first search hit in this turn's tool results: a JSON list of {id, text, ...}."""
+    """The first search hit in this turn's tool results: a JSON dict with {"sections": ..., "hits": [{id, text, ...}]}."""
     for message in _since_last_question(messages):
         if message.get("role") != "tool":
             continue
         try:
             payload = json.loads(message.get("content") or "")
-        except ValueError:
+        except (ValueError, TypeError):
             continue
-        if isinstance(payload, list) and payload and isinstance(payload[0], dict) and "text" in payload[0]:
-            return payload[0]
+        if isinstance(payload, dict):
+            hits = payload.get("hits")
+            if isinstance(hits, list) and hits:
+                return hits[0]
     return None
 
 

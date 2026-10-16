@@ -89,11 +89,27 @@ def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     hits = search(ctx.session, tenant_id=ctx.tenant_id, query=args.query, embeddings=ctx.embeddings,
                   vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids,
                   question=ctx.question)
-    payload = [
-        {"id": str(h.element_id), "document": h.document_title, "page": h.page_start,
-         "section": " › ".join(h.section_path), "text": h.text, "context": h.context}
-        for h in hits
-    ]
+    sections: dict[str, dict[str, str]] = {}
+    sec_refs: dict[tuple[uuid.UUID, tuple[str, ...]], str] = {}
+    formatted_hits: list[dict[str, object]] = []
+    # each section's text once; hits point to it (spec T1)
+    for h in hits:
+        key = (h.version_id, h.section_path)
+        if key not in sec_refs:
+            ref = f"S{len(sections) + 1}"
+            sec_refs[key] = ref
+            sections[ref] = {
+                "document": h.document_title,
+                "section": " › ".join(h.section_path),
+                "text": h.context,
+            }
+        formatted_hits.append({
+            "id": str(h.element_id),
+            "section": sec_refs[key],
+            "page": h.page_start,
+            "text": h.text,
+        })
+    payload = {"sections": sections, "hits": formatted_hits}
     return ToolOutcome(
         json.dumps(payload),
         sources={str(h.element_id): h.text for h in hits},
