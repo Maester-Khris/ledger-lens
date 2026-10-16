@@ -6,6 +6,7 @@ import json
 import os
 import statistics
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -21,7 +22,11 @@ AUTH = (os.environ["LANGFUSE_PUBLIC_KEY"], os.environ["LANGFUSE_SECRET_KEY"])
 def pages(path: str, params: dict) -> list[dict]:
     rows, page = [], 1
     while True:
-        body = httpx.get(f"{HOST}/api/public/{path}", params=params | {"page": page, "limit": 100}, auth=AUTH, timeout=60).json()
+        response = httpx.get(f"{HOST}/api/public/{path}", params=params | {"page": page, "limit": 100}, auth=AUTH, timeout=60)
+        if response.status_code == 429:  # Langfuse allows a few reads per minute: wait out the window, same page
+            time.sleep(int(response.json().get("details", {}).get("retryAfterSeconds", 15)) + 1)
+            continue
+        body = response.json()
         rows += body["data"]
         if page >= body["meta"]["totalPages"]:
             return rows
