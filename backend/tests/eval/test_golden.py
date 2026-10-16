@@ -20,6 +20,7 @@ from app.assistant.service import run_turn
 from app.documents import dao as documents_dao
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
+from app.tracing import flush_tracing
 
 CASES = json.loads((Path(__file__).parent / "golden.json").read_text())
 REPORTS = Path(__file__).resolve().parents[2] / "reports"
@@ -130,6 +131,7 @@ def _run(case: dict, document_ids: dict[str, uuid.UUID]) -> dict:
 
 
 @pytest.mark.eval
+@pytest.mark.enable_tracing
 def test_golden_set():
     print(f"eval target: db={str(config.DATABASE_URL).rsplit('/', 1)[-1]} index={config.PINECONE_INDEX} "
           f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()} run={RUN_ID}")
@@ -147,6 +149,7 @@ def test_golden_set():
         with log.open("a") as out:
             out.write(json.dumps(result) + "\n")
         done[case["id"]] = result
+    flush_tracing()  # traces are sent in the background: send them before the process ends
     results = [done[case["id"]] for case in cases]
     config_hash = eval_config_hash()
     summary = summarise(results)

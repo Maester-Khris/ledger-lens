@@ -36,6 +36,14 @@ def spread(values: list[float]) -> dict:
     return {"n": len(values), "median": statistics.median(values), "p95": p95(values), "max": max(values)}
 
 
+def prompt_usage(call: dict) -> tuple[int, int]:
+    """(cached, all) prompt tokens of one generation. Langfuse names usage keys by the SDK: every key starting with
+    'input' counts prompt tokens, and those naming a cache are the cached part."""
+    usage = call.get("usageDetails") or {}
+    cached = sum(v for k, v in usage.items() if k.startswith("input") and "cache" in k)
+    return cached, sum(v for k, v in usage.items() if k.startswith("input"))
+
+
 def main() -> None:
     start, end, tag = sys.argv[1], sys.argv[2], (sys.argv[3] if len(sys.argv) > 3 else "chat")
     traces = {t["id"]: t for t in pages("traces", {"fromTimestamp": start, "toTimestamp": end, "tags": tag})}
@@ -59,6 +67,9 @@ def main() -> None:
         "window": [start, end], "tag": tag, "models": sorted({c.get("model") for c in calls}),
         "turns": len(per_turn), "sessions": len(per_session), "llm_calls": len(calls), "calls_without_price": unpriced,
         "total_usd": sum(per_turn.values()),
+        "prompt_tokens": sum(prompt_usage(c)[1] for c in calls),
+        "cached_prompt_tokens": sum(prompt_usage(c)[0] for c in calls),
+        "cache_hit_rate": sum(prompt_usage(c)[0] for c in calls) / max(1, sum(prompt_usage(c)[1] for c in calls)),
         "usd_per_turn": spread(list(per_turn.values())),
         "usd_per_session": spread(list(per_session.values())),
         "llm_calls_per_turn": spread([float(n) for n in steps.values()]),
