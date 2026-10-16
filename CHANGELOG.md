@@ -140,9 +140,20 @@ after it, write-up only.
       `backend/reports/relevance-8e192f7302ee.json`); the three earlier runs at 0.43 passed it. The calibration also
       shows the gap between answerable and junk scores is gone on this corpus (junk at 0.445 and 0.456 sit next to
       it; suggested floor 0.436).
+- [ ] `security` — **N8** security review in two buckets: general application security (OWASP Top 10 / ASVS: secrets,
+      dependencies, static analysis, ZAP, access control) and AI security (OWASP Agentic + LLM Top 10, with LedgerLens
+      checked against Meta's Agents Rule of Two and the lethal trifecta), free tools only, run live against the real
+      model. Runs **last**, after the scale work (and X1 if it happens), and must be done by **Sun 2026-10-18 18:00**
+      whatever else is left. Done when: the Tier 1 sections are run, Critical/High findings fixed or reported with a
+      plan, re-run, and the results table filled → **Not epic-tracked**
+      **Read first:** `artifacts/2026-10-16-security-review-decisions.md` (research, decisions, tool installs, run
+      order with time estimates, commands). **Open:** the freeze (Sun 12:00) falls before the deadline; start by
+      Sat 18:00 or allow security fixes until about Sun 16:00 (owner decides).
 - [ ] `docs` — **N6** one-page design for bot and agent defense: a challenge before an anonymous session, a per-guest
       token / $ budget sized from N1, the per-IP limits already built, identified agents through an API with their own
       quotas. Design only. Written after the freeze → **Not epic-tracked**
+      Context: `artifacts/2026-10-16-security-review-decisions.md` (LLM10 unbounded consumption, the limiter's
+      fail-open choice, `X-Guest-Id` as a bearer token).
 - [ ] `docs` — write-up after the freeze: the before/after one-pager, proof-sheet rows, and a README section
       "Measured numbers" filled from the table below → **Not epic-tracked**
 
@@ -243,6 +254,26 @@ after it, write-up only.
       change too late in the sprint. Cached prompt tokens stay about 5.6% (gate 1). Other routes, not taken: strict
       tools on every call, or sending `response_format` outside langchain and parsing the answer ourselves.
 
+      **Gate 2 (batch B: T5, T6, T7 and the three gate-1 fixes; run `batch-b-r1`, config `7c221c701ce8`): passed on
+      quality** (answerable 28/28, over-refusal 0, junk 21/21) **but cost more than before the sprint**: prompt tokens
+      679k against 361k at gate 1 (+88%, Langfuse, every call), $1.41 at list price, 4 model calls per turn (was 3), 13
+      answer retries (was 3). Where the +318k went, from `chat_turns` (agent calls) against Langfuse (all calls):
+      answer calls +257k (81%), the answer call keeping the 8,204-token document list after a lookup (`65fc9f3`, a
+      gate-1 fix that did not fix its case); junk agent calls +29k (9%), the shorter T6 prompt sending 3 junk
+      questions (refused at about 640 tokens before) through a lookup and 4 searches; answerable agent calls +32k
+      (10%), the restored `document_key` (2,162 tokens per list; 29 lookup turns). Not explained: the retries.
+      Report `backend/reports/eval-7c221c701ce8-batch-b-r1.json`, `backend/reports/cost-2026-10-16-batch-b.json`.
+
+      **Regroup (2026-10-16, owner's decision):** batch gating plus an offline gauge that cannot see the model's
+      choices hid side effects, and the gate-1 fixes were reactive. Frozen configuration = batch A (T1, T3, T2) + the
+      key fix (`fcfa4c1`) + T5; reverted: T6 (`d96727d`), the answer-prompt wording (`278385f`), the document list in
+      the answer call (`8d9b317`, `753a982`), the 5-hit default (`520eca8`; `SEARCH_TOP_K` stays, default 8). T4 was
+      already dropped. Offline: 4,936 / 10,011 per turn, answer call 2,133 (`reports/tokens/2026-10-16-frozen.json`).
+      **Estimate before gate 3** (from measured parts, not a run): prompt tokens about gate 1's 361k plus the key on
+      26 lookup turns (26 x 2,162 = 56k), about **417k, 8.3k per turn**, against 13.6k at gate 2 and about 24k before
+      the sprint on the same full count; quality as gate 1 with both Nomura cases answering (2 of 2 clean runs),
+      `management-fee-unscoped` refused in 8 of 10 clean runs since T1 (the gate's 0% rule likely fails on it alone).
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
@@ -269,6 +300,9 @@ after it, write-up only.
       the verifier's false-pass rate against a small hand-labelled set, are recorded. Raw page images reach a vision
       model, so the PII claim and its test are restated first
       (`artifacts/2026-10-09-azure-multidoc-ingestion-review.md`, sections 3.1 and 3.2) → **Not epic-tracked**
+      **Read first:** `artifacts/2026-10-15-ingestion-quality-verification-decisions.md` (settled, leaning and open
+      decisions, cost picture, suggested scope) and its evidence base
+      `artifacts/research/2026-10-15-ingestion-quality-verification.md`.
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
@@ -319,6 +353,9 @@ Each row is quoted with all four parts or not at all. "Limit" lists what is alre
   `medicoordai/artifacts/perf/2026-10-13-phase5-report.md`).
 - Corpus critique and sourcing: `artifacts/2026-10-09-azure-multidoc-ingestion-review.md`,
   `artifacts/2026-10-04-review-first-reactions.md`, `artifacts/research/2026-10-09-client-onboarding-documents-wealth.md`.
+- Decision records (read before starting the item): X1 →
+  `artifacts/2026-10-15-ingestion-quality-verification-decisions.md`; N8 (and N6) →
+  `artifacts/2026-10-16-security-review-decisions.md`.
 - Cut until after Monday: multi-type ingestion (brochures, RDI, tax and identity forms), multi-region, auth, managed
   bot control, chaos tooling, dashboards, evals in CI.
 
