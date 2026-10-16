@@ -171,6 +171,7 @@ after it, write-up only.
       |---|---|---|---|---|---|
       | Before: N4 change 2 (`f1b10db`) | 10.07 | about 112 ms (87% at 7.75 turns/s) | 12.67 s | 0 | `2026-10-15-n4-short-sessions.steps.md` |
       | C1, document list in one query (`4ae5b83`) | **13.22** (+31%) | **about 78 ms** (61% at 7.80), -30% | 7.50 s | 0 | `2026-10-15-c1-document-titles.steps.md` |
+      | C2, graph compiled once (`931d946`) | **14.20** (+7%) | **about 70 ms** (54% at 7.77), -11% | 7.09 s | 0 | `2026-10-15-c2-graph-once.steps.md` |
 
       CPU per turn = API CPU % (max) at 40 conversations x 10 / turns/s. Limit: local, one run per change, mock timing.
 - [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
