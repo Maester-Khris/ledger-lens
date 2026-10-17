@@ -298,6 +298,16 @@ after it, write-up only.
       `POST /guests`). It would have reached the public demo as visitors piled up; it is also an N8 finding
       (unbounded consumption: cheap guest creation slowed every later registration).
 
+      **L1, a contract looked up by name** (plan `artifacts/2026-10-16-document-lookup-plan.md`; `find_documents`, Postgres
+      full-text over title and document key, top 5, one query, replacing the 102-contract list wherever an id is
+      needed; commits `8d8c08e`, `beba9d8`, `f76c31b`). Why: gate 3's traces show 26 of 50 turns sending the 8,204-token
+      list (22 to resolve a contract the question names, 2 forced calculations, 2 topic questions), and it grows with
+      the corpus (about 80k tokens at 1,000 documents). Offline token row `l1-find`: 4,971 / 8,779 per turn (frozen:
+      4,936 / 10,011): the mock only looks up on the 2 calculation turns, so it shows the cost (about +146 tokens per
+      call for the new tool and prompt line) and not the saving on the real model's name turns.
+      CPU (`2026-10-16-ladder-l1.steps.md`): about 40.6 ms per turn at 40 (before 41.2 ms, -1%), peak 15.13 turns/s
+      (before 15.22), 0 failed: inside the 5% band. Gate 4 pending.
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
