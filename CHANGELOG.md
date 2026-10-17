@@ -412,7 +412,10 @@ after it, write-up only.
         to ≤ 1% at about 300 labels; class B ≤ 5%; class C ≤ 10%. Every posting still needs a person's approval, so
         0 errors reach billing. A class passes when its 95% upper bound is under its target, so the minimum is
         about 150 labels (60 A, 60 B, 30 C). Evidence: `artifacts/research/2026-10-17-extraction-error-rate-targets.md`.
-      - Open: the A/B/C field classes.
+      - Field classes approved:
+        - A: fee tiers, method, basis, currency, billing frequency, payment timing.
+        - B: fund or account, adviser, client, effective date.
+        - C: agreement date, notice days, governing law, signatories.
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
