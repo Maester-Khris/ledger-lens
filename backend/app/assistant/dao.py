@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, select, update
+from sqlalchemy import Select, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -67,9 +67,11 @@ def register_guest(session: Session, tenant_id: uuid.UUID, known_id: uuid.UUID |
     return guest.id
 
 
-def stale_guest_ids(session: Session, tenant_id: uuid.UUID, *, before: datetime) -> list[uuid.UUID]:
-    """Guests not seen since `before`. Their overlay decisions are purged; the guest rows stay (chat turns reference them)."""
-    return list(session.scalars(select(Guest.id).where(Guest.tenant_id == tenant_id, Guest.last_seen_at < before)))
+def stale_guests(tenant_id: uuid.UUID, *, before: datetime) -> Select:
+    """Guests not seen since `before`, as a subquery: the purge deletes by it in one statement, so its cost follows the
+    overlay rows, not the number of guests (11,211 stale guests once meant 11,211 bind parameters per DELETE).
+    Their overlay decisions are purged; the guest rows stay (chat turns reference them)."""
+    return select(Guest.id).where(Guest.tenant_id == tenant_id, Guest.last_seen_at < before)
 
 
 def find_turn(session: Session, tenant_id: uuid.UUID, turn_id: uuid.UUID) -> ChatTurn | None:

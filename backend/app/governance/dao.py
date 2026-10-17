@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 
-from sqlalchemy import ColumnElement, delete, func, select
+from sqlalchemy import ColumnElement, Select, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -214,6 +214,6 @@ def count_pending(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.UU
     return session.scalar(query) or 0
 
 
-def purge_guest_decisions(session: Session, guest_ids: Sequence[uuid.UUID]) -> None:
+def purge_guest_decisions(session: Session, guest_ids: Select | Sequence[uuid.UUID]) -> None:
     """Delete these guests' overlay decisions (the 24-hour purge). The caller commits."""
     session.execute(delete(GuestToolDecision).where(GuestToolDecision.guest_id.in_(guest_ids)))
