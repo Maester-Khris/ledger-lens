@@ -266,6 +266,17 @@ export interface ToolInvocationDto {
   proposed_entries: ProposedEntryDto[] | null;
   approval_required: boolean;
   decision: ToolDecisionDto | null;
+  /** Proposals only: the contract and the clauses behind the amount (empty / null otherwise). */
+  document_title: string | null;
+  document_version: number | null;
+  sources: ApprovalSourceDto[];
+}
+
+export interface ApprovalSourceDto {
+  element_id: string;
+  page: number;
+  section: string;
+  quote: string;
 }
 
 export type ReviewDecision = 'confirmed' | 'corrected' | 'rejected';

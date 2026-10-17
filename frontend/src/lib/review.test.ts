@@ -64,4 +64,15 @@ describe('viewer targets', () => {
     });
     expect(approvalTarget({ id: 'i2', input: {} } as unknown as ToolInvocationDto, documents)).toBeNull();
   });
+
+  it('opens a proposal at its first cited clause, in the version it cites', () => {
+    const invocation = {
+      id: 'i1', input: { document_id: 'd1' }, document_version: 3,
+      sources: [{ element_id: 'e1', page: 7, section: '4. Fees', quote: 'q' }, { element_id: 'e2', page: 2, section: '', quote: 'q' }],
+    } as unknown as ToolInvocationDto;
+    const documents = [{ id: 'd1', version: 4, title: 'Tremblay IMA' }] as unknown as DocumentSummary[];
+    expect(approvalTarget(invocation, documents)).toEqual({
+      key: 'approval:i1', documentId: 'd1', version: 3, page: 7, title: 'Tremblay IMA',
+    });
+  });
 });

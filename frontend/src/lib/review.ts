@@ -48,5 +48,9 @@ export function approvalTarget(invocation: ToolInvocationDto, documents: Documen
   const documentId = invocation.input.document_id;
   const doc = typeof documentId === 'string' ? documents.find((d) => d.id === documentId) : undefined;
   if (!doc) return null;
-  return { key: `approval:${invocation.id}`, documentId: doc.id, version: doc.version, page: null, title: doc.title };
+  const first = invocation.sources?.[0];  // a proposal opens at its first cited clause, in the version it cites
+  return {
+    key: `approval:${invocation.id}`, documentId: doc.id, version: first ? (invocation.document_version ?? doc.version) : doc.version,
+    page: first ? first.page : null, title: doc.title,
+  };
 }

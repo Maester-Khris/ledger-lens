@@ -7,12 +7,15 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app import config
 from app.deps import decided_by, get_guest_id, get_overlay_guest, get_session, get_tenant_id, require_overlay_guest
 from app.governance.dao import Decision, decide, list_invocations
 from app.governance.models import ToolInvocation
 from app.governance.types import ToolDecision
 from app.ledger.dao import account_labels
 from app.assistant import dao as assistant_dao
+from app.documents import dao as documents_dao
+from app.retrieval import dao as retrieval_dao
 from app.reporting.dashboard import invalidate_dashboard_stats
 
 router = APIRouter(prefix="/tool-invocations", tags=["governance"])
@@ -37,6 +40,13 @@ class DecisionOut(BaseModel):
     recorded: bool
 
 
+class SourceOut(BaseModel):
+    element_id: str
+    page: int
+    section: str
+    quote: str
+
+
 class InvocationOut(BaseModel):
     id: uuid.UUID
     session_id: str
@@ -55,6 +65,11 @@ class InvocationOut(BaseModel):
     proposed_entries: list | None
     approval_required: bool
     decision: DecisionOut | None
+    # Proposals only (N8 S8): the contract and the clauses behind the amount, so an approver sees them on the card.
+    document_title: str | None = None
+    document_version: int | None = None
+    sources: list[SourceOut] = []
+
 
 
 def _labelled(session: Session, entries: list | None) -> list | None:
@@ -88,6 +103,30 @@ def _invocation_out(session: Session, invocation: ToolInvocation, decision: Deci
     )
 
 
+def _evidence(session: Session, tenant_id: uuid.UUID, invocations: list[ToolInvocation]) -> dict[uuid.UUID, dict]:
+    """Per proposal: its cited clauses, revealed for display like every other quote, in one query for the page."""
+    cited = {i.id: [uuid.UUID(e) for e in (i.citation or {}).get("ids", [])] for i in invocations if i.approval_required}
+    element_ids = [e for ids in cited.values() for e in ids]
+    if not element_ids:
+        return {}
+    rows = retrieval_dao.evidence_rows(session, element_ids)
+    quotes = iter(documents_dao.reveal(session, tenant_id, [element.text_redacted for element, _, _ in rows.values()],
+                                       config.require("PII_VAULT_KEY")))
+    revealed = {element_id: next(quotes) for element_id in rows}
+    evidence = {}
+    for invocation_id, ids in cited.items():
+        found = [i for i in ids if i in rows]
+        if not found:
+            continue
+        _, version, document = rows[found[0]]
+        evidence[invocation_id] = {
+            "document_title": document.title, "document_version": version.version,
+            "sources": [SourceOut(element_id=str(i), page=rows[i][0].page_start, section=" › ".join(rows[i][0].section_path),
+                                  quote=revealed[i]) for i in found],
+        }
+    return evidence
+
+
 @router.get("", response_model=list[InvocationOut])
 def list_tool_invocations(
     session: SessionDep,
@@ -101,9 +140,11 @@ def list_tool_invocations(
     rows = list_invocations(session, tenant_id=tenant_id, posting_id=posting_id, pending=pending, limit=limit, session_id=session_id, overlay_guest=overlay_guest)
     turn_ids = {uuid.UUID(i.input["turn_id"]) for i, _ in rows if i.input.get("turn_id")}
     traces = assistant_dao.trace_ids(session, tenant_id, turn_ids)
+    evidence = _evidence(session, tenant_id, [invocation for invocation, _ in rows])
     return [
         _invocation_out(session, invocation, decision).model_copy(update={
             "trace_id": traces.get(uuid.UUID(invocation.input["turn_id"])) if invocation.input.get("turn_id") else None,
+            **evidence.get(invocation.id, {}),
         })
         for invocation, decision in rows
     ]
