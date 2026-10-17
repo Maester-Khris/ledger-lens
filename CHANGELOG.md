@@ -286,6 +286,18 @@ after it, write-up only.
       median 18,391 to **10.3k (-44%)**, $ per answer median $0.037 to **$0.022 (-41%)**.
       Reports `backend/reports/eval-5afaf72a1f94-gate3-{1,2}-r1.json`, `backend/reports/cost-gate3-{1,2}.json`.
 
+      **Found by the CPU baseline for the document lookup (2026-10-16): a time bomb in the guest purge.** The frozen
+      code measured about 182 ms of CPU per turn at 40 conversations (C3b: 41 ms), and a control run of the C3b code
+      at the same time was just as slow (about 186 ms), so the cause was data, not code. Every `POST /guests` (one per
+      new conversation) read the ids of all guests idle for 24 hours and deleted their overlay rows with one bind
+      parameter per guest; the load ladders of 2026-10-15 had created about 12,000 guests, which crossed the TTL
+      overnight (11,211 stale), and guests are never deleted. **Fixed** (`9203dfa`): the purge deletes by subquery,
+      2 statements whatever the guest count (test pins it). After the fix: about **41 ms** per turn at 40, peak
+      **15.22 turns/s at 80** with flat latency (p95 6.79 s), 0 failed turns (`2026-10-16-ladder-purge-fixed.steps.md`;
+      before: `2026-10-16-ladder-frozen.steps.md`). The gates were not affected (they call `run_turn`, never
+      `POST /guests`). It would have reached the public demo as visitors piled up; it is also an N8 finding
+      (unbounded consumption: cheap guest creation slowed every later registration).
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
