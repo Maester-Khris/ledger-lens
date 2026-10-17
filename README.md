@@ -137,19 +137,20 @@ Everything above was first built against fakes (268 automated tests). With the r
 
 Each number comes with its method, where it ran, its sample and its limit. Full tables: N7 in [`CHANGELOG.md`](./CHANGELOG.md).
 
-**CPU per chat turn** (2026-10-15; API alone on 1 vCPU / 1 GiB, one uvicorn worker; k6 ladder of 5 to 160
+**CPU per chat turn** (2026-10-15 and 2026-10-16; API alone on 1 vCPU / 1 GiB, one uvicorn worker; k6 ladder of 5 to 160
 conversations; provider mock calibrated on real turns; stub vector index):
 
 | Metric | Before | After | Change | Method and sample |
 |---|---|---|---|---|
 | CPU per turn at 40 conversations | 61 ms | 41 ms | -33% | API CPU % (median over the hold) x 10 / turns/s; one k6 run per change |
-| Peak throughput at 80 conversations | 10.07 turns/s | 14.75 turns/s | +46% | k6; one run per change |
+| Peak throughput at 80 conversations | 10.07 turns/s | 15.22 turns/s | +51% | k6; after: 2026-10-16 ladder after the guest-purge fix, p95 6.79 s, 0 failed (14.75 on the 2026-10-15 run) |
 | Python CPU per turn | about 90 ms | about 54 ms | -40% | py-spy `--gil`, 2 min at 40 conversations, about 1,000 turns each |
 | Failed turns | 0 | 0 | – | k6, every run |
 | Full ladder to 160 conversations | stopped (p95 over 15 s) | completes | – | k6 threshold |
 
 Limits: local, one machine; a cgroup quota approximates a vCPU; model latency from the mock, not live; one run per
-change; the stub index leaves out the Pinecone client's CPU. Step tables: `backend/reports/load/2026-10-15-*.steps.md`.
+change; the stub index leaves out the Pinecone client's CPU. Step tables: `backend/reports/load/2026-10-15-*.steps.md` and
+`2026-10-16-ladder-purge-fixed.steps.md`.
 
 **Tokens and cost per chat turn** (2026-10-15 to 2026-10-17; real OpenAI `gpt-4.1-2025-04-14`, local corpus of
 102 documents; before = N1 / N0.1, after = gate 5, config `820a555c46c3`):
