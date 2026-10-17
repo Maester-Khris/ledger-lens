@@ -151,12 +151,18 @@ conversations; provider mock calibrated on real turns; stub vector index):
 Limits: local, one machine; a cgroup quota approximates a vCPU; model latency from the mock, not live; one run per
 change; the stub index leaves out the Pinecone client's CPU. Step tables: `backend/reports/load/2026-10-15-*.steps.md`.
 
-**Tokens per chat turn** (gate 3, real OpenAI, traced): _to be filled after gate 3._
+**Tokens and cost per chat turn** (2026-10-15 to 2026-10-17; real OpenAI `gpt-4.1-2025-04-14`, local corpus of
+102 documents; before = N1 / N0.1, after = gate 5, config `820a555c46c3`):
 
 | Metric | Before | After | Change | Method and sample |
 |---|---|---|---|---|
-| Prompt tokens per turn | _TBD (gate 3)_ | _TBD (gate 3)_ | _TBD_ | _TBD_ |
-| Golden-set quality | _TBD (gate 3)_ | _TBD (gate 3)_ | _TBD_ | _TBD_ |
+| Prompt tokens per turn, every model call | about 24k (estimated) | 4.4k | about -81% | Langfuse, 50 golden turns; "before" is N1's 18,391 x 1.31, the measured share of the answer call that `chat_turns` misses |
+| Input tokens per turn, like for like | 18,391 | 2,695 | -85% | median of `chat_turns` (agent calls, no answer call); N1: 150 turns over 3 replays, gate 5: one run |
+| $ per answer | $0.037 | $0.0076 | -79% | median, same `chat_turns` basis, list price ($2 in / $8 out per million) |
+| Golden-set quality | 28/28 answerable, 21/21 junk | 28/28 answerable, 21/21 junk | unchanged | 49 cases, threshold 0.43; before 3 runs (N0.1), after one run (gate 5) |
+
+Limits: curated questions, not user traffic; list prices (a full gate run costs $0.46); one gate run after the
+changes; the local threshold is 0.43, the demo's 0.46. Per-change rows: N7 in [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Local development — ledger DB core
 
