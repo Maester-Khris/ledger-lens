@@ -40,9 +40,11 @@ class ParsedDocument:
 
 @lru_cache(maxsize=1)
 def _converter():
+    from docling.datamodel.base_models import InputFormat
     from docling.document_converter import DocumentConverter
 
-    return DocumentConverter()  # loads layout/table models once per process
+    # PDF only: Docling's other format backends never see user input (defence in depth for F1)
+    return DocumentConverter(allowed_formats=[InputFormat.PDF])  # loads layout/table models once per process
 
 
 def _grade(value: object) -> str:
