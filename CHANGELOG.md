@@ -401,6 +401,14 @@ after it, write-up only.
       **Read first:** `artifacts/2026-10-15-ingestion-quality-verification-decisions.md` (settled, leaning and open
       decisions, cost picture, suggested scope) and its evidence base
       `artifacts/research/2026-10-15-ingestion-quality-verification.md`.
+      **Decisions 2026-10-17 (owner; section 9 of the decisions file):**
+      - Crop vs page is settled by a side-by-side run on labelled class A fields, with fee tiers cropped as the whole table.
+      - Labels come from a human plus a second labeller; if time is short, two LLM judges from different providers,
+        fed the same redacted inputs.
+      - PII has three layers: a local OCR re-read with no egress; vision only on class A crops after personal data is
+        blacked out; client and other personal fields never sent to vision. A test OCRs every outgoing image.
+      - Cost and confidence are reported per stage, on two axes (documents; daily active users).
+      - Open: the A/B/C field classes and a target error rate per class.
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
