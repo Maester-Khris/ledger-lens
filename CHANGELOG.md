@@ -158,7 +158,12 @@ after it, write-up only.
       checked against Meta's Agents Rule of Two and the lethal trifecta), free tools only, run live against the real
       model. Runs **last**, after the scale work (and X1 if it happens), and must be done by **Sun 2026-10-18 18:00**
       whatever else is left. Done when: the Tier 1 sections are run, Critical/High findings fixed or reported with a
-      plan, re-run, and the results table filled → **Not epic-tracked**
+      plan, re-run, and the results table filled, **and the review ends in a report that can be presented:** a full
+      report tracked in the repo at `docs/security/2026-10-18-security-review.md` with both sections (general
+      application security: S1–S5; AI security: S6–S10), each finding with severity, evidence, fix or plan, and the
+      tool versions and limits; plus a short "Security" overview in the README (what was checked, headline results,
+      what is open), linking to the full report. The local decision note (`artifacts/`, untracked) stays the working
+      file, not the deliverable → **Not epic-tracked**
       **Progress 2026-10-17:** S1 to S3 (`ecc5db9`: secrets 0 real; dependencies 3 real High, all fixed or not
       reachable; static analysis 0 real), S6 PII egress test passes (`d0ed40f`: every provider request from indexing
       through two turns, chat and embeddings; shown to fail when question tokenising is off), S8 Rule of Two checklist
