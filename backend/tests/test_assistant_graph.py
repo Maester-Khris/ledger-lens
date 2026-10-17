@@ -316,3 +316,11 @@ def test_the_forced_lookup_finds_the_contract_by_name():
     from app.assistant.graph import LIST_TOOL, LOOKUP_TOOL
     assert LOOKUP_TOOL == "find_documents" and LIST_TOOL == "list_documents"
     assert {"find_documents", "list_documents", "search_contracts"} <= {spec.name for spec in default_tools()}
+
+
+def test_a_topic_without_a_contract_is_searched_not_listed():
+    # L2 (2026-10-16): listing the contracts and reading the first four reached contracts with no rate, so
+    # "What is the management fee?" was refused in 10 of 12 runs. The agent searches the topic across contracts instead.
+    from app.assistant.graph import AGENT_PROMPT
+    rule = next(line for line in AGENT_PROMPT.split("\n- ") if "but no contract" in line)
+    assert "search_contracts" in rule and "list_documents" not in rule
