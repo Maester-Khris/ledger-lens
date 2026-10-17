@@ -214,7 +214,7 @@ def find_documents(
     ponytail: the tsvector is computed per query, with no index; add a stored tsvector and a GIN index past a few
     thousand documents.
     """
-    words = re.findall(r"[A-Za-z0-9]+", name)
+    words = re.findall(r"[^\W_]+", name)  # letters and digits only (accents kept): no tsquery operator gets through
     if not words:
         return []
     tsquery = func.to_tsquery("english", bindparam("query", " | ".join(w.lower() for w in words)))

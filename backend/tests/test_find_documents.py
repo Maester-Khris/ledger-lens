@@ -72,6 +72,12 @@ def test_punctuation_in_a_name_does_not_break_the_query(db_session, tenant_id):
     assert _find(db_session, tenant_id, "Calamos: 'Investment' & Trust | (2021) <x>!")[0].id == ids[CALAMOS[0]]
 
 
+def test_an_accented_name_is_matched_whole(db_session, tenant_id):
+    expected = _document(db_session, tenant_id, "cote-family-ima", "Côté family — IMA")
+    _document(db_session, tenant_id, "edgar-t-rowe-price-ex-99-d", "T. Rowe Price — EX-99.D")
+    assert [t.id for t in _find(db_session, tenant_id, "the Côté family")] == [expected]
+
+
 def test_at_most_five_matches(db_session, tenant_id):
     for n in range(7):
         _document(db_session, tenant_id, f"acme-fund-{n}", f"Acme Fund {n}")
