@@ -173,7 +173,7 @@ after it, write-up only.
       cost: `admit` p50 0.128 ms, p95 0.156 ms (n=1,000, local Redis). Limit: local; one client; a managed Redis adds a
       network round trip. Also fixed on the way: `alembic/env.py` disabled every existing logger when the test suite
       ran migrations, which silenced app warnings asserted later in the suite.
-- [ ] `api` — **N7** CPU and tokens per chat turn: after N4, CPU is the limit on 1 vCPU; after N1, a turn costs
+- [x] `api` — **N7** CPU and tokens per chat turn: after N4, CPU is the limit on 1 vCPU; after N1, a turn costs
       about 18.4k input tokens. Spec `docs/superpowers/specs/2026-10-15-cpu-and-token-per-turn-design.md`, plan
       `docs/superpowers/plans/2026-10-15-cpu-and-token-per-turn.md`. One change per row; quality gated per batch
       (2 gates, OpenAI balance). Done when: every row is filled and both gates are recorded → **Not epic-tracked**
@@ -315,6 +315,20 @@ after it, write-up only.
       **$0.57** at list price (gate 3: $0.85, -33%), 4 calls per turn, 53 answer calls, cache 7.4%. Like for like with
       N1 (`chat_turns`, no answer call): $ per answer $0.037 to **$0.0074**. Reports
       `backend/reports/eval-de32f3c20127-gate4-r1.json`, `backend/reports/cost-gate4.json`.
+      **L2, a topic with no contract named is searched across contracts** (prompt rule, `afa54f1`, pinned by a test):
+      offline row `l2-topic` 5,012 / 8,809 (the mock asks no topic question: only the rule's words show).
+      **Gate 5 (L1 + L2; run `gate5-r1`, threshold 0.43, config `820a555c46c3`): passed**, answerable **28/28**,
+      citations and numbers 100%, over-refusal 0, junk 21/21; `management-fee-unscoped` now answers (it searched the
+      topic and cited the Volumetric Fund agreement); no newly failing case. Case time median 3.63 s, p95 **6.48 s**
+      (gate 4: 3.65 / 7.45 s). Prompt tokens per turn, every call (Langfuse): **4.4k** (gate 4: 5.3k, gate 3: 8.0k);
+      `chat_turns` median 2.7k, p95 4.2k. Cost **$0.46** per run at list price (gate 3: $0.85), median 3 model calls
+      per turn (was 4), 53 answer calls, cache 14.5%. Like for like with N1 (`chat_turns`): input tokens per turn
+      median 18,391 to **2,695 (-85%)**, $ per answer $0.037 to **$0.0076 (-79%)**. Reports
+      `backend/reports/eval-820a555c46c3-gate5-r1.json`, `backend/reports/cost-gate5.json`.
+      **N7 done 2026-10-17:** CPU per turn 61 to 41 ms (-33%), peak 10.07 to 15.22 turns/s (+51%) on 1 vCPU / 1 GB,
+      0 failed turns; prompt tokens per turn about 24k to 4.4k (every call; -81%, the "before" estimated from N1 x
+      1.31), the golden gate passing 28/28 and 21/21. Limit: local, one gate run per change, curated questions,
+      list prices, mock timing for the CPU rows.
 
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
