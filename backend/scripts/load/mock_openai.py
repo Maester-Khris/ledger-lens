@@ -95,7 +95,12 @@ def reply(body: dict) -> dict:
     if name is None:  # the agent has its evidence: hand over to the answer node
         return {"role": "assistant", "content": "I have the passages I need."}
     question = next((m.get("content") for m in reversed(messages) if m.get("role") == "user"), "")
-    arguments = {"query": str(question)[:200]} if name == "search_contracts" else {}
+    if name == "find_documents":
+        arguments = {"name": str(question)[:200]}
+    elif name == "search_contracts":
+        arguments = {"query": str(question)[:200]}
+    else:
+        arguments = {}
     _stats["tool_calls"] += 1
     return {"role": "assistant", "content": None, "tool_calls": [{
         "id": f"call_{uuid.uuid4().hex[:12]}", "type": "function",

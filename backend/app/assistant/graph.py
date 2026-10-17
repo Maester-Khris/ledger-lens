@@ -29,7 +29,8 @@ RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
 SEARCH_TOOL = "search_contracts"
-LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
+LOOKUP_TOOL = "find_documents"  # forced first: the forced tool takes a document_id the model looks up by name
+LIST_TOOL = "list_documents"
 CALCULATION_PATTERN = re.compile(r"\b(how much would|fee for|compare|leakage|difference|under this contract)\b", re.I)
 NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't guess."
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
@@ -114,14 +115,15 @@ def _hits_only(content: str) -> str:
 
 def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"]) -> list[AnyMessage]:
     """What one model call is sent; the turn's state keeps every message as it was. A document list that a later
-    model reply has already used becomes a placeholder (spec T3), and agent calls see search hits without their
-    section text (spec T2). Every tool message stays in place, so its tool call keeps a result, as OpenAI requires."""
+    model reply has already used becomes a placeholder (spec T3; find_documents is small and never cleared), and
+    agent calls see search hits without their section text (spec T2). Every tool message stays in place, so its
+    tool call keeps a result, as OpenAI requires."""
     names = {c["id"]: c["name"] for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
     last_reply = max((i for i, m in enumerate(messages) if isinstance(m, AIMessage)), default=-1)
     view = []
     for position, message in enumerate(messages):
         name = names.get(message.tool_call_id) if isinstance(message, ToolMessage) else None
-        if name == LOOKUP_TOOL and position < last_reply:
+        if name == LIST_TOOL and position < last_reply:
             message = message.model_copy(update={"content": LIST_CLEARED})
         elif name == SEARCH_TOOL and call == "agent":
             message = message.model_copy(update={"content": _hits_only(message.content)})

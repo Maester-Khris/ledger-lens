@@ -74,6 +74,10 @@ class NoArgs(BaseModel):
     pass
 
 
+class FindArgs(BaseModel):
+    name: str = Field(min_length=1, max_length=200, description="The contract's name as the user wrote it (fund, client or adviser name)")
+
+
 class SearchArgs(BaseModel):
     query: str = Field(min_length=1, max_length=500, description="What to look for in the contracts")
     document_ids: list[uuid.UUID] | None = Field(default=None, description="Limit to these documents")
@@ -85,6 +89,17 @@ def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
         # The key stays: some contracts are named only there, not in their title (gate 1, batch-a-r1).
         {"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in rows
     ]))
+
+
+def _find_documents(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
+    assert isinstance(args, FindArgs)
+    matches = documents_dao.find_documents(ctx.session, ctx.tenant_id, args.name, ctx.document_id)
+    payload: dict[str, object] = {
+        "matches": [{"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in matches]
+    }
+    if not matches:
+        payload["hint"] = "No contract matched that name. Try other words from its name, or search the topic with search_contracts."
+    return ToolOutcome(json.dumps(payload))
 
 
 def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
@@ -122,7 +137,8 @@ def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
 
 def default_tools() -> list[ToolSpec]:
     return [
-        ToolSpec("list_documents", "List the indexed contracts with their document_id.", NoArgs, _list_documents),
+        ToolSpec("list_documents", "List every indexed contract with its document_id. Use only to show what contracts exist; to find one by name, use find_documents.", NoArgs, _list_documents),
+        ToolSpec("find_documents", "Find indexed contracts by name (title or document key). Returns up to 5 matches with their document_id.", FindArgs, _find_documents),
         ToolSpec("search_contracts", "Search contract text. Returns clauses with ids you can cite.", SearchArgs, _search_contracts),
     ]
 

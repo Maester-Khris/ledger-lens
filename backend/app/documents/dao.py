@@ -202,6 +202,36 @@ def document_titles(session: Session, tenant_id: uuid.UUID, document_id: uuid.UU
     return [DocumentTitle(*row) for row in session.execute(query.order_by(Document.created_at.desc()))]
 
 
+def find_documents(
+    session: Session,
+    tenant_id: uuid.UUID,
+    name: str,
+    document_id: uuid.UUID | None = None,
+    limit: int = 5,
+) -> list[DocumentTitle]:
+    """Name lookup over title and key, one query.
+
+    ponytail: the tsvector is computed per query, with no index; add a stored tsvector and a GIN index past a few
+    thousand documents.
+    """
+    words = re.findall(r"[A-Za-z0-9]+", name)
+    if not words:
+        return []
+    tsquery = func.to_tsquery("english", bindparam("query", " | ".join(w.lower() for w in words)))
+    vector = func.to_tsvector(
+        "english",
+        Document.title.concat(" ").concat(func.replace(Document.document_key, "-", " ")),
+    )
+    query = (
+        select(Document.id, Document.document_key, Document.title)
+        .where(Document.tenant_id == tenant_id, vector.op("@@")(tsquery))
+    )
+    if document_id is not None:
+        query = query.where(Document.id == document_id)
+    query = query.order_by(func.ts_rank(vector, tsquery).desc(), Document.created_at.desc()).limit(limit)
+    return [DocumentTitle(*row) for row in session.execute(query)]
+
+
 def get_document_row(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> DocumentRow:
     document = session.get(Document, document_id)
     if document is None or document.tenant_id != tenant_id:
