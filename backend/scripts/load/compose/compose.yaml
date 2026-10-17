@@ -39,6 +39,7 @@ services:
     command: uvicorn scripts.load.mock_openai:app --host 0.0.0.0 --port 8090 --log-level warning
     environment:
       MOCK_DELAY_SCALE: "0.05"  # the check counts admissions, not latency
+      HEALTH_PORT: "8090"  # load.Dockerfile HEALTHCHECK
 
   redis:
     image: redis:7-alpine
