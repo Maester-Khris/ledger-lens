@@ -153,7 +153,7 @@ after it, write-up only.
       `backend/reports/relevance-8e192f7302ee.json`); the three earlier runs at 0.43 passed it. The calibration also
       shows the gap between answerable and junk scores is gone on this corpus (junk at 0.445 and 0.456 sit next to
       it; suggested floor 0.436).
-- [ ] `security` — **N8** security review in two buckets: general application security (OWASP Top 10 / ASVS: secrets,
+- [x] `security` — **N8** security review in two buckets: general application security (OWASP Top 10 / ASVS: secrets,
       dependencies, static analysis, ZAP, access control) and AI security (OWASP Agentic + LLM Top 10, with LedgerLens
       checked against Meta's Agents Rule of Two and the lethal trifecta), free tools only, run live against the real
       model. Runs **last**, after the scale work (and X1 if it happens), and must be done by **Sun 2026-10-18 18:00**
@@ -170,8 +170,15 @@ after it, write-up only.
       (`7678336`: 2 pass, 1 partial; **Medium:** the approval card shows deterministic amounts but not the cited
       clauses, contract or as_of date), F2 `source-map-js` 1.2.2 override (`d39759c`, build-time only; npm audit 0),
       F3/F4 load image non-root with a healthcheck (`5f7e6f4`). Also an N8 finding, fixed: the unbounded guest purge
-      (`9203dfa`, see N7). **Left:** F1 Docling 2.132.0, S4a ZAP passive, S7 red team (live), the S8 Medium, the
-      write-up (S13). Outside demo mode the decision route has no authentication (known; restate with S5).
+      (`9203dfa`, see N7). Outside demo mode the decision route has no authentication (known; restate with S5).
+      **Done 2026-10-17:** F1 Docling 2.132.0 with the converter limited to PDF (`5dcc3b4`; fixture parse
+      byte-identical, 504 tests, worker re-audit 0); S4a ZAP 2.17.0 baseline on the demo-mode API: 0 High or Medium,
+      2 Low (`nosniff`, CORP headers), 3 Info; S7 Promptfoo 0.124.1 red team on the real model: 138 cases, 665 turns,
+      **133 pass**, the 5 failures triaged as 2 false positives and 3 by design (synthetic client PII that the
+      document viewer shows the same guest), 0 decisions and 0 postings, no hardening needed so no gate re-run
+      (`a64ec9c`). Report `docs/security/2026-10-18-security-review.md` and README "Security" (`7593c8c`). **Open, with
+      plan in the report:** the S8 Medium (cited clauses on the approval card), H1 and the 2 ZAP Lows; S4b, S5, S9, S10
+      (Tier 2) not run.
       **Read first:** `artifacts/2026-10-16-security-review-decisions.md` (research, decisions, tool installs, run
       order with time estimates, commands). **Open:** the freeze (Sun 12:00) falls before the deadline; start by
       Sat 18:00 or allow security fixes until about Sun 16:00 (owner decides).
@@ -188,6 +195,8 @@ after it, write-up only.
       $0.46 per run) roughly halves every cost figure in it.
 - [ ] `docs` — write-up after the freeze: the before/after one-pager, proof-sheet rows, and a README section
       "Measured numbers" filled from the table below → **Not epic-tracked**
+      **Progress 2026-10-17:** README token and cost rows filled from N7 (`b5cc1e3`); the before/after one-pager
+      (local, `artifacts/2026-10-16-before-after-cpu.md`) now has the token side. Left: proof-sheet rows.
 
 ### Scope — Next (only once every Now item has passed)
 
