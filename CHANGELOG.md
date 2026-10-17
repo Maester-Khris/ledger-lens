@@ -274,6 +274,18 @@ after it, write-up only.
       the sprint on the same full count; quality as gate 1 with both Nomura cases answering (2 of 2 clean runs),
       `management-fee-unscoped` refused in 8 of 10 clean runs since T1 (the gate's 0% rule likely fails on it alone).
 
+      **Gate 3, the frozen configuration (runs `gate3-1-r1`, `gate3-2-r1`, threshold 0.43, config `5afaf72a1f94`):**
+      both runs answerable 27/28 (citations and numbers 100%), junk 21/21; the one miss in both is
+      `management-fee-unscoped`, so each fails the 0% over-refusal rule at 4%, as estimated (refused in 10 of 12 clean
+      runs since T1). Both Nomura cases answered in both runs.
+      **Tokens, all calls (Langfuse):** run 1 400,612 prompt tokens, **8.0k per turn** (estimate before the run: 8.3k),
+      against 7.2k at gate 1 and 13.6k at gate 2; 4 model calls per turn (median), 53 answer calls (3 retries).
+      **Cost at list price:** run 1 **$0.85** with 3.5% cached; run 2 $0.43 with 73% cached, because it repeated run 1's
+      requests minutes later and OpenAI's prompt cache served them: real caching, not representative traffic, so run 1
+      is the number quoted. Like for like with N1 (`chat_turns`, which leaves out the answer call): input tokens per turn
+      median 18,391 to **10.3k (-44%)**, $ per answer median $0.037 to **$0.022 (-41%)**.
+      Reports `backend/reports/eval-5afaf72a1f94-gate3-{1,2}-r1.json`, `backend/reports/cost-gate3-{1,2}.json`.
+
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
       160-conversation ladder now completes on 1 vCPU / 1 GB.
