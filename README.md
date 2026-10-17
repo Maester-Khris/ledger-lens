@@ -133,6 +133,31 @@ Everything above was first built against fakes (268 automated tests). With the r
   chat questions (fee schedule, leakage, the new upload) return cited answers; a citation chip opens the PDF on the
   cited page. UI issues found there are listed in `artifacts/product-backlog.md`.
 
+## Measured numbers
+
+Each number comes with its method, where it ran, its sample and its limit. Full tables: N7 in [`CHANGELOG.md`](./CHANGELOG.md).
+
+**CPU per chat turn** (2026-10-15; API alone on 1 vCPU / 1 GiB, one uvicorn worker; k6 ladder of 5 to 160
+conversations; provider mock calibrated on real turns; stub vector index):
+
+| Metric | Before | After | Change | Method and sample |
+|---|---|---|---|---|
+| CPU per turn at 40 conversations | 61 ms | 41 ms | -33% | API CPU % (median over the hold) x 10 / turns/s; one k6 run per change |
+| Peak throughput at 80 conversations | 10.07 turns/s | 14.75 turns/s | +46% | k6; one run per change |
+| Python CPU per turn | about 90 ms | about 54 ms | -40% | py-spy `--gil`, 2 min at 40 conversations, about 1,000 turns each |
+| Failed turns | 0 | 0 | – | k6, every run |
+| Full ladder to 160 conversations | stopped (p95 over 15 s) | completes | – | k6 threshold |
+
+Limits: local, one machine; a cgroup quota approximates a vCPU; model latency from the mock, not live; one run per
+change; the stub index leaves out the Pinecone client's CPU. Step tables: `backend/reports/load/2026-10-15-*.steps.md`.
+
+**Tokens per chat turn** (gate 3, real OpenAI, traced): _to be filled after gate 3._
+
+| Metric | Before | After | Change | Method and sample |
+|---|---|---|---|---|
+| Prompt tokens per turn | _TBD (gate 3)_ | _TBD (gate 3)_ | _TBD_ | _TBD_ |
+| Golden-set quality | _TBD (gate 3)_ | _TBD (gate 3)_ | _TBD_ | _TBD_ |
+
 ## Local development — ledger DB core
 
 Prerequisites: Docker running locally.
