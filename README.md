@@ -164,6 +164,24 @@ change; the stub index leaves out the Pinecone client's CPU. Step tables: `backe
 Limits: curated questions, not user traffic; list prices (a full gate run costs $0.46); one gate run after the
 changes; the local threshold is 0.43, the demo's 0.46. Per-change rows: N7 in [`CHANGELOG.md`](./CHANGELOG.md).
 
+## Security
+
+Reviewed 2026-10-16 to 2026-10-18 with free tools, the AI part against the real model. Full report, with each
+finding's evidence, fix or plan, tool versions and limits:
+[`docs/security/2026-10-18-security-review.md`](./docs/security/2026-10-18-security-review.md).
+
+- **Design bound:** the agent reads untrusted text and sees client data, but it cannot change the ledger or send
+  data out. It can only propose an entry, which a person approves on a separate route (Meta's Agents Rule of Two).
+- **Application:** secrets in history (gitleaks), dependencies (pip-audit, npm audit, Trivy), static analysis
+  (Semgrep, Bandit) and a passive HTTP scan (ZAP). 3 real High findings, all fixed; 0 real secrets; 0 real static
+  findings; ZAP 0 High or Medium, 2 Low (missing security headers).
+- **AI:** no raw personal data in any model request (test, `backend/tests/test_pii_egress.py`); a live red
+  team (Promptfoo, 138 cases, 665 turns on the real model) passed 133. All agency, access, prompt-extraction and
+  hijacking cases passed, and no case approved or posted anything. The 5 failures were 2 false positives and 3
+  answers quoting a synthetic client's data that the same user can already read in the document viewer.
+- **Open:** the approval card does not yet show the cited clauses (Medium); no authentication outside demo mode;
+  access-control tests, the active scan, a poisoned-document test and a kill switch are not run yet.
+
 ## Local development — ledger DB core
 
 Prerequisites: Docker running locally.
