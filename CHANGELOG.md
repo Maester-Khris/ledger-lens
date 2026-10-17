@@ -159,14 +159,28 @@ after it, write-up only.
       model. Runs **last**, after the scale work (and X1 if it happens), and must be done by **Sun 2026-10-18 18:00**
       whatever else is left. Done when: the Tier 1 sections are run, Critical/High findings fixed or reported with a
       plan, re-run, and the results table filled → **Not epic-tracked**
+      **Progress 2026-10-17:** S1 to S3 (`ecc5db9`: secrets 0 real; dependencies 3 real High, all fixed or not
+      reachable; static analysis 0 real), S6 PII egress test passes (`d0ed40f`: every provider request from indexing
+      through two turns, chat and embeddings; shown to fail when question tokenising is off), S8 Rule of Two checklist
+      (`7678336`: 2 pass, 1 partial; **Medium:** the approval card shows deterministic amounts but not the cited
+      clauses, contract or as_of date), F2 `source-map-js` 1.2.2 override (`d39759c`, build-time only; npm audit 0),
+      F3/F4 load image non-root with a healthcheck (`5f7e6f4`). Also an N8 finding, fixed: the unbounded guest purge
+      (`9203dfa`, see N7). **Left:** F1 Docling 2.132.0, S4a ZAP passive, S7 red team (live), the S8 Medium, the
+      write-up (S13). Outside demo mode the decision route has no authentication (known; restate with S5).
       **Read first:** `artifacts/2026-10-16-security-review-decisions.md` (research, decisions, tool installs, run
       order with time estimates, commands). **Open:** the freeze (Sun 12:00) falls before the deadline; start by
       Sat 18:00 or allow security fixes until about Sun 16:00 (owner decides).
-- [ ] `docs` — **N6** one-page design for bot and agent defense: a challenge before an anonymous session, a per-guest
+- [x] `docs` — **N6** one-page design for bot and agent defense: a challenge before an anonymous session, a per-guest
       token / $ budget sized from N1, the per-IP limits already built, identified agents through an API with their own
       quotas. Design only. Written after the freeze → **Not epic-tracked**
       Context: `artifacts/2026-10-16-security-review-decisions.md` (LLM10 unbounded consumption, the limiter's
       fail-open choice, `X-Guest-Id` as a bearer token).
+      **Done 2026-10-17:** `docs/superpowers/specs/2026-10-17-bot-and-agent-defense-design.md` (design only). Proposes
+      a $0.50/day per-guest budget counted on measured tokens (a real visitor costs about $0.16 at gate 3's $0.026 per
+      answer; an abusive guest drops from about $37/day to $0.50), names the 30k TPM limit as both today's spend
+      ceiling (about $140/day) and the denial-of-service point, and finds that `POST /guests` has no rate limit, so
+      the per-IP limit is the real bound today. 5 open decisions for the owner. Sized on gate 3; gate 5 (4.4k tokens,
+      $0.46 per run) roughly halves every cost figure in it.
 - [ ] `docs` — write-up after the freeze: the before/after one-pager, proof-sheet rows, and a README section
       "Measured numbers" filled from the table below → **Not epic-tracked**
 
