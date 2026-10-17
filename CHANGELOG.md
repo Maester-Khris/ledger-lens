@@ -306,7 +306,15 @@ after it, write-up only.
       4,936 / 10,011): the mock only looks up on the 2 calculation turns, so it shows the cost (about +146 tokens per
       call for the new tool and prompt line) and not the saving on the real model's name turns.
       CPU (`2026-10-16-ladder-l1.steps.md`): about 40.6 ms per turn at 40 (before 41.2 ms, -1%), peak 15.13 turns/s
-      (before 15.22), 0 failed: inside the 5% band. Gate 4 pending.
+      (before 15.22), 0 failed: inside the 5% band.
+      **Gate 4 (L1 alone; run `gate4-r1`, threshold 0.43, config `de32f3c20127`):** same quality as gate 3 (answerable
+      27/28, citations and numbers 100%, junk 21/21; the one miss again `management-fee-unscoped`, so the 0% rule fails
+      at 4%); no newly failing case. Case time median **3.65 s** (gate 3: 4.75 s, -23%), p95 7.45 s (+1%). Prompt
+      tokens per turn, every call (Langfuse): **5.3k** (gate 3: 8.0k, **-34%**; predicted about 4k: the new tool's
+      definition rides on every one of 177 calls, about +26k); `chat_turns` median 3.3k (gate 3: 10.3k). Cost
+      **$0.57** at list price (gate 3: $0.85, -33%), 4 calls per turn, 53 answer calls, cache 7.4%. Like for like with
+      N1 (`chat_turns`, no answer call): $ per answer $0.037 to **$0.0074**. Reports
+      `backend/reports/eval-de32f3c20127-gate4-r1.json`, `backend/reports/cost-gate4.json`.
 
       **Section 1 (CPU) done 2026-10-15:** CPU per turn at 40 conversations 61 to 41 ms (**-33%**), peak 10.07 to
       14.75 turns/s (**+46%**), Python CPU per turn 90 to 54 ms (**-40%**, py-spy), 0 failed turns in every run; the full
