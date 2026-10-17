@@ -310,3 +310,9 @@ def test_a_retry_with_no_valid_citation_gets_every_passage(db_session, tenant_id
                                        Answer(text="", citations=[], refused=True)])
     _run(model, _ctx(db_session, tenant_id, *indexed), "What is the second tier rate?")
     assert element_id in model.prompts[-1] and "tool:" not in model.prompts[-1]
+
+
+def test_the_forced_lookup_finds_the_contract_by_name():
+    from app.assistant.graph import LIST_TOOL, LOOKUP_TOOL
+    assert LOOKUP_TOOL == "find_documents" and LIST_TOOL == "list_documents"
+    assert {"find_documents", "list_documents", "search_contracts"} <= {spec.name for spec in default_tools()}

@@ -81,3 +81,11 @@ def test_real_graph_reaches_a_verified_cited_answer(session_factory, db_session,
     final = asyncio.run(ask())[-1]
     assert final.type == "answer", final
     assert final.data["citations"]
+
+
+def test_a_forced_name_lookup_gets_the_question_as_the_name():
+    choice = {"type": "function", "function": {"name": "find_documents"}}
+    reply = mock_openai.reply({"messages": [{"role": "user", "content": "How much would the Tremblay household pay?"}],
+                               "tool_choice": choice})
+    call = reply["tool_calls"][0]["function"]
+    assert call["name"] == "find_documents" and json.loads(call["arguments"]) == {"name": "How much would the Tremblay household pay?"}
