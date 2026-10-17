@@ -23,9 +23,14 @@ def trace_ids(session: Session, tenant_id: uuid.UUID, turn_ids: Iterable[uuid.UU
     return {turn_id: trace_id for turn_id, trace_id in rows}
 
 
-def recent_turns(session: Session, tenant_id: uuid.UUID, session_id: str, limit: int) -> list[ChatTurn]:
+def recent_turns(
+    session: Session, tenant_id: uuid.UUID, session_id: str, limit: int, guest_id: uuid.UUID | None = None,
+) -> list[ChatTurn]:
+    """The session's latest turns asked by this guest (None: turns with no guest, as outside demo mode).
+    session_id is client-chosen, so another guest's turns under the same id are never history (N8 H1)."""
     rows = session.scalars(
-        select(ChatTurn).where(ChatTurn.tenant_id == tenant_id, ChatTurn.session_id == session_id)
+        select(ChatTurn).where(ChatTurn.tenant_id == tenant_id, ChatTurn.session_id == session_id,
+                               ChatTurn.guest_id.is_not_distinct_from(guest_id))
         .order_by(ChatTurn.created_at.desc()).limit(limit)
     )
     return list(reversed(list(rows)))

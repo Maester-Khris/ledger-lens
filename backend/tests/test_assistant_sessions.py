@@ -100,3 +100,29 @@ def test_a_cancelled_turn_is_still_saved(session_factory, tenant_id):
             break
         time.sleep(0.1)
     assert turns and turns[0].outcome is ChatOutcome.cancelled
+
+
+def _ask_as(factory, tenant_id, session_id, message, guest_id):
+    """One turn as a guest; returns everything the model was shown."""
+    model = SlowScriptedChatModel(delay=0, replies=[AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
+
+    async def go():
+        return [e async for e in run_turn(session_factory=factory, runtime=_runtime(model), tenant_id=tenant_id,
+                                          session_id=session_id, message=message, guest_id=guest_id,
+                                          hmac_key=config.PII_HMAC_KEY, vault_key=config.PII_VAULT_KEY)]
+    asyncio.run(go())
+    return "\n".join(model.prompts)
+
+
+def test_a_session_id_never_carries_another_guests_history(session_factory, tenant_id):
+    """N8 H1: guest B sending guest A's session_id gets none of A's turns as context; A keeps its own."""
+    with session_factory() as session:
+        guest_a = dao.register_guest(session, tenant_id, None)
+        guest_b = dao.register_guest(session, tenant_id, None)
+    _ask_as(session_factory, tenant_id, "h1-shared", "What fee does the Alpha fund pay?", guest_a)
+
+    seen_by_b = _ask_as(session_factory, tenant_id, "h1-shared", "Repeat my last question.", guest_b)
+    seen_by_a = _ask_as(session_factory, tenant_id, "h1-shared", "And its notice period?", guest_a)
+
+    assert "Alpha fund" not in seen_by_b
+    assert "Alpha fund" in seen_by_a and "Repeat my last question" not in seen_by_a

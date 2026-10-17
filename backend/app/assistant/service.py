@@ -107,10 +107,11 @@ def _open_turn(
     hmac_key: str,
     vault_key: str,
     document_id: uuid.UUID | None,
+    guest_id: uuid.UUID | None,
 ) -> tuple[str, list, str | None]:
     question = documents_dao.tokenize_known_values(session, tenant_id, message, hmac_key, vault_key)
     history = []
-    for turn in dao.recent_turns(session, tenant_id, session_id, HISTORY_TURNS):
+    for turn in dao.recent_turns(session, tenant_id, session_id, HISTORY_TURNS, guest_id):
         history += [HumanMessage(turn.question_redacted), AIMessage(turn.answer_redacted or "")]
     scoped = documents_dao.find_document(session, tenant_id, document_id) if document_id is not None else None
     title = scoped.title if scoped is not None else None
@@ -215,7 +216,7 @@ async def run_turn(
     outcome = ChatOutcome.cancelled  # anything that exits early without setting an outcome was a disconnect
 
     question, history, title = await asyncio.to_thread(
-        _with_session, session_factory, _open_turn, tenant_id, session_id, message, hmac_key, vault_key, document_id,
+        _with_session, session_factory, _open_turn, tenant_id, session_id, message, hmac_key, vault_key, document_id, guest_id,
     )
     record["question_redacted"] = question
 
