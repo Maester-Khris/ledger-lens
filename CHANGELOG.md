@@ -408,7 +408,11 @@ after it, write-up only.
       - PII has three layers: a local OCR re-read with no egress; vision only on class A crops after personal data is
         blacked out; client and other personal fields never sent to vision. A test OCRs every outgoing image.
       - Cost and confidence are reported per stage, on two axes (documents; daily active users).
-      - Open: the A/B/C field classes and a target error rate per class.
+      - Target error rates on auto-accepted fields, measured on a random labelled sample: class A ≤ 5%, tightening
+        to ≤ 1% at about 300 labels; class B ≤ 5%; class C ≤ 10%. Every posting still needs a person's approval, so
+        0 errors reach billing. A class passes when its 95% upper bound is under its target, so the minimum is
+        about 150 labels (60 A, 60 B, 30 C). Evidence: `artifacts/research/2026-10-17-extraction-error-rate-targets.md`.
+      - Open: the A/B/C field classes.
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
