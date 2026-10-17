@@ -416,6 +416,11 @@ after it, write-up only.
         - A: fee tiers, method, basis, currency, billing frequency, payment timing.
         - B: fund or account, adviser, client, effective date.
         - C: agreement date, notice days, governing law, signatories.
+      - Inferred class A fields (fee method, payment timing, billing frequency, currency) have no text for the local
+        OCR re-read, so they are checked by the vision verifier alone: one independent reading, not two. Fee tables,
+        fee basis, amounts, dates and short text keep both.
+      - Labelling uses export and import scripts (blind CSV plus crops); there is no new screen.
+      - Design: `docs/superpowers/specs/2026-10-17-x1-extraction-verification-design.md`.
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
