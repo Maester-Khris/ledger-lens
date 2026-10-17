@@ -175,13 +175,15 @@ finding's evidence, fix or plan, tool versions and limits:
   data out. It can only propose an entry, which a person approves on a separate route (Meta's Agents Rule of Two).
 - **Application:** secrets in history (gitleaks), dependencies (pip-audit, npm audit, Trivy), static analysis
   (Semgrep, Bandit) and a passive HTTP scan (ZAP). 3 real High findings, all fixed; 0 real secrets; 0 real static
-  findings; ZAP 0 High or Medium, 2 Low (missing security headers).
+  findings; ZAP 0 High or Medium, and its 2 Low (missing security headers) fixed and re-scanned.
 - **AI:** no raw personal data in any model request (test, `backend/tests/test_pii_egress.py`); a live red
   team (Promptfoo, 138 cases, 665 turns on the real model) passed 133. All agency, access, prompt-extraction and
   hijacking cases passed, and no case approved or posted anything. The 5 failures were 2 false positives and 3
   answers quoting a synthetic client's data that the same user can already read in the document viewer.
-- **Open:** the approval card does not yet show the cited clauses (Medium); no authentication outside demo mode;
-  access-control tests, the active scan, a poisoned-document test and a kill switch are not run yet.
+- **Fixed after the review:** the approval card shows the contract and the cited clauses behind the amount
+  (Medium); a chat session never carries another guest's history.
+- **Open:** no authentication outside demo mode; access-control tests, the active scan, a poisoned-document test and
+  a kill switch are not run yet.
 
 ## Local development — ledger DB core
 

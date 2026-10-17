@@ -15,13 +15,13 @@ section that was not run says so.
 |---|---|---|---|
 | S1 | Secrets in the whole git history | 0 real (17 false positives) | none |
 | S2 | Known vulnerabilities in dependencies and images | 3 real High, all fixed | none at High; Medium and Low closed by the same upgrades |
-| S3 | Static analysis | 0 real | 1 hardening item (H1) |
-| S4a | HTTP surface, passive scan (ZAP) | 0 High, 0 Medium, 2 Low, 3 Info | 2 Low: security headers |
+| S3 | Static analysis | 0 real; hardening item H1 fixed | none |
+| S4a | HTTP surface, passive scan (ZAP) | 0 High, 0 Medium, 2 Low (fixed, re-scanned), 3 Info | 1 Info: a session id in a query string |
 | S4b | HTTP surface, active scan | **not run** | Tier 2 |
 | S5 | Access control (BOLA) tests | **not run as a suite**; partly covered by S3, S7, S8 | Tier 2; no authentication outside demo mode |
 | S6 | No raw PII in any model request | pass (0 leaks) | detector misses are not covered |
 | S7 | Live red team (Promptfoo), real model | 133 / 138 pass; the 5 failures: 2 false positives, 3 by design | access to client data rests on authentication (S5) |
-| S8 | Rule of Two, human approval | 2 pass, 1 partial (Medium) | approval card lacks the cited clauses |
+| S8 | Rule of Two, human approval | 2 pass, 1 partial (Medium, fixed) | none |
 | S9 | Poisoned document | **not run** | Tier 2 |
 | S10 | Kill switch | **not run** | Tier 2 |
 | also | Unbounded guest purge (found by load testing) | fixed (`9203dfa`) | none |
@@ -93,8 +93,10 @@ Medium and Low are recorded with a plan.
   - Bandit: 0 at Medium or above (4 Low, below the threshold).
   - `/security-review`: 0 findings at confidence 8 or above; all 5 tenant-scoping checks pass.
 - **H1 (hardening, Low, ours):** a chat `session_id` is a client-chosen string, not bound to its guest. A guest who
-  learned another guest's `session_id` could continue that session. Plan: reject a `session_id` owned by another
-  guest; belongs with S5. ZAP's informational note on `session_id` in a query string (S4a) is the same item.
+  learned another guest's `session_id` could continue that session, and that guest's questions became the model's
+  conversation history. **Fixed** (`8b09e75`): a turn's history is read only from the asking guest's own turns, so
+  another guest's id gives neither context nor any sign that the session exists; pinned by a test. ZAP's
+  informational note on `session_id` in a query string (S4a) stays open (Info).
 - **Limits:** pattern rules; business-logic flaws are out of reach, which is why S5 and S8 exist.
 - **Evidence:** `backend/reports/security/{semgrep,bandit}.json`, `backend/reports/security/security-review.md`.
 
@@ -107,16 +109,19 @@ Medium and Low are recorded with a plan.
 
 | Alert | ZAP risk | Where | Plan |
 |---|---|---|---|
-| `X-Content-Type-Options` missing (10021) | Low | every JSON response | A small middleware setting `nosniff` |
-| `Cross-Origin-Resource-Policy` missing (90004) | Low | every response | Same middleware: `same-origin` (plus HSTS behind TLS) |
-| Sensitive information in URL (10024) | Informational | `GET /tool-invocations?session_id=` | Goes with H1: a session id should not travel in a URL that proxies log |
+| `X-Content-Type-Options` missing (10021) | Low | every JSON response | **Fixed** (`6c4602e`): `nosniff` on every response |
+| `Cross-Origin-Resource-Policy` missing (90004) | Low | every response | **Fixed** (`6c4602e`): `same-origin` (it covers no-cors loads only; the frontend's CORS fetches and page links are unaffected) |
+| Sensitive information in URL (10024) | Informational | `GET /tool-invocations?session_id=` | Open: a session id should not travel in a URL that proxies log; after H1 it no longer opens another guest's history |
 | Cache-control notes (10049) | Informational | error and JSON responses | none |
 
+- **Re-scan after the fix (2026-10-17):** 0 FAIL, 2 WARN (both Informational: 10024, 10049), 65 PASS
+  (`zap-baseline-after-headers.json`). Both headers are set by a plain ASGI middleware, so the chat's SSE stream is
+  not wrapped or buffered.
 - **Manual check:** a cross-origin preflight to `POST /chat` from another origin is refused (405, no
   `Access-Control-Allow-Origin`): CORS is off unless origins are configured.
 - **Limits:** passive only (no attack traffic); the spider sees the OpenAPI document, not request bodies; local run,
   so headers the demo host adds in front of the API are not seen.
-- **Evidence:** `backend/reports/security/zap-baseline.json`.
+- **Evidence:** `backend/reports/security/zap-baseline.json`, `zap-baseline-after-headers.json`.
 
 ### S4b. HTTP surface, active scan: not run
 
@@ -237,9 +242,12 @@ fee-correction **proposals**, and **0 decisions and 0 postings**. Every one of t
 | The agent cannot approve its own proposal | **Pass** | None of the agent's tools decides; the graph refuses unknown tool names; a decision needs `POST /tool-invocations/{id}/decision` from a client, and is recorded once |
 | No outbound channel in tools or rendering | **Pass** | No tool fetches a URL, sends mail, calls a webhook or runs code; `backend/app` imports no HTTP or subprocess client; answers render through a link-free, image-free markdown subset as escaped React text, so the markdown-image exfiltration channel does not exist |
 
-- **Medium (ours, ASI09 human trust):** an approver can approve without seeing the clause that justifies the amount.
-  Plan: show the contract title, `as_of`, and each cited quote with its page on the card, and open the contract at the
-  first cited page.
+- **Medium (ours, ASI09 human trust):** an approver could approve without seeing the clause that justifies the
+  amount. **Fixed** (`e3e3f86`): `GET /tool-invocations` now returns, for each proposal, the contract title and
+  version and each cited clause (quote, page, section; resolved in one query and revealed for display like every
+  other quote). The card shows them under "Why this amount" with the `as_of` date, each page links to the PDF, and
+  "Show contract" on the Review screen opens at the first cited page. Pinned by a route test and a viewer-target
+  test.
 - **Evidence:** `backend/reports/security/s8-rule-of-two.md`.
 
 ### S9. Poisoned document (ASI06): not run
@@ -277,10 +285,8 @@ pinned by a test. After the fix: about 41 ms per turn and 15.22 turns/s at peak,
 |---|---|---|
 | Who may see a client's personal data is decided by document access, which has no authentication (S7, S5) | Context, known gap | Authentication and per-user document access before real client data |
 | The model calls revealed values "tokens" (S7) | Low | A prompt line, if it confuses users |
-| Approval card lacks the cited clauses, contract and `as_of` (S8) | Medium | Render them on the card |
 | No authentication outside demo mode (S5) | Context, known gap | Authenticated principal before any non-demo deployment |
-| `session_id` not bound to its guest (H1, ZAP 10024) | Low | Reject a session owned by another guest; move it out of query strings |
-| `nosniff` and CORP headers missing (S4a) | Low | One middleware |
+| `session_id` in a query string (ZAP 10024) | Info | Move it to a header or the body; H1 already stops it opening another guest's history |
 | S4b, S5, S9, S10 not run | – | Tier 2, next |
 | No CI gate for the scans | – | S1 to S4a on every pull request (S12) |
 

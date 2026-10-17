@@ -176,9 +176,10 @@ after it, write-up only.
       2 Low (`nosniff`, CORP headers), 3 Info; S7 Promptfoo 0.124.1 red team on the real model: 138 cases, 665 turns,
       **133 pass**, the 5 failures triaged as 2 false positives and 3 by design (synthetic client PII that the
       document viewer shows the same guest), 0 decisions and 0 postings, no hardening needed so no gate re-run
-      (`a64ec9c`). Report `docs/security/2026-10-18-security-review.md` and README "Security" (`7593c8c`). **Open, with
-      plan in the report:** the S8 Medium (cited clauses on the approval card), H1 and the 2 ZAP Lows; S4b, S5, S9, S10
-      (Tier 2) not run.
+      (`a64ec9c`). Report `docs/security/2026-10-18-security-review.md` and README "Security" (`7593c8c`). Then fixed: the 2 ZAP
+      Lows (`6c4602e`, re-scan 0 Low), H1 (`8b09e75`, history only from the asking guest's own turns), the S8 Medium
+      (`e3e3f86`, contract, as_of and cited clauses with pages on the approval card); 508 tests. **Open:** ZAP Info
+      10024 (session id in a query string); S4b, S5, S9, S10 (Tier 2) not run.
       **Read first:** `artifacts/2026-10-16-security-review-decisions.md` (research, decisions, tool installs, run
       order with time estimates, commands). **Open:** the freeze (Sun 12:00) falls before the deadline; start by
       Sat 18:00 or allow security fixes until about Sun 16:00 (owner decides).
