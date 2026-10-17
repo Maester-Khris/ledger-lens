@@ -47,7 +47,7 @@ after it, write-up only.
       runner `backend/scripts/gate_runs.sh <runs>`. Limit: the local `.env` sets the threshold to 0.43 (an older
       calibration); the demo and the code default use 0.46. A stricter threshold can only refuse more, so junk holds;
       answerable cases at 0.46 are not measured yet. Golden questions name the original 4 documents.
-- [ ] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
+- [x] `ops` — **N1** cost per answer from Langfuse (already wired; the price entry for `gpt-4.1-2025-04-14` is
       confirmed): golden set replayed 3 times on the expanded corpus, local Langfuse project. Done when: median and p95
       $ per answer and per session, steps per answer and the most expensive step are recorded, cross-checked against
       the token counts in `chat_turns` → **Epic 2.3**
@@ -64,6 +64,19 @@ after it, write-up only.
       Not resolved yet; likely causes are OpenAI's automatic prompt caching (repeated prefixes such as the system
       prompt and the document list are billed at a discount, and the stored token counts include cached tokens) and
       the balance updating with a delay. The traced re-run records cached tokens per call and should settle it.
+      **Done 2026-10-17, from Langfuse traces** (every model call counted, list price; `scripts/cost_report.py`):
+      | Run (config) | $ per turn median / p95 | $ per session median / p95 | Calls per turn median / p95 | Agent calls / answer calls ($) | Cache |
+      |---|---|---|---|---|---|
+      | Gate 3 run 1 (frozen, before the lookup) | $0.0183 / $0.0296 | $0.0240 / $0.0297 | 4 / 5 | 118 ($0.667) / 53 ($0.183) | 3.5% |
+      | Gate 5 (final: L1 + L2) | **$0.0093 / $0.0172** | **$0.0093 / $0.0210** | **3 / 5** | 117 ($0.290) / 53 ($0.174) | 14.5% |
+      **Most expensive step:** the agent calls (tool choice), 62% of the final run's cost; they were 78% before the
+      lookup, because the 102-title list rode on them. **Cross-check:** `chat_turns` leaves out the answer call, so it
+      reads about 1.31x low against Langfuse (measured at gate 1: 275,889 against 361,327 prompt tokens); the
+      like-for-like rows are in N7. **The billed-half gap** above is most likely the prompt cache: list price
+      ignores the cached-input discount, and a run that repeats another's requests minutes later measured 73% cached
+      (gate 3 run 2, against 3.5% cold); the three N0.1 runs were exactly such back-to-back replays. Not reconciled
+      against the bill to the dollar. Limit: one traced run per configuration, curated golden questions (not user
+      traffic), list prices, one model; reports `backend/reports/cost-gate3-1.json`, `cost-gate5.json`.
 - [x] `ops` — **N2** the replayed LLM responses saved as fixtures; a provider mock built from them that reproduces
       their response times (OpenAI chat completions with tool calls and structured output, embeddings). Done when: mock
       mean and p95 turn time are within 10% of the real replay (MediCoord Sprint 22 method) → **Not epic-tracked**
