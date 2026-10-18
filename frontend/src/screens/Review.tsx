@@ -4,6 +4,7 @@ import {
   type ReviewDecision,
   type ReviewItemDto,
   type ToolInvocationDto,
+  cropUrl,
   listDocuments,
   listReviews,
   listToolInvocations,
@@ -16,10 +17,15 @@ import { paginate } from '../lib/paginate';
 import {
   type ViewerTarget,
   approvalTarget,
+  bandRows,
+  canTakeVerifier,
+  diffParts,
   fieldTarget,
+  flagReason,
   formatValue,
   parseCorrection,
   reviewReasons,
+  verifierCorrection,
 } from '../lib/review';
 import './Review.css';
 
@@ -30,6 +36,250 @@ interface FieldReviewCardProps {
   selected: boolean;
   onSelect: () => void;
   onDone: () => void;
+}
+
+function verifierColumnLabel(item: ReviewItemDto): string {
+  const v = item.verification;
+  if (!v) return 'Verifier';
+  if (v.layer === 'vision') {
+    return v.verifier ? `Vision check (${v.verifier})` : 'Vision check';
+  }
+  if (v.layer === 'ocr_local') {
+    return 'Local OCR check';
+  }
+  return v.verifier ? `${v.layer} (${v.verifier})` : v.layer;
+}
+
+export function DiffCard({ item, selected, onSelect, onDone }: FieldReviewCardProps) {
+  const [correcting, setCorrecting] = useState(false);
+  const [draft, setDraft] = useState(formatValue(item.value));
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canTake = canTakeVerifier(item);
+  const reasonText = flagReason(item);
+
+  const send = async (decision: ReviewDecision, correctedOverride?: unknown) => {
+    const corrected = decision === 'corrected'
+      ? (correctedOverride !== undefined ? correctedOverride : parseCorrection(draft))
+      : null;
+    if (decision === 'corrected' && corrected === undefined) {
+      setError('Enter the corrected value.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submitReview({
+        run_id: item.run_id,
+        field_path: item.field_path,
+        decision,
+        corrected_value: corrected ?? null,
+        reason: reason.trim() || null,
+      });
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'The decision was not recorded');
+      setSubmitting(false);
+    }
+  };
+
+  const isFeeTable = item.field_path === 'fee_tiers';
+  const rows = isFeeTable ? bandRows(item) : [];
+  const verifierLabel = verifierColumnLabel(item);
+
+  const extractedStr = formatValue(item.value);
+  const readVal = item.verification?.read_value;
+  const readStr = readVal !== null && readVal !== undefined ? formatValue(readVal) : null;
+
+  return (
+    <article className={`field-card diff-card${selected ? ' field-card--selected' : ''}`}>
+      <div className="field-card__head">
+        <span className="field-card__path mono">{item.field_path}</span>
+        {item.field_class && <span className="diff-card__chip">Class {item.field_class}</span>}
+        <span className="field-card__doc">
+          {item.document_title} · v{item.version}
+          {item.page !== null && ` · p.${item.page}`}
+        </span>
+        <button type="button" className="field-card__show" aria-pressed={selected} onClick={onSelect}>
+          {selected ? 'Showing' : `Show ${item.page !== null ? `page ${item.page}` : 'document'}`}
+        </button>
+      </div>
+
+      {reasonText && <p className="diff-card__reason">{reasonText}</p>}
+
+      <div className="diff-card__comparison">
+        <div className="diff-card__column">
+          <span className="diff-card__column-label">Extracted</span>
+          <div className="diff-card__value mono">
+            {isFeeTable ? (
+              <table className="diff-card__table">
+                <thead>
+                  <tr>
+                    <th>Band</th>
+                    <th>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.index} className={row.changed ? 'diff-card__row--changed' : undefined}>
+                      <td>{row.extracted ? row.extracted.band_text : '—'}</td>
+                      <td>{row.extracted ? row.extracted.rate_text : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : readStr !== null ? (
+              <div className="diff-card__text">
+                {diffParts(extractedStr, readStr).map((part, idx) =>
+                  part.changed ? <mark key={idx}>{part.text}</mark> : <span key={idx}>{part.text}</span>
+                )}
+              </div>
+            ) : (
+              <div className="diff-card__text">{extractedStr}</div>
+            )}
+          </div>
+        </div>
+
+        <div className="diff-card__column">
+          <span className="diff-card__column-label">{verifierLabel}</span>
+          <div className="diff-card__value mono">
+            {isFeeTable ? (
+              <table className="diff-card__table">
+                <thead>
+                  <tr>
+                    <th>Band</th>
+                    <th>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.index} className={row.changed ? 'diff-card__row--changed' : undefined}>
+                      <td>{row.read ? row.read.band_text : '—'}</td>
+                      <td>{row.read ? row.read.rate_text : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : readStr !== null ? (
+              <div className="diff-card__text">
+                {diffParts(readStr, extractedStr).map((part, idx) =>
+                  part.changed ? <mark key={idx}>{part.text}</mark> : <span key={idx}>{part.text}</span>
+                )}
+              </div>
+            ) : (
+              <div className="diff-card__text diff-card__text--empty">
+                {item.verification?.outcome === 'unreadable'
+                  ? 'Could not read'
+                  : item.verification?.outcome === 'error'
+                    ? 'Verification error'
+                    : '—'}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {item.verification && (
+        <div className="diff-card__evidence">
+          <div className="diff-card__evidence-head">
+            <span className="diff-card__evidence-label">Cited evidence</span>
+            <button type="button" className="diff-card__open-contract" onClick={onSelect}>
+              Open contract
+            </button>
+          </div>
+          <img
+            src={cropUrl(item.verification.crop_url)}
+            alt={`Cited evidence for ${item.field_path}`}
+            loading="lazy"
+            className="diff-card__crop"
+          />
+        </div>
+      )}
+
+      {correcting && (
+        <div className="field-card__correct">
+          <label>
+            Corrected value
+            <input className="mono" value={draft} onChange={(event) => setDraft(event.target.value)} />
+          </label>
+          <label>
+            Reason (optional)
+            <input value={reason} onChange={(event) => setReason(event.target.value)} />
+          </label>
+        </div>
+      )}
+
+      <div className="field-card__actions">
+        {correcting ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={submitting}
+              onClick={() => void send('corrected')}
+            >
+              Save correction
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={submitting}
+              onClick={() => setCorrecting(false)}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={submitting}
+              onClick={() => void send('confirmed')}
+            >
+              Keep extracted
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={submitting || !canTake}
+              onClick={() => void send('corrected', verifierCorrection(item))}
+            >
+              Take verifier's
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={submitting}
+              onClick={() => setCorrecting(true)}
+            >
+              Type the value
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={submitting}
+              onClick={() => void send('rejected')}
+            >
+              Reject
+            </button>
+            {!canTake && (
+              <span className="diff-card__note">
+                The tables have a different number of bands: reject or type the value.
+              </span>
+            )}
+          </>
+        )}
+        {error && (
+          <span className="field-card__error" role="alert">
+            {error}
+          </span>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function FieldReviewCard({ item, selected, onSelect, onDone }: FieldReviewCardProps) {
@@ -185,7 +435,8 @@ export function Review() {
           <section className="review__section">
             <h2 className="review__section-title">Extraction anomaly queue ({items?.length ?? '…'})</h2>
             <p className="review__hint">
-              Held back because the quote couldn't be grounded, a validator failed, or the page was hard to read.
+              Held back because the quote couldn't be grounded, a validator failed, the page was hard to read, or an
+              independent re-reading disagreed.
             </p>
             {items === null ? (
               <p className="review__empty">Loading…</p>
@@ -196,7 +447,15 @@ export function Review() {
                 <div className="review__list">
                   {fields.items.map((item) => {
                     const target = fieldTarget(item);
-                    return (
+                    return item.verification ? (
+                      <DiffCard
+                        key={target.key}
+                        item={item}
+                        selected={selected?.key === target.key}
+                        onSelect={() => setSelectedKey(target.key)}
+                        onDone={load}
+                      />
+                    ) : (
                       <FieldReviewCard
                         key={target.key}
                         item={item}

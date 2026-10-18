@@ -281,6 +281,15 @@ export interface ApprovalSourceDto {
 
 export type ReviewDecision = 'confirmed' | 'corrected' | 'rejected';
 
+export interface VerificationDto {
+  layer: 'ocr_local' | 'vision' | string;
+  verifier: string;
+  read_value: unknown;      // the second reading; a fee table is a list of { band_text, rate_text }
+  outcome: 'disagree' | 'unreadable' | 'error' | string;
+  detail: string | null;    // e.g. "band 2: rate 85 vs 80 bps", or a provider error
+  crop_url: string;         // relative, e.g. "/reviews/<run>/crops/fee_tiers"; prefix API_BASE to load it
+}
+
 export interface ReviewItemDto {
   run_id: string;
   field_path: string;
@@ -293,6 +302,8 @@ export interface ReviewItemDto {
   document_title: string;
   version: number;
   page: number | null;
+  field_class?: 'A' | 'B' | 'C' | string;
+  verification?: VerificationDto | null;
 }
 
 export interface ReviewSubmission {
@@ -386,6 +397,10 @@ export function checkHealth(): Promise<boolean> {
 export function documentPageUrl(documentId: string, version: number, page: number | null): string {
   const url = `${API_BASE}/documents/${documentId}/versions/${version}/file`;
   return page === null ? url : `${url}#page=${page}`;
+}
+
+export function cropUrl(path: string): string {
+  return `${API_BASE}${path}`;
 }
 
 export type EvalDto = {
