@@ -50,7 +50,8 @@ describe('reviewReasons', () => {
 describe('viewer targets', () => {
   const item: ReviewItemDto = {
     run_id: 'r1', field_path: 'fee_method', value: 'cliff', quote: 'q', grounded: false, validator_errors: [],
-    page_grade: 'FAIR', document_id: 'd1', document_title: 'Tremblay IMA', version: 2, page: 3,
+    page_grade: 'FAIR', document_id: 'd1', document_title: 'Tremblay IMA', version: 2, page: 3, field_class: 'A',
+    verification: null,
   };
 
   it('points a field at its document, version and page', () => {

@@ -302,8 +302,8 @@ export interface ReviewItemDto {
   document_title: string;
   version: number;
   page: number | null;
-  field_class?: 'A' | 'B' | 'C' | string;
-  verification?: VerificationDto | null;
+  field_class: 'A' | 'B' | 'C' | string;
+  verification: VerificationDto | null;
 }
 
 export interface ReviewSubmission {
