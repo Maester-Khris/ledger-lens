@@ -424,6 +424,21 @@ after it, write-up only.
       - Plan: `docs/superpowers/plans/2026-10-17-x1-extraction-verification.md` (11 tasks; built through
         claude-agy-orch, Gemini on 8 chunks, Claude on the migration, the verify stage wiring, image redaction and the
         backfill).
+      **Status 2026-10-18:** tasks 1–10 built and merged; Task 11 (extraction-model comparison) not run.
+      - Labelled result on ledger_dev (one LLM judge, Claude Sonnet 5.5, owner-adjudicated; Groq second judge stopped at
+        55/150 by its free-tier daily cap, 76% agreement, kappa 0.75 on the 54 both read): class A **0 errors in 59,
+        upper bound 4.95%: passes ≤ 5%**; class B 1 error in 48 (upper bound 9.5%): fails ≤ 5%; class C 21 labels:
+        sample too small. 11 labels dropped because redaction hid the value, 6 dropped as ill-defined or possibly
+        hidden.
+      - Spend: OpenAI $0.048 (verifier), Anthropic + Groq ≈ $0.42 (judges).
+      - Defect, deferred: image redaction blacks out whole OCR lines, and the vault holds false-positive PERSON tokens
+        ("Restated", "Appendix A"), so values sit under black boxes (111 of 145 label crops had a blacked-out line).
+        Safe (no leak) but it blinds the vision verifier and the judges. Fix: black out matched words only and ignore
+        common-word tokens → **Not epic-tracked**
+      - Defect, deferred: `fund_or_account` is one value, but multi-fund agreements cover many funds; the schema should
+        hold a list → **Not epic-tracked**
+      - Deferred: vision prompt v3 for single-rate fees (read as "no fee table"); `fee_basis` containment rule
+        (32 review items where the verifier quotes a longer phrase) → **Not epic-tracked**
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
