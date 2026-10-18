@@ -421,6 +421,9 @@ after it, write-up only.
         fee basis, amounts, dates and short text keep both.
       - Labelling uses export and import scripts (blind CSV plus crops); there is no new screen.
       - Design: `docs/superpowers/specs/2026-10-17-x1-extraction-verification-design.md`.
+      - Plan: `docs/superpowers/plans/2026-10-17-x1-extraction-verification.md` (11 tasks; built through
+        claude-agy-orch, Gemini on 8 chunks, Claude on the migration, the verify stage wiring, image redaction and the
+        backfill).
 - [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
       one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
 - [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
