@@ -110,3 +110,25 @@ def test_baseline_scores_the_current_extractor_from_its_runs(db_session, tenant_
 
 def test_usd_uses_list_prices_per_million_tokens():
     assert usd(3000, 700, (0.40, 1.60)) == pytest.approx(0.00232)
+
+
+def test_outputs_are_revealed_before_scoring(db_session, tenant_id):
+    # The model reads redacted text, so personal names come back as tokens; labels are raw text.
+    from app import config
+    from app.documents import dao as documents_dao
+    from app.documents.redact import make_token
+    from tests.test_contracts_fields import _text
+
+    token = make_token(tenant_id, "PERSON", "Fred Alger", config.PII_HMAC_KEY)
+    documents_dao.save_tokens(db_session, tenant_id, {token: ("PERSON", "Fred Alger")}, config.PII_VAULT_KEY)
+    version, run = _labelled_version(db_session, tenant_id, {"adviser": "Fred Alger Management, LLC"})
+
+    class Tokenised(ScriptedChatModel):
+        def with_structured_output(self, schema, include_raw=False, **kwargs):
+            terms = _terms(adviser=_text(f"{token} Management, LLC", "q"))
+            return RunnableLambda(lambda _m: {"raw": AIMessage(content=""), "parsed": terms, "parsing_error": None})
+
+    [doc] = run_candidate(db_session, chat_model=Tokenised(), version_ids=[version.id], concurrency=1)
+    assert {f["field_path"]: f["value"] for f in doc["fields"]}["adviser"] == "Fred Alger Management, LLC"
+    labels = [l for l in load_labels(db_session) if l[0] == version.id]
+    assert score([doc], labels)["by_class"]["B"]["correct"] == 1

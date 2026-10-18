@@ -51,6 +51,7 @@ from app.contracts.fields import ElementRef  # noqa: E402
 from app.contracts.models import ExtractionRun, FieldLabel  # noqa: E402
 from app.contracts.terms import field_class  # noqa: E402
 from app.documents import dao as documents_dao  # noqa: E402
+from app.documents.models import DocumentVersion  # noqa: E402
 from app.ledger.db import SessionLocal  # noqa: E402
 
 _INDEXED_TIER = re.compile(r"^fee_tiers\[(\d+)\]$")
@@ -128,6 +129,21 @@ def _evaluate_one(
         }
 
 
+def _reveal(session: Session, outputs: list[dict]) -> list[dict]:
+    """The model reads redacted text, so personal values come back as tokens; labels are raw text. Swap tokens back
+    to values (locally) so a correct reading scores as correct."""
+    vault_key = config.require("PII_VAULT_KEY")
+    for out in outputs:
+        strings = [f for f in out["fields"] if isinstance(f["value"], str)]
+        if not strings:
+            continue
+        version = session.get(DocumentVersion, uuid.UUID(out["version_id"]))
+        tenant_id = documents_dao.get_document_for_version(session, version.id).tenant_id
+        for f, value in zip(strings, documents_dao.reveal(session, tenant_id, [f["value"] for f in strings], vault_key)):
+            f["value"] = value
+    return outputs
+
+
 def run_candidate(
     session: Session,
     *,
@@ -151,7 +167,7 @@ def run_candidate(
             executor.submit(_evaluate_one, v_id, elements, detail, chat_model)
             for v_id, elements, detail in items
         ]
-        return [f.result() for f in futures]
+        return _reveal(session, [f.result() for f in futures])
 
 
 def baseline_outputs(session: Session, version_ids: Sequence[uuid.UUID]) -> list[dict]:
@@ -187,7 +203,7 @@ def baseline_outputs(session: Session, version_ids: Sequence[uuid.UUID]) -> list
             "latency_ms": 0,
             "fields": field_dicts,
         })
-    return outputs
+    return _reveal(session, outputs)
 
 
 def score(
