@@ -64,38 +64,52 @@ def test_pipeline_order_is_parse_extract_verify_index():
     assert next_stage(PIPELINE, reached + [_Event(VersionStage.verified, {})]).name == "index"
 
 
-@pytest.mark.slow
-def test_verify_stage_end_to_end_on_fixture(db_session, tenant_id):
+TRUE_VALUES = {
+    "adviser": "Maple Ridge Wealth Advisors Inc.", "effective_date": "January 1, 2026",
+    "fee_basis": "combined household market value", "governing_law": "Province of Ontario",
+    "fee_method": "graduated", "currency": "CAD", "billing_frequency": "quarterly", "payment_timing": "arrears",
+}
+def keys() -> dict[str, str]:
+    """Read at call time: conftest sets the test keys after import."""
+    return {"hmac_key": config.PII_HMAC_KEY, "vault_key": config.PII_VAULT_KEY}
+
+
+def fixture_run(db_session, tenant_id, key: str, values: dict | None = None):
+    """Ingest the fixture with the real parser and detector, then save an extraction run citing the real elements.
+    `values` overrides TRUE_VALUES (a wrong value is how a test makes a check disagree). Returns (version, run)."""
+    values = {**TRUE_VALUES, **(values or {})}
     data = FIXTURE.read_bytes()
     version = documents_dao.register_upload(
-        db_session, tenant_id=tenant_id, document_key="x1-verify", title="Tremblay IMA", source_url=None, data=data,
+        db_session, tenant_id=tenant_id, document_key=key, title="Tremblay IMA", source_url=None, data=data,
         facts=PdfFacts(2, len(data)), uploaded_by="test", store_root=config.DOCUMENT_STORE_DIR,
     ).version
-    keys = {"hmac_key": config.PII_HMAC_KEY, "vault_key": config.PII_VAULT_KEY}
     parse_and_redact(db_session, version.id, parser=parse_pdf, detector=PiiDetector(),
-                     store_root=config.DOCUMENT_STORE_DIR, **keys)
+                     store_root=config.DOCUMENT_STORE_DIR, **keys())
     elements = documents_dao.list_elements(db_session, version.id)
     table = next(e for e in elements if e.kind is ElementKind.table)
     parties = next(e for e in elements if "is effective as of" in e.text_redacted)
     fees = next(e for e in elements if "combined household market value" in e.text_redacted)
     client_token = re.search(r"and (.+?) \(together", parties.text_redacted).group(1)
     assert "Tremblay" not in client_token  # stored tokenised; the stage reveals it locally to compare
+    cites = {"adviser": parties, "effective_date": parties, "client": parties, "governing_law": parties,
+             "fee_basis": fees, "fee_method": fees, "currency": fees, "billing_frequency": fees, "payment_timing": fees}
 
     def field(path, value, element):
         return FieldResult(path, value, [element.id], "q", True, [], "GOOD", FieldRouting.accepted)
 
-    results = [field(f"fee_tiers[{i}]", band, table) for i, band in enumerate(TABLE)] + [
-        field("adviser", "Maple Ridge Wealth Advisors Inc.", parties),
-        field("effective_date", "January 1, 2026", parties),
-        field("client", client_token, parties),
-        field("fee_basis", "combined household market value", fees),
-        field("governing_law", "Province of Ontario", parties),  # class C: no live check
-    ]
+    results = [field(f"fee_tiers[{i}]", band, table) for i, band in enumerate(values.get("fee_tiers", TABLE))]
+    results += [field(path, values.get(path, client_token), cites[path]) for path in cites]
     run = contracts_dao.save_run(db_session, version.id, CONFIG, {}, results)
     documents_dao.append_event(db_session, version.id, VersionStage.extracted, {"run_id": str(run.id)})
     db_session.commit()
+    return version, run
 
-    run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, vision=None, **keys)
+
+@pytest.mark.slow
+def test_verify_stage_end_to_end_on_fixture(db_session, tenant_id):
+    version, run = fixture_run(db_session, tenant_id, "x1-verify")
+
+    run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, vision=None, **keys())
 
     rows = {r.field_path: r for r in db_session.scalars(select(FieldVerification).where(FieldVerification.run_id == run.id))}
     assert set(rows) == {"fee_tiers", "adviser", "effective_date", "client", "fee_basis"}
@@ -111,6 +125,6 @@ def test_verify_stage_end_to_end_on_fixture(db_session, tenant_id):
     served = contracts_dao.served_fields(db_session, tenant_id, version.document_id)
     assert "adviser" in served.fields and "fee_tiers[0]" in served.unserved  # class A still needs the vision reading
 
-    run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, vision=None, **keys)
+    run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, vision=None, **keys())
     again = db_session.scalars(select(FieldVerification).where(FieldVerification.run_id == run.id)).all()
     assert len(again) == len(rows)  # idempotent re-run
