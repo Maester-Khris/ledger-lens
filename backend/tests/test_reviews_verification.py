@@ -82,7 +82,18 @@ def test_table_correction_takes_the_verifiers_bands(client, db_session, tenant_i
     reviews = _band_reviews(db_session, run)
     assert [r.corrected_value["rate_text"] for r in reviews] == ["1.00%", "0.80%", "0.65%"]
     served = dao.served_fields(db_session, tenant_id, version.document_id)
-    assert served.fields["fee_tiers[1]"].value["rate_text"] == "0.80%"
+    # billing's parsers recompute the numbers compare reads; a taken value never carries model arithmetic
+    assert served.fields["fee_tiers[1]"].value == {"band_text": "On the next $1,500,000", "rate_text": "0.80%",
+                                                   "up_to_minor": 250_000_000, "rate_bps": "80"}
+
+
+def test_table_correction_that_does_not_parse_is_refused(client, db_session, tenant_id):
+    _, run = _flagged_run(db_session, tenant_id)
+    broken = [dict(band) for band in READ]
+    broken[2] = {"band_text": "On the next $9", "rate_text": "0.65%"}  # the last band must be open-ended
+    response = _decide(client, run, "fee_tiers", "corrected", corrected_value=broken)
+    assert response.status_code == 422 and response.json()["type"] == "/problems/review-invalid"
+    assert _band_reviews(db_session, run) == []
 
 
 def test_table_correction_band_count_mismatch_writes_nothing(client, db_session, tenant_id):
