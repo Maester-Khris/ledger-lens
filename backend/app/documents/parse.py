@@ -3,7 +3,7 @@ from functools import lru_cache
 from importlib.metadata import version
 from pathlib import Path
 
-from app.documents.types import ElementKind
+from app.documents.types import Box, ElementKind
 
 GRADES = ("POOR", "FAIR", "GOOD", "EXCELLENT")
 MAX_HEADING_CHARS = 80
@@ -29,6 +29,7 @@ class ParsedElement:
     section_path: tuple[str, ...]
     page_start: int
     page_end: int
+    boxes: tuple[Box, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,18 @@ def parse_pdf(path: Path) -> ParsedDocument:
     elements: list[ParsedElement] = []
     for item, _depth in document.iterate_items():
         pages = [prov.page_no for prov in getattr(item, "prov", [])] or [1]
+        boxes = tuple(
+            Box(
+                page_no=prov.page_no,
+                l=prov.bbox.l,
+                t=prov.bbox.t,
+                r=prov.bbox.r,
+                b=prov.bbox.b,
+                coord_origin=getattr(prov.bbox.coord_origin, "name", str(prov.bbox.coord_origin)),
+            )
+            for prov in getattr(item, "prov", [])
+            if getattr(prov, "bbox", None) is not None
+        )
         heading, level = None, 0
         if item.label in heading_labels:
             heading = item.text.strip()
@@ -83,7 +96,7 @@ def parse_pdf(path: Path) -> ParsedDocument:
         else:
             continue  # page headers/footers, pictures: not citable content
         if text:
-            elements.append(ParsedElement(kind, text, tuple(t for _, t in stack), min(pages), max(pages)))
+            elements.append(ParsedElement(kind, text, tuple(t for _, t in stack), min(pages), max(pages), boxes))
 
     # Docling keys pages by 0-based integer index; check once and adjust if already 1-based
     raw_pages = result.confidence.pages
