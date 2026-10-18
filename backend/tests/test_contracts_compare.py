@@ -24,7 +24,7 @@ def _accepted(path, value):
     return FieldResult(path, value, [], "q", True, [], "GOOD", FieldRouting.accepted)
 
 
-def _contract(db_session, tenant_id, household_id, *, tier_routing=FieldRouting.accepted, key="tremblay-ima"):
+def _contract(db_session, tenant_id, household_id, *, tier_routing=FieldRouting.accepted, key="tremblay-ima", verified=True):
     data = FIXTURE.read_bytes()
     version = documents_dao.register_upload(
         db_session, tenant_id=tenant_id, document_key=key, title="Tremblay IMA", source_url=None, data=data,
@@ -35,7 +35,8 @@ def _contract(db_session, tenant_id, household_id, *, tier_routing=FieldRouting.
         value = {"band_text": band, "rate_text": rate, "up_to_minor": up_to, "rate_bps": bps}
         results.append(FieldResult(f"fee_tiers[{i}]", value, [], band, tier_routing is FieldRouting.accepted, [], "GOOD", tier_routing))
     run = contracts_dao.save_run(db_session, version.id, CONFIG, {}, results)
-    verify_all(db_session, run.id)
+    if verified:
+        verify_all(db_session, run.id)
     db_session.commit()
     return version.document_id
 
