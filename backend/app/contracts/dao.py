@@ -13,7 +13,7 @@ from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInva
 from app.contracts.fee_text import FeeBand, FeeTextError, tiers_from_bands
 from app.contracts.fields import FieldResult, GRADE_ORDER
 from app.contracts.agree import Outcome
-from app.contracts.models import ExtractedField, ExtractionRun, FieldReview, FieldVerification, GuestFieldReview
+from app.contracts.models import ExtractedField, ExtractionRun, FieldLabel, FieldReview, FieldVerification, GuestFieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents import dao as documents_dao
 from app.documents.models import DocumentVersion
@@ -577,3 +577,60 @@ def terms_view(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, o
 def purge_guest_reviews(session: Session, guest_ids: Select | Sequence[uuid.UUID]) -> None:
     """Delete these guests' overlay reviews (the 24-hour purge). The caller commits."""
     session.execute(delete(GuestFieldReview).where(GuestFieldReview.guest_id.in_(guest_ids)))
+
+
+@dataclass(frozen=True)
+class LabelRow:
+    run_id: uuid.UUID
+    field_path: str      # verification path: "fee_tiers" for a whole table
+    labeller: str        # "human:<name>" | "judge:<model>" | "adjudicated"
+    label_value: object
+    blind: bool = True
+
+
+def auto_accepted_fields(session: Session) -> list[tuple[uuid.UUID, str, str]]:
+    """Return (run_id, verification_path, field_class) for all auto-accepted fields across latest runs.
+
+    A field counts when its status is exactly 'accepted' without a person's review decision.
+    A fee table counts once, and only if every band is accepted.
+    Ordered by run id then verification path for reproducible sampling.
+    """
+    version_ids = session.scalars(select(ExtractionRun.version_id).distinct()).all()
+    items: list[tuple[uuid.UUID, str, str]] = []
+    for vid in version_ids:
+        run = _latest_run(session, vid)
+        if run is None:
+            continue
+        reviews = _reviews_by_field(session, run.id, overlay_guest=None)
+        outcomes = verification_outcomes(session, run.id)
+        fields = session.scalars(
+            select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path)
+        ).all()
+
+        tier_fields = [f for f in fields if verification_path(f.field_path) == "fee_tiers"]
+        other_fields = [f for f in fields if verification_path(f.field_path) != "fee_tiers"]
+
+        if tier_fields and all(_status(f, reviews.get(f.field_path), outcomes) == "accepted" for f in tier_fields):
+            items.append((run.id, "fee_tiers", field_class("fee_tiers")))
+
+        for f in other_fields:
+            if _status(f, reviews.get(f.field_path), outcomes) == "accepted":
+                v_path = verification_path(f.field_path)
+                items.append((run.id, v_path, field_class(v_path)))
+
+    items.sort(key=lambda t: (t[0], t[1]))
+    return items
+
+
+def save_labels(session: Session, rows: Sequence[LabelRow]) -> None:
+    """Insert ground-truth field labels. Table is append-only; caller commits."""
+    for r in rows:
+        session.add(FieldLabel(
+            run_id=r.run_id,
+            field_path=r.field_path,
+            labeller=r.labeller,
+            label_value=r.label_value,
+            blind=r.blind,
+        ))
+    session.flush()
+
