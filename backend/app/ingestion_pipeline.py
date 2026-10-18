@@ -27,9 +27,12 @@ class StageSpec:
 
 
 PARSE_REDACT = StageSpec("parse_redact", VersionStage.stored, VersionStage.parsed)
-INDEX = StageSpec("index", VersionStage.parsed, VersionStage.indexed)
 EXTRACT = StageSpec("extract", VersionStage.parsed, VersionStage.extracted)
-PIPELINE: tuple[StageSpec, ...] = (PARSE_REDACT, INDEX, EXTRACT)
+VERIFY = StageSpec("verify", VersionStage.extracted, VersionStage.verified)
+# Indexing last (X1, owner decision): a document is searchable only once its values are verified, and review-ready
+# (verified) is reached sooner than if indexing ran first.
+INDEX = StageSpec("index", VersionStage.verified, VersionStage.indexed)
+PIPELINE: tuple[StageSpec, ...] = (PARSE_REDACT, EXTRACT, VERIFY, INDEX)
 
 
 class EventLike(Protocol):

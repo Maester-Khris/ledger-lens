@@ -1,12 +1,14 @@
 import type { DocumentEvent, DocumentStatus } from '../api';
 
-const STAGES = ['stored', 'parsed', 'indexed', 'extracted'] as const;
+// Pipeline order (X1): values are verified before the document is indexed for search.
+const STAGES = ['stored', 'parsed', 'extracted', 'verified', 'indexed'] as const;
 
 const STAGE_LABELS: Record<(typeof STAGES)[number], string> = {
   stored: 'Stored (content-addressed)',
   parsed: 'Parsed + PII tokenised (Docling, Presidio)',
-  indexed: 'Indexed (Postgres full-text + Pinecone)',
   extracted: 'Fee terms extracted',
+  verified: 'Fee terms verified (local OCR re-read)',
+  indexed: 'Indexed (Postgres full-text + Pinecone)',
 };
 
 export interface PipelineStep {

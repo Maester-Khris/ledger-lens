@@ -175,6 +175,14 @@ def _latest_run(session: Session, version_id: uuid.UUID) -> ExtractionRun | None
     ).first()
 
 
+def latest_run(session: Session, version_id: uuid.UUID) -> ExtractionRun | None:
+    return _latest_run(session, version_id)
+
+
+def run_fields(session: Session, run_id: uuid.UUID) -> list[ExtractedField]:
+    return list(session.scalars(select(ExtractedField).where(ExtractedField.run_id == run_id).order_by(ExtractedField.field_path)))
+
+
 def _needs_a_reviewer(field: ExtractedField, outcomes: dict[str, dict[str, Outcome]]) -> bool:
     """The extraction routed it to review, or a check that ran flagged it. A field still waiting for the verify stage
     is not a reviewer's job yet: it is unserved, and it reaches the queue only if a check flags it."""

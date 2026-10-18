@@ -2,6 +2,9 @@
 -r requirements.txt
 docling==2.132.0
 presidio-analyzer==2.2.364
+pillow==11.3.0  # X1 crops and image redaction
+pypdfium2==5.8.0  # X1 page rendering
+rapidocr==3.9.2  # X1 local OCR re-read (pulls onnxruntime)
 pytest
 httpx
 py-spy==0.4.2  # load-test profiling (scripts/load/run_chat.sh PROFILE=1)

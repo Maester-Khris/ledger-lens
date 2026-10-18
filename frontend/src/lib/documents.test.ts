@@ -8,26 +8,28 @@ function event(stage: string, at: string): DocumentEvent {
 
 const STORED = event('stored', '2026-09-24T10:00:00Z');
 const PARSED = event('parsed', '2026-09-24T10:00:12.5Z');
-const INDEXED = event('indexed', '2026-09-24T10:00:15Z');
-const EXTRACTED = event('extracted', '2026-09-24T10:00:30Z');
+const EXTRACTED = event('extracted', '2026-09-24T10:00:27.5Z');
+const VERIFIED = event('verified', '2026-09-24T10:00:30Z');
+const INDEXED = event('indexed', '2026-09-24T10:00:45Z');
 
 describe('pipelineSteps', () => {
   it('marks the next stage active while processing', () => {
-    expect(pipelineSteps([STORED, PARSED], 'processing').map((s) => s.state)).toEqual(['done', 'done', 'active', 'waiting']);
+    expect(pipelineSteps([STORED, PARSED], 'processing').map((s) => s.state)).toEqual(['done', 'done', 'active', 'waiting', 'waiting']);
   });
 
   it('marks the stage that did not complete as failed', () => {
     const steps = pipelineSteps([STORED, event('failed', '2026-09-24T10:00:05Z')], 'failed');
-    expect(steps.map((s) => s.state)).toEqual(['done', 'failed', 'waiting', 'waiting']);
+    expect(steps.map((s) => s.state)).toEqual(['done', 'failed', 'waiting', 'waiting', 'waiting']);
   });
 
   it('shows only completed stages with durations when ready', () => {
-    const steps = pipelineSteps([STORED, PARSED, INDEXED, EXTRACTED], 'ready');
+    const steps = pipelineSteps([STORED, PARSED, EXTRACTED, VERIFIED, INDEXED], 'ready');
     expect(steps.map((s) => [s.stage, s.state, s.duration])).toEqual([
       ['stored', 'done', null],
       ['parsed', 'done', '12.5s'],
-      ['indexed', 'done', '2.5s'],
       ['extracted', 'done', '15.0s'],
+      ['verified', 'done', '2.5s'],
+      ['indexed', 'done', '15.0s'],
     ]);
   });
 
