@@ -115,4 +115,4 @@ def test_queue_holds_flagged_fields_but_not_those_awaiting_verification(db_sessi
     dao.save_verification(db_session, _check(run, "adviser", "ocr_local", "unreadable"))
     db_session.commit()
     paths = [p.field_path for p in dao.pending_reviews(db_session, tenant_id) if p.run_id == run.id]
-    assert paths == ["adviser", "fee_method"]  # currency only awaits the stage
+    assert paths == ["fee_method", "adviser"]  # class A first; currency only awaits the stage
