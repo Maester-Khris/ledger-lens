@@ -21,6 +21,15 @@ from app.documents.parse import ParsedDocument  # noqa: E402
 from app.documents.redact import PiiDetector, apply_redaction  # noqa: E402
 
 
+# Docling 2.130 wrote defined terms as 'Adviser', 2.132 as "Adviser" or with curly quotes; the element and its place on
+# the page are the same, so quote style is not part of the match.
+_QUOTES = str.maketrans({'"': "'", "\u201c": "'", "\u201d": "'", "\u2018": "'", "\u2019": "'"})
+
+
+def _same_element(a: str, b: str) -> bool:
+    return a.translate(_QUOTES) == b.translate(_QUOTES)
+
+
 def backfill_boxes(session: Session, version_id: uuid.UUID, *, parser: Callable[[Path], ParsedDocument],
                    detector: PiiDetector, store_root: Path, hmac_key: str) -> tuple[int, int]:
     """(matched, skipped) for one version. Elements that already have boxes are left alone and not counted."""
@@ -39,7 +48,7 @@ def backfill_boxes(session: Session, version_id: uuid.UUID, *, parser: Callable[
             continue
         # Deterministic HMAC tokens: the same raw text redacts to exactly the stored text.
         redacted = apply_redaction(element.text, detector.detect(element.text), tenant_id, hmac_key).text
-        if stored is None or not element.boxes or redacted != stored.text_redacted:
+        if stored is None or not element.boxes or not _same_element(redacted, stored.text_redacted):
             skipped += 1
             continue
         dao.save_boxes(session, stored.id, [dataclasses.asdict(b) for b in element.boxes])

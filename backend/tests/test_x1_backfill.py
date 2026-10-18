@@ -45,3 +45,11 @@ def test_backfill_is_idempotent_and_ignores_extra_elements(db_session, tenant_id
     parser = _reparse(("3. Fees", "Client Marie Tremblay pays quarterly.", "A new paragraph Docling now finds."))
     assert _backfill(db_session, version.id, parser) == (2, 1)
     assert _backfill(db_session, version.id, parser) == (0, 0)  # fully boxed: not even re-parsed
+
+
+def test_backfill_ignores_the_quote_style_of_the_parser_version(db_session, tenant_id):
+    # Docling 2.130 stored 'Adviser'; 2.132 parses "Adviser". Same element, same place on the page.
+    version = _stored_version(db_session, tenant_id)
+    _run(db_session, version.id, parser=_reparse(("3. Fees", "Client Marie Tremblay (the 'Client') pays."), boxes=()))
+    reparse = _reparse(("3. Fees", "Client Marie Tremblay (the “Client”) pays."))
+    assert _backfill(db_session, version.id, reparse) == (2, 0)
