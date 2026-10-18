@@ -1,11 +1,11 @@
 """X1 crops: render cited pages, crop element bounding boxes, read lines with local OCR."""
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 import pypdfium2 as pdfium
 
 from app.documents.types import Box
@@ -149,3 +149,21 @@ def ocr_lines(image: Image.Image) -> list[OcrLine]:
 
     rows.sort(key=lambda r: (r.box[1], r.box[0]))
     return rows
+
+
+REDACT_PAD_PX = 2
+
+
+def redact_image(image: Image.Image, is_personal: Callable[[str], bool]) -> Image.Image:
+    """Black out every OCR line that holds personal data, before the image may leave the machine (owner decision 3).
+
+    Whole lines, not words: coarser on purpose, so a name split across words or a partly read number is still
+    covered. `is_personal` is the caller's text check (Presidio plus the tenant's known values)."""
+    redacted = image.copy()
+    draw = ImageDraw.Draw(redacted)
+    for line in ocr_lines(image):
+        if is_personal(line.text):
+            left, top, right, bottom = line.box
+            draw.rectangle((left - REDACT_PAD_PX, top - REDACT_PAD_PX, right + REDACT_PAD_PX, bottom + REDACT_PAD_PX),
+                           fill="black")
+    return redacted
