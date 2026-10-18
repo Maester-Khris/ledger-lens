@@ -108,3 +108,22 @@ def test_report_counts_only_documents_ingested_through_x1_for_end_to_end_times(d
     db_session.commit()
     report = build_report(db_session, label="t", since=t0, chat_usd_per_answer=0.004)
     assert report["end_to_end"]["review_ready_seconds"] == {"n": 0, "median": None, "p95": None}
+
+
+def test_labelled_error_is_measured_on_the_machine_value_even_after_a_human_fix(db_session, tenant_id):
+    # The sample measures what the machine auto-accepted. A person correcting the field later must not erase the error.
+    from app.contracts.models import FieldReview
+    from app.contracts.types import ReviewDecision
+
+    version = parsed_version(db_session, tenant_id)
+    t0 = datetime(2032, 1, 1, tzinfo=timezone.utc)
+    run = dao.save_run(db_session, version.id, CONFIG, {}, [
+        FieldResult("governing_law", "Quebec", [], "q", True, [], "GOOD", FieldRouting.accepted)])
+    _event(db_session, version.id, VersionStage.stored, t0, {})
+    db_session.add(FieldLabel(run_id=run.id, field_path="governing_law", labeller="human:niki", label_value="Ontario",
+                              blind=True))
+    db_session.add(FieldReview(run_id=run.id, field_path="governing_law", decision=ReviewDecision.corrected,
+                               corrected_value="Ontario", decided_by="t"))
+    db_session.commit()
+    labelled = build_report(db_session, label="t", since=t0, chat_usd_per_answer=0.004)["stages"]["verify"]["confidence"]["labelled"]["C"]
+    assert (labelled["n"], labelled["errors"]) == (1, 1)

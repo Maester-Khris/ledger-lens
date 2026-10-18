@@ -341,51 +341,14 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
             verifier_vs_human_fields.add((rev.run_id, v_path))
     verifier_vs_human = len(verifier_vs_human_fields)
 
-    def get_served_value(rid: uuid.UUID, fpath: str) -> object:
-        outcomes = outcomes_by_run.get(rid, {})
-        v_path = verification_path(fpath)
-        path_outcomes = outcomes.get(v_path, {})
-
+    def machine_value(rid: uuid.UUID, fpath: str) -> object:
+        """What the machine auto-accepted: the extracted value, whatever a person decided later. The sample is
+        drawn from auto-accepted fields, so a later human correction must not hide the machine's error."""
         if fpath == "fee_tiers":
-            tf = [f for f in all_extracted_fields if f.run_id == rid and verification_path(f.field_path) == "fee_tiers"]
-            tf.sort(key=lambda f: dao._tier_index(f.field_path))
-            if not tf:
-                return None
-            first_review = reviews_by_run_field.get((rid, tf[0].field_path)) or reviews_by_run_field.get((rid, "fee_tiers"))
-            if first_review and first_review.decision == ReviewDecision.corrected:
-                band_vals = []
-                for band_f in tf:
-                    r = reviews_by_run_field.get((rid, band_f.field_path))
-                    if r and r.corrected_value:
-                        band_vals.append(r.corrected_value)
-                if len(band_vals) == len(tf):
-                    return band_vals
-            all_accepted = True
-            for band_f in tf:
-                r = reviews_by_run_field.get((rid, band_f.field_path))
-                st = field_status(band_f.routing, None if r is None else r.decision, path_outcomes, band_f.field_path)
-                if st not in SERVED_STATUSES:
-                    all_accepted = False
-                    break
-            if all_accepted:
-                return [band_f.value for band_f in tf]
-            return None
-
-        f = None
-        for cand in all_extracted_fields:
-            if cand.run_id == rid and cand.field_path == fpath:
-                f = cand
-                break
-        r = reviews_by_run_field.get((rid, fpath))
-        if f is None and r is None:
-            return None
-        routing = f.routing if f else FieldRouting.needs_review
-        st = field_status(routing, None if r is None else r.decision, path_outcomes, fpath)
-        if st == "corrected" and r:
-            return r.corrected_value
-        elif st in SERVED_STATUSES and f:
-            return f.value
-        return None
+            bands = sorted((f for f in all_extracted_fields if f.run_id == rid and verification_path(f.field_path) == "fee_tiers"),
+                           key=lambda f: dao._tier_index(f.field_path))
+            return [f.value for f in bands] or None
+        return next((f.value for f in all_extracted_fields if f.run_id == rid and f.field_path == fpath), None)
 
     labelled_report: dict[str, dict] = {}
     for cls in ("A", "B", "C"):
@@ -413,8 +376,7 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
         n = len(selected)
         errors = 0
         for l in selected:
-            served_val = get_served_value(l.run_id, l.field_path)
-            cmp = compare_field(l.field_path, served_val, l.label_value)
+            cmp = compare_field(l.field_path, machine_value(l.run_id, l.field_path), l.label_value)
             if cmp.outcome != "agree":
                 errors += 1
 
