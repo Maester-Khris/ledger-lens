@@ -140,3 +140,16 @@ def test_compare_reports_unverified_class_a_as_not_comparable(db_session, tenant
     with pytest.raises(ContractNotComparable) as caught:
         compare_contract_to_billing(db_session, tenant_id=tenant_id, document_id=document_id)
     assert {"fee_method", "currency"} <= set(caught.value.extensions["fields"])
+
+
+def test_a_partly_reviewed_table_keeps_its_open_bands_in_the_queue(db_session, tenant_id):
+    # A table decided band by band before X1: the bands still open stay visible, one item each.
+    version = parsed_version(db_session, tenant_id)
+    results = [FieldResult(f"fee_tiers[{i}]", band, [], "q", False, [], "GOOD", FieldRouting.needs_review)
+               for i, band in enumerate(BANDS)]
+    run = dao.save_run(db_session, version.id, CONFIG, {"raw": True}, results)
+    db_session.commit()
+    dao.record_review(db_session, tenant_id=tenant_id, run_id=run.id, field_path="fee_tiers[0]",
+                      decision=ReviewDecision.confirmed, corrected_value=None, reason=None, decided_by="t")
+    paths = [p.field_path for p in dao.pending_reviews(db_session, tenant_id) if p.run_id == run.id]
+    assert paths == ["fee_tiers[1]", "fee_tiers[2]"]

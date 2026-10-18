@@ -20,7 +20,7 @@ from app.documents.models import DocumentVersion
 from datetime import date, datetime
 from app.billing import dao as billing_dao
 from app.billing.errors import NoScheduleAssigned
-from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, _split, field_class, field_group,
+from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, field_class, field_group,
                                  field_label, field_reason, field_sort_key, field_status, verification_path,
                                  verification_problem)
 
@@ -208,8 +208,7 @@ def _needs_a_reviewer(field: ExtractedField, outcomes: dict[str, dict[str, Outco
 
 
 def _tier_index(field_path: str) -> int:
-    _base, idx = _split(field_path)
-    return 0 if idx is None else idx
+    return field_sort_key(field_path)[1]
 
 
 def _pick_verification(
@@ -272,9 +271,11 @@ def pending_reviews(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.
             and any(_needs_a_reviewer(f, outcomes) for f in tier_fields)
         )
 
+        # A table already decided band by band (before X1) is no longer one unit: its open bands are listed singly.
+        partly_reviewed = any(f.field_path in reviewed for f in tier_fields)
         fee_table_emitted = False
         for f in fields:
-            if verification_path(f.field_path) == "fee_tiers":
+            if verification_path(f.field_path) == "fee_tiers" and not partly_reviewed:
                 if fee_table_qualifies and not fee_table_emitted:
                     val_errors: list[str] = []
                     for tf in tier_fields:
