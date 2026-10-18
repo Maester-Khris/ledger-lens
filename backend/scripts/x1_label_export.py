@@ -105,6 +105,48 @@ def export(
     return written
 
 
+# Personal fields never reach a third-party judge: their crop would arrive blacked out, so a label would be noise.
+PERSONAL_FIELDS = frozenset({"client"})
+
+
+def judge_population(population: Sequence[tuple[uuid.UUID, str, str]]) -> list[tuple[uuid.UUID, str, str]]:
+    return [item for item in population if item[1] not in PERSONAL_FIELDS]
+
+
+def render_missing_crops(session, sample: Sequence[tuple[uuid.UUID, str, str]], *, store_root: Path) -> int:
+    """Class C has no live check, so the verify stage cropped nothing for it: render those crops the same way
+    (cited elements, their boxes, page fallback). Local only. Returns how many were written."""
+    from app.contracts import dao as contracts_dao
+    from app.contracts.crops import render_pages
+    from app.contracts.terms import verification_path
+    from app.contracts.verify import RENDER_DPI, _evidence, _stack
+    from app.documents import store as doc_store
+    from app.documents.models import DocumentVersion
+
+    written = 0
+    for run_id, path, _cls in sample:
+        target = doc_store.crop_path(store_root, run_id, path)
+        if target.exists():
+            continue
+        run = session.get(ExtractionRun, run_id)
+        ids = [i for f in contracts_dao.run_fields(session, run_id) if verification_path(f.field_path) == path
+               for i in f.element_ids]
+        if run is None or not ids:
+            continue
+        by_id = {e.id: e for e in documents_dao.list_elements(session, run.version_id)}
+        cited = [by_id[i] for i in dict.fromkeys(ids) if i in by_id]
+        boxes = documents_dao.element_boxes(session, [e.id for e in cited])
+        version = session.get(DocumentVersion, run.version_id)
+        pages = render_pages(doc_store.original_path(store_root, version.file_sha256),
+                             sorted({p for e in cited for p in range(e.page_start, e.page_end + 1)}), dpi=RENDER_DPI)
+        sizes = {p: (img.width * 72 / RENDER_DPI, img.height * 72 / RENDER_DPI) for p, img in pages.items()}
+        images, _kind = _evidence(cited, boxes, pages, sizes, table=path == "fee_tiers")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _stack(images).save(target)
+        written += 1
+    return written
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True, help="output directory for exported crops and CSV")
@@ -119,7 +161,7 @@ def main() -> None:
     vault_key = config.require("PII_VAULT_KEY")
 
     with SessionLocal() as session:
-        population = dao.auto_accepted_fields(session)
+        population = judge_population(dao.auto_accepted_fields(session))
         per_class = {"A": args.a, "B": args.b, "C": args.c}
         sample = draw_sample(population, seed=args.seed, per_class=per_class)
 
@@ -148,6 +190,7 @@ def main() -> None:
 
             return redact_image(image, is_personal)
 
+        print(f"Rendered {render_missing_crops(session, sample, store_root=config.DOCUMENT_STORE_DIR)} missing crops")
         written = export(sample, out_dir=args.out, store_root=config.DOCUMENT_STORE_DIR, redact=redact)
         print(f"Exported {written} items to {args.out}")
 

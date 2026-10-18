@@ -182,3 +182,22 @@ def test_crop_vs_page_scores_both_against_the_labels():
     assert report["n"] == 2
     assert report["crop"]["correct"] == 1 and report["page"]["correct"] == 2
     assert report["crop"]["accuracy"] == pytest.approx(0.5) and report["page"]["accuracy"] == pytest.approx(1.0)
+
+
+def test_judge_population_excludes_personal_fields():
+    from scripts.x1_label_export import judge_population
+    population = [(uuid.UUID(int=1), "client", "B"), (uuid.UUID(int=1), "adviser", "B"), (uuid.UUID(int=1), "governing_law", "C")]
+    assert [p for _r, p, _c in judge_population(population)] == ["adviser", "governing_law"]
+
+
+@pytest.mark.slow
+def test_render_missing_crop_for_an_unchecked_class_c_field(db_session, tenant_id):
+    from app import config
+    from scripts.x1_label_export import render_missing_crops
+    from tests.test_contracts_verify import fixture_run
+    _version, run = fixture_run(db_session, tenant_id, "x1-label-crop")
+    target = store.crop_path(config.DOCUMENT_STORE_DIR, run.id, "governing_law")
+    assert not target.exists()
+    assert render_missing_crops(db_session, [(run.id, "governing_law", "C")], store_root=config.DOCUMENT_STORE_DIR) == 1
+    assert Image.open(target).width > 0
+    assert render_missing_crops(db_session, [(run.id, "governing_law", "C")], store_root=config.DOCUMENT_STORE_DIR) == 0
