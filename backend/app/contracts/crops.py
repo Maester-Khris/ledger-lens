@@ -25,12 +25,12 @@ def render_pages(pdf_path: Path, pages: Iterable[int], dpi: int = 200) -> dict[i
     doc = pdfium.PdfDocument(str(pdf_path))
     scale = dpi / 72
     rendered: dict[int, Image.Image] = {}
-    for page_no in pages:
-        page = doc[page_no - 1]
-        img = page.render(scale=scale).to_pil()
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        rendered[page_no] = img
+    try:
+        for page_no in pages:
+            img = doc[page_no - 1].render(scale=scale).to_pil()
+            rendered[page_no] = img if img.mode == "RGB" else img.convert("RGB")
+    finally:
+        doc.close()  # pdfium holds native memory; the worker renders 102 documents in one process
     return rendered
 
 
@@ -120,6 +120,7 @@ def ocr_lines(image: Image.Image) -> list[OcrLine]:
         if root_i != root_j:
             parent[root_i] = root_j
 
+    # ponytail: O(n²) pairwise row test; fine for a crop or a page (~100 boxes), sweep by top edge if pages grow
     for i in range(n):
         _, t_i, _, b_i, _ = items[i]
         h_i = b_i - t_i
