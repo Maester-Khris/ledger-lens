@@ -155,3 +155,19 @@ def record_statements(session: Session, work: Callable[[], T]) -> tuple[T, list[
         return work(), seen
     finally:
         event.remove(engine, "before_cursor_execute", record)
+
+
+def verify_all(session: Session, run_id: uuid.UUID) -> None:
+    """Record an 'agree' for every required X1 check of a run, as if the verify stage had passed it. Tests that are
+    about serving, comparison or review (not about verification) use this so class A fields are served."""
+    from sqlalchemy import select
+
+    from app.contracts import dao as contracts_dao
+    from app.contracts.models import ExtractedField
+    from app.contracts.terms import required_layers, verification_path
+
+    paths = {verification_path(p) for p in session.scalars(select(ExtractedField.field_path).where(ExtractedField.run_id == run_id))}
+    for path in paths:
+        for layer in required_layers(path):
+            contracts_dao.save_verification(session, contracts_dao.VerificationRow(
+                run_id, path, layer, "test", "table" if path == "fee_tiers" else "element", None, "agree"))

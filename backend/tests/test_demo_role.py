@@ -1,3 +1,5 @@
+import uuid
+
 import psycopg
 import pytest
 from sqlalchemy import text
@@ -8,7 +10,7 @@ from app.ledger.db import make_session_factory
 
 SHARED = (
     "documents", "document_versions", "document_elements", "pii_tokens", "extraction_runs", "extracted_fields",
-    "field_reviews", "postings", "entries", "accounts", "tool_invocation_decisions", "fee_calculations", "gl_exports",
+    "field_reviews", "field_verifications", "field_labels", "element_boxes", "postings", "entries", "accounts", "tool_invocation_decisions", "fee_calculations", "gl_exports",
 )
 OVERLAYS = ("guest_field_reviews", "guest_tool_decisions")
 
@@ -68,3 +70,10 @@ def test_feedback_is_insert_only_and_descriptions_are_read_only_for_the_demo_rol
     assert _can(owner_session, "ledger_demo", "document_descriptions", "SELECT")
     for privilege in ("INSERT", "UPDATE", "DELETE"):
         assert not _can(owner_session, "ledger_demo", "document_descriptions", privilege), privilege
+
+
+def test_demo_role_can_serve_verified_fields(demo_session):
+    # X1 Review Focus 1: served_fields reads field_verifications under the public demo's role.
+    from app.contracts import dao as contracts_dao
+
+    assert contracts_dao.verification_outcomes(demo_session, uuid.uuid4()) == {}

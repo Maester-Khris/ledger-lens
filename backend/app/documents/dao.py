@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
-from app.documents.models import Document, DocumentDescription, DocumentElement, DocumentVersion, PiiToken, VersionEvent
+from app.documents.models import (Document, DocumentDescription, DocumentElement, DocumentVersion, ElementBox, PiiToken,
+                                  VersionEvent)
 from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, normalise_value, token_maker, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
@@ -320,3 +321,15 @@ def last_event_at(session: Session, tenant_id: uuid.UUID) -> datetime | None:
 
 def version_number(session: Session, version_id: uuid.UUID) -> int:
     return session.get(DocumentVersion, version_id).version
+
+
+def save_boxes(session: Session, element_id: uuid.UUID, boxes: list[dict]) -> None:
+    """Insert once; a second call for the same element is a no-op (the backfill and parse_redact may both reach it)."""
+    session.execute(insert(ElementBox).values(element_id=element_id, boxes=boxes).on_conflict_do_nothing())
+
+
+def element_boxes(session: Session, element_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[dict]]:
+    if not element_ids:
+        return {}
+    rows = session.scalars(select(ElementBox).where(ElementBox.element_id.in_(element_ids)))
+    return {row.element_id: row.boxes for row in rows}

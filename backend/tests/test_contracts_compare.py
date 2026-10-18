@@ -12,7 +12,7 @@ from app.contracts.fields import FieldResult
 from app.contracts.types import FieldRouting
 from app.documents import dao as documents_dao
 from app.documents.sniff import PdfFacts
-from tests.support import build_fee_scenario
+from tests.support import build_fee_scenario, verify_all
 from tests.test_contracts_dao import CONFIG
 
 FIXTURE = Path(__file__).parent / "fixtures" / "documents" / "client_agreement.pdf"
@@ -34,7 +34,8 @@ def _contract(db_session, tenant_id, household_id, *, tier_routing=FieldRouting.
     for i, (band, rate, up_to, bps) in enumerate(TIERS):
         value = {"band_text": band, "rate_text": rate, "up_to_minor": up_to, "rate_bps": bps}
         results.append(FieldResult(f"fee_tiers[{i}]", value, [], band, tier_routing is FieldRouting.accepted, [], "GOOD", tier_routing))
-    contracts_dao.save_run(db_session, version.id, CONFIG, {}, results)
+    run = contracts_dao.save_run(db_session, version.id, CONFIG, {}, results)
+    verify_all(db_session, run.id)
     db_session.commit()
     return version.document_id
 

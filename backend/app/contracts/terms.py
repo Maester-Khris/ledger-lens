@@ -1,7 +1,9 @@
 """What a reviewer sees for each extracted field: its status, why it isn't confirmed, and where it belongs."""
 import re
+from collections.abc import Mapping
 from typing import Literal
 
+from app.contracts.agree import Outcome
 from app.contracts.types import FieldRouting, ReviewDecision
 
 FieldStatus = Literal["accepted", "confirmed", "corrected", "rejected", "needs_review"]
@@ -22,22 +24,67 @@ _LABELS = {
     "agreement_date": "Agreement date", "effective_date": "Effective date",
     "termination_notice_days": "Termination notice (days)", "governing_law": "Governing law",
 }
+FieldClass = Literal["A", "B", "C"]
+# X1 field classes (owner decision 2026-10-17): A moves money, B identifies the parties, C is informational.
+_CLASSES: dict[str, FieldClass] = {
+    "fee_tiers": "A", "fee_method": "A", "fee_basis": "A", "currency": "A", "billing_frequency": "A", "payment_timing": "A",
+    "fund_or_account": "B", "adviser": "B", "client": "B", "effective_date": "B",
+}
+# The extractor infers these from wording, so there is no text for a local re-read: the vision reading alone checks them.
+INFERRED = frozenset({"fee_method", "payment_timing", "billing_frequency", "currency"})
+LAYERS = ("ocr_local", "vision")
+_PROBLEM_REASONS = {"disagree": "verifier disagreed", "unreadable": "verifier could not read it", "error": "verification failed"}
 _INDEXED = re.compile(r"^(?P<base>[a-z_]+)(?:\[(?P<index>\d+)\])?$")
 
 
-def field_status(routing: FieldRouting, decision: ReviewDecision | None) -> FieldStatus:
-    """The one definition of a field's status; served_fields serves exactly SERVED_STATUSES."""
+def field_class(path: str) -> FieldClass:
+    return _CLASSES.get(_split(path)[0], "C")
+
+
+def verification_path(path: str) -> str:
+    """A fee table is verified, reviewed and labelled as one unit: every band follows the 'fee_tiers' outcome."""
+    base = _split(path)[0]
+    return base if base == "fee_tiers" else path
+
+
+def required_layers(path: str) -> frozenset[str]:
+    """Checks a field must pass before it is served. Only class A has any: B and C are served as today unless a
+    check that did run disagrees."""
+    base = _split(path)[0]
+    if field_class(base) != "A":
+        return frozenset()
+    return frozenset({"vision"}) if base in INFERRED else frozenset(LAYERS)
+
+
+def verification_problem(outcomes: Mapping[str, Outcome], path: str) -> str | None:
+    """Why verification holds this field back, or None. A failed or unreadable check never counts as agree."""
+    for layer in LAYERS:
+        if (outcome := outcomes.get(layer)) is not None and outcome != "agree":
+            return _PROBLEM_REASONS[outcome]
+    if required_layers(path) - outcomes.keys():
+        return "awaiting verification"
+    return None
+
+
+def field_status(routing: FieldRouting, decision: ReviewDecision | None, outcomes: Mapping[str, Outcome],
+                 path: str) -> FieldStatus:
+    """The one definition of a field's status; served_fields serves exactly SERVED_STATUSES. A person's decision
+    outranks every verifier; `outcomes` maps layer -> outcome for this field's verification_path."""
     if decision is ReviewDecision.corrected:
         return "corrected"
     if decision is ReviewDecision.confirmed:
         return "confirmed"
     if decision is ReviewDecision.rejected:
         return "rejected"
-    return "accepted" if routing is FieldRouting.accepted else "needs_review"
+    if routing is not FieldRouting.accepted or verification_problem(outcomes, path) is not None:
+        return "needs_review"
+    return "accepted"
 
 
 def field_reason(status: FieldStatus, grounded: bool, validator_errors: list[str], page_grade: str,
-                 review_reason: str | None) -> str | None:
+                 review_reason: str | None, verification: str | None = None) -> str | None:
+    """`verification` is verification_problem(...) for the field. The extraction's own reasons come first: they
+    explain the routing; a verifier's reason only matters once the extraction itself passed."""
     if status == "rejected":
         return review_reason or "rejected by a reviewer"
     if status != "needs_review":
@@ -46,9 +93,9 @@ def field_reason(status: FieldStatus, grounded: bool, validator_errors: list[str
         return "not grounded in the cited text"
     if validator_errors:
         return validator_errors[0]
-    if page_grade != "GOOD":
+    if page_grade not in ("GOOD", "EXCELLENT"):
         return f"low page quality ({page_grade})"
-    return "awaiting review"
+    return verification or "awaiting review"
 
 
 def _split(path: str) -> tuple[str, int | None]:

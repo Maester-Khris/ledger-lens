@@ -12,6 +12,7 @@ class VersionStage(str, enum.Enum):
     parsed = "parsed"
     indexed = "indexed"
     extracted = "extracted"
+    verified = "verified"
     failed = "failed"
 
 

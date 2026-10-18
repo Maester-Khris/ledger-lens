@@ -85,3 +85,11 @@ class DocumentDescription(Base):
     document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), primary_key=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = _created_at()
+
+
+class ElementBox(Base):
+    """Where an element sits on its page(s), from Docling's provenance: a list of {page_no, l, t, r, b, coord_origin}.
+    Derived from the source PDF; X1 crops evidence with it. Beside document_elements, which is append-only."""
+    __tablename__ = "element_boxes"
+    element_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("document_elements.id"), primary_key=True)
+    boxes: Mapped[list[dict]] = mapped_column(JSONB, nullable=False)

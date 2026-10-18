@@ -6,10 +6,12 @@ from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy import Select, delete, func, select
+from sqlalchemy.dialects.postgresql import insert
 
 from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
 from app.contracts.fields import FieldResult
-from app.contracts.models import ExtractedField, ExtractionRun, FieldReview, GuestFieldReview
+from app.contracts.agree import Outcome
+from app.contracts.models import ExtractedField, ExtractionRun, FieldReview, FieldVerification, GuestFieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents import dao as documents_dao
 from app.documents.models import DocumentVersion
@@ -17,7 +19,7 @@ from datetime import date, datetime
 from app.billing import dao as billing_dao
 from app.billing.errors import NoScheduleAssigned
 from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, field_group, field_label, field_reason,
-                                 field_sort_key, field_status)
+                                 field_sort_key, field_status, verification_path, verification_problem)
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,45 @@ def _reviews_by_field(session: Session, run_id: uuid.UUID, overlay_guest: uuid.U
     return reviews
 
 
+@dataclass(frozen=True)
+class VerificationRow:
+    run_id: uuid.UUID
+    field_path: str  # the verification path: 'fee_tiers' for the whole table
+    layer: str
+    verifier: str
+    crop_kind: str
+    read_value: object | None
+    outcome: Outcome
+    detail: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: Decimal = Decimal(0)
+    latency_ms: int = 0
+
+
+def save_verification(session: Session, row: VerificationRow) -> None:
+    """Idempotent on the check's identity (run, field, layer, verifier, crop kind): a re-run keeps the first result."""
+    session.execute(insert(FieldVerification).values(**row.__dict__).on_conflict_do_nothing(
+        constraint="uq_field_verifications_check"))
+
+
+def verification_outcomes(session: Session, run_id: uuid.UUID) -> dict[str, dict[str, Outcome]]:
+    """verification path -> layer -> outcome. An element or table crop is the live check; a page crop counts only
+    when there is none for that layer (the fallback when an element has no box)."""
+    outcomes: dict[str, dict[str, Outcome]] = {}
+    rows = session.execute(select(FieldVerification.field_path, FieldVerification.layer, FieldVerification.crop_kind,
+                                  FieldVerification.outcome).where(FieldVerification.run_id == run_id)
+                           .order_by(FieldVerification.id))
+    for path, layer, crop_kind, outcome in sorted(rows, key=lambda r: r.crop_kind != "page"):
+        outcomes.setdefault(path, {})[layer] = outcome  # non-page rows sort last, so they win
+    return outcomes
+
+
+def _status(field: ExtractedField, review: Review | None, outcomes: dict[str, dict[str, Outcome]]) -> FieldStatus:
+    return field_status(field.routing, None if review is None else review.decision,
+                        outcomes.get(verification_path(field.field_path), {}), field.field_path)
+
+
 def save_run(session: Session, version_id: uuid.UUID, config: RunConfig, raw_output: dict, results: Sequence[FieldResult], run_id: uuid.UUID | None = None) -> ExtractionRun:
     run = ExtractionRun(version_id=version_id, schema_version=config.schema_version, model_id=config.model_id,
                         prompt_version=config.prompt_version, temperature=config.temperature,
@@ -86,10 +127,11 @@ def served_fields(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID
     if run is None:
         return None
     reviews = _reviews_by_field(session, run.id, overlay_guest)
+    outcomes = verification_outcomes(session, run.id)
     served, unserved = {}, []
     for field in session.scalars(select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path)):
         review = reviews.get(field.field_path)
-        status = field_status(field.routing, None if review is None else review.decision)
+        status = _status(field, review, outcomes)
         if status in SERVED_STATUSES:
             value = review.corrected_value if status == "corrected" else field.value
             served[field.field_path] = ServedField(field.field_path, value, field.element_ids, field.quote)
@@ -133,6 +175,15 @@ def _latest_run(session: Session, version_id: uuid.UUID) -> ExtractionRun | None
     ).first()
 
 
+def _needs_a_reviewer(field: ExtractedField, outcomes: dict[str, dict[str, Outcome]]) -> bool:
+    """The extraction routed it to review, or a check that ran flagged it. A field still waiting for the verify stage
+    is not a reviewer's job yet: it is unserved, and it reaches the queue only if a check flags it."""
+    if field.routing is FieldRouting.needs_review:
+        return True
+    problem = verification_problem(outcomes.get(verification_path(field.field_path), {}), field.field_path)
+    return problem is not None and problem != "awaiting verification"
+
+
 def pending_reviews(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.UUID | None = None) -> list[PendingField]:
     # ponytail: a few queries per contract; fine for a demo corpus, one joined query when it isn't
     pending: list[PendingField] = []
@@ -141,17 +192,15 @@ def pending_reviews(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.
         if run is None:
             continue
         reviewed = set(_reviews_by_field(session, run.id, overlay_guest))
+        outcomes = verification_outcomes(session, run.id)
         fields = session.scalars(
-            select(ExtractedField)
-            .where(ExtractedField.run_id == run.id, ExtractedField.routing == FieldRouting.needs_review)
-            .order_by(ExtractedField.field_path)
-        )
+            select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path))
         pending += [
             PendingField(run.id, f.field_path, f.value, f.quote, f.grounded, list(f.validator_errors), f.page_grade,
                          row.document.id, row.document.title, row.version.version,
                          documents_dao.first_page(session, f.element_ids))
             for f in fields
-            if f.field_path not in reviewed
+            if f.field_path not in reviewed and _needs_a_reviewer(f, outcomes)
         ]
     return pending
 
@@ -265,16 +314,18 @@ def terms_view(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID, o
     if run is None:
         return TermsView(document_id, document.title, version_no, None, None, [], household, schedule)
     reviews = _reviews_by_field(session, run.id, overlay_guest)
+    outcomes = verification_outcomes(session, run.id)
     fields = []
     for f in sorted(session.scalars(select(ExtractedField).where(ExtractedField.run_id == run.id)),
                     key=lambda f: field_sort_key(f.field_path)):
         review = reviews.get(f.field_path)
-        status = field_status(f.routing, None if review is None else review.decision)
+        status = _status(f, review, outcomes)
+        problem = verification_problem(outcomes.get(verification_path(f.field_path), {}), f.field_path)
         fields.append(TermField(
             path=f.field_path, label=field_label(f.field_path), group=field_group(f.field_path),
             value=review.corrected_value if status == "corrected" else f.value, status=status,
             reason=field_reason(status, f.grounded, list(f.validator_errors), f.page_grade,
-                                None if review is None else review.reason),
+                                None if review is None else review.reason, problem),
             page=documents_dao.first_page(session, f.element_ids), quote=f.quote,
         ))
     return TermsView(document_id, document.title, version_no, run.id, run.created_at, fields, household, schedule)
