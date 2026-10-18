@@ -77,6 +77,7 @@ def keys() -> dict[str, str]:
 def fixture_run(db_session, tenant_id, key: str, values: dict | None = None):
     """Ingest the fixture with the real parser and detector, then save an extraction run citing the real elements.
     `values` overrides TRUE_VALUES (a wrong value is how a test makes a check disagree). Returns (version, run)."""
+    extra = set(values or {}) - set(TRUE_VALUES) - {"fee_tiers", "client"}  # e.g. fund_or_account, only when asked
     values = {**TRUE_VALUES, **(values or {})}
     data = FIXTURE.read_bytes()
     version = documents_dao.register_upload(
@@ -93,6 +94,7 @@ def fixture_run(db_session, tenant_id, key: str, values: dict | None = None):
     assert "Tremblay" not in client_token  # stored tokenised; the stage reveals it locally to compare
     cites = {"adviser": parties, "effective_date": parties, "client": parties, "governing_law": parties,
              "fee_basis": fees, "fee_method": fees, "currency": fees, "billing_frequency": fees, "payment_timing": fees}
+    cites |= {path: parties for path in extra}
 
     def field(path, value, element):
         return FieldResult(path, value, [element.id], "q", True, [], "GOOD", FieldRouting.accepted)
@@ -128,3 +130,13 @@ def test_verify_stage_end_to_end_on_fixture(db_session, tenant_id):
     run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, vision=None, **keys())
     again = db_session.scalars(select(FieldVerification).where(FieldVerification.run_id == run.id)).all()
     assert len(again) == len(rows)  # idempotent re-run
+
+
+def test_read_local_checks_each_band_on_a_multi_fund_table():
+    # Corpus tables often list several funds; only the extracted fund's bands must be present, each on one line.
+    ocr = ("Fund Rate\nOther Growth Fund on the first $1,000,000 0.95%\nOn the first $1,000,000 1.00%\n"
+           "On the next $1,500,000 0.85%\nOn assets in excess of $2,500,000 0.65%\nOther Fund thereafter 0.40%")
+    assert compare_field("fee_tiers", TABLE, read_local("fee_tiers", ocr, TABLE)).outcome == "agree"
+    missing = ocr.replace("On the next $1,500,000 0.85%", "On the next $1,500,000 0.80%")
+    result = compare_field("fee_tiers", TABLE, read_local("fee_tiers", missing, TABLE))
+    assert result.outcome == "disagree"

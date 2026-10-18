@@ -83,6 +83,8 @@ def compare_date(a: str | None, b: str | None) -> Comparison:
         return Comparison("agree")
     if a is None or b is None:
         return Comparison("disagree")
+    if isinstance(a, str) and isinstance(b, str) and normalise_text(a) == normalise_text(b):
+        return Comparison("agree")  # the same words read twice agree, whether or not they parse as a date
     da = _parse_date(a) if isinstance(a, str) else None
     if da is None:
         return Comparison("disagree", detail="extracted date does not parse")

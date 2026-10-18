@@ -114,3 +114,10 @@ def test_similarity_never_bridges_a_different_number_or_short_word():
 
 def test_int_rule_does_not_coerce():
     assert compare_int(30, 30.9).outcome == "disagree"  # type: ignore[arg-type]
+
+
+def test_us_numeric_dates_and_identical_text_agree():
+    assert compare_date("12/30/2024", "12/30/2024").outcome == "agree"
+    assert compare_date("12/30/2024", "December 30, 2024").outcome == "agree"
+    assert compare_date("Commencement of Operations", "Commencement of Operations").outcome == "agree"  # same words
+    assert compare_date("12/30/2024", "12/31/2024").outcome == "disagree"

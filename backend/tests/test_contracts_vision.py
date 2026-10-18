@@ -102,7 +102,7 @@ def test_vision_agreement_serves_class_a_and_client_never_goes_to_vision(db_sess
     vision_paths = {path for path, layer in rows if layer == "vision"}
     assert CLASS_A <= vision_paths and "client" not in vision_paths
     assert all(rows[(p, "vision")].outcome == "agree" for p in CLASS_A)
-    assert rows[("fee_method", "vision")].verifier == "gpt-6-luna"
+    assert rows[("fee_method", "vision")].verifier == "gpt-6-luna@verify_v2"  # model and prompt version
     assert rows[("currency", "vision")].cost_usd == Decimal("0.000110")  # 1000 in, 20 out at $0.10 / $0.50 per 1M
     asked = [re.search(r"field: (\S+)", _text_parts(m)).group(1) for m in model.seen]
     assert "client" not in asked
@@ -183,3 +183,37 @@ def test_no_raw_pii_in_any_vision_request_body(db_session, tenant_id, monkeypatc
             read = " ".join(line.text for line in ocr_lines(image))
             assert [value for value in RAW_PII if value in read] == []
     assert len([b for b in bodies if _images_in(b)]) >= len(CLASS_A)
+
+
+def _text_for(model: FakeVision, path: str) -> str:
+    return next(_text_parts(m) for m in model.seen if f"field: {path}" in _text_parts(m))
+
+
+@pytest.mark.slow
+def test_inferred_fields_see_the_whole_fee_section_and_tables_name_their_fund(db_session, tenant_id):
+    version, run = fixture_run(db_session, tenant_id, "x1-vision-v2", values={"fund_or_account": "Household accounts"})
+    model = FakeVision(answers=_answers(fund_or_account={"value": "Household accounts"}))
+    _verify(db_session, version.id, model)
+    assert "Household accounts" in _text_for(model, "fee_tiers")  # which schedule to read on a multi-fund table
+    assert "Household accounts" not in _text_for(model, "currency")
+    assert "$" in _text_for(model, "currency")  # the inference rule for an inferred field is spelled out
+    # the inferred field's evidence is the fee section: the fee paragraph and the fee table, taller than one paragraph
+    from PIL import Image as _Image
+    currency_crop = _Image.open(config.DOCUMENT_STORE_DIR / "crops" / str(run.id) / "currency.png")
+    basis_crop = _Image.open(config.DOCUMENT_STORE_DIR / "crops" / str(run.id) / "fee_basis.png")
+    assert currency_crop.height > basis_crop.height
+
+
+@pytest.mark.slow
+def test_reverify_a_subset_appends_rows_without_a_new_stage_event(db_session, tenant_id):
+    version, run = fixture_run(db_session, tenant_id, "x1-vision-only")
+    _verify(db_session, version.id, FakeVision(answers=_answers(currency={"value": None})))
+    events_before = len(documents_dao.version_events(db_session, version.id))
+    run_verification(db_session, version.id, store_root=config.DOCUMENT_STORE_DIR, **keys(),
+                     vision=VisionVerifier(FakeVision(answers=_answers()), "gpt-6-luna-b"),
+                     only=frozenset({"currency"}), record_event=False)
+    assert len(documents_dao.version_events(db_session, version.id)) == events_before
+    rows = db_session.scalars(select(FieldVerification).where(FieldVerification.run_id == run.id,
+                                                              FieldVerification.layer == "vision")).all()
+    assert sorted((r.field_path, r.outcome) for r in rows if r.verifier.startswith("gpt-6-luna-b")) == [("currency", "agree")]
+    assert contracts_dao.verification_outcomes(db_session, run.id)["currency"]["vision"] == "agree"  # newest wins

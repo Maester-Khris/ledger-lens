@@ -7,7 +7,7 @@ index, so a document is searchable only once its values are checked (owner decis
 Layer 2 adds a vision model reading redacted crops of class A fields, never seeing the extracted value."""
 import base64
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from importlib.metadata import version
@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from app import config
 from app.contracts import dao
 from app.contracts.agree import Outcome, compare_field, compare_text, normalise_text
+from app.contracts.fee_text import FeeTextError, parse_amount_minor, parse_rate_bps
 from app.contracts.crops import crop, ocr_lines, redact_image, render_pages
 from app.contracts.models import ExtractedField
 from app.contracts.terms import verification_path
@@ -41,27 +42,36 @@ from app.documents.types import Box, VersionStage
 # Fields whose value is written in the text, so a local re-read can find it. The four inferred class A enums have
 # no such text (vision only, Task 5); class C has no live check (audit sample only).
 LAYER1_FIELDS = frozenset({"fee_tiers", "fee_basis", "fund_or_account", "adviser", "effective_date", "client"})
-OCR_VERIFIER = f"rapidocr {version('rapidocr')}"
+# The rules version is part of the verifier's identity: a re-check under new rules appends rows, never overwrites.
+OCR_VERIFIER = f"rapidocr {version('rapidocr')} rules-v2"
 RENDER_DPI = 200
 # A rate as billing's parser reads it (fee_text.parse_rate_bps); the band wording is whatever precedes it on the line.
 _RATE = re.compile(r"\d+(?:\.\d+)?\s*(?:%|bps\b|bp\b|basis points?\b)", re.I)
 
+INFERRED_FIELDS = frozenset({"fee_method", "currency", "billing_frequency", "payment_timing"})
+FEE_SECTION_FIELDS = frozenset({"fee_tiers", "fee_basis", "fee_method", "currency", "billing_frequency", "payment_timing"})
 CLASS_A_FIELDS = frozenset({"fee_tiers", "fee_basis", "fee_method", "currency", "billing_frequency", "payment_timing"})
 CLASS_B_FIELDS = frozenset({"adviser", "fund_or_account", "effective_date"})
 ALL_VERIFY_FIELDS = LAYER1_FIELDS | CLASS_A_FIELDS | CLASS_B_FIELDS
 MAX_DETAIL_CHARS = 500  # a provider error message is stored for the reviewer, bounded like pipeline errors
 VISION_SAMPLE_RATE = 0.10  # ponytail, a fixed audit rate; tune with labels
 
-PROMPT_PATH = Path(__file__).parent / "prompts" / "verify_v1.md"
+PROMPT_ID = "verify_v2"
+PROMPT_PATH = Path(__file__).parent / "prompts" / f"{PROMPT_ID}.md"
 PROMPT = PROMPT_PATH.read_text(encoding="utf-8").strip()
 
 _FIELD_DESCRIPTIONS: dict[str, str] = {
     "fee_tiers": "Every band's wording and rate, in order; null if the image shows no fee table.",
     "fee_basis": "What the fee is calculated on or charged against; null if not stated.",
-    "fee_method": "Whether the fee calculation method is graduated or cliff; null if not stated.",
-    "currency": "The currency code for fees and assets (USD or CAD); null if not stated.",
-    "billing_frequency": "How often billing occurs (monthly, quarterly, or annually); null if not stated.",
-    "payment_timing": "Whether payment is due in arrears or advance; null if not stated.",
+    # The four inferred fields: the excerpt is the whole fee section, and the rules say what the wording implies.
+    "fee_method": "graduated when the schedule has bands billed at their own rates ('first ... next ... in excess of'); "
+                  "cliff when one rate applies to all assets; null if the excerpt shows no fee schedule.",
+    "currency": "The currency of the fees: USD when amounts are written with $ and no other currency is named, CAD "
+                "when Canadian dollars are named; null if the excerpt shows no amount or currency.",
+    "billing_frequency": "How often the fee is billed or paid (monthly, quarterly, annually), as the fee section "
+                         "states it; null if not stated.",
+    "payment_timing": "arrears when the fee is paid after the period it covers (in arrears, at the end of each period); "
+                      "advance when paid before; null if not stated.",
     "adviser": "The legal name of the investment adviser or manager; null if not stated.",
     "fund_or_account": "The fund, account, or portfolio name; null if not stated.",
     "effective_date": "The effective date of the agreement as written; null if not stated.",
@@ -72,6 +82,7 @@ _FIELD_DESCRIPTIONS: dict[str, str] = {
 class VisionRequest:
     field_path: str  # the verification path: "fee_tiers" for the whole table
     image_png: bytes  # already redacted
+    hint: str | None = None  # for a fee table, the fund whose schedule to read; never the value being checked
 
 
 @dataclass(frozen=True)
@@ -148,7 +159,8 @@ class VisionVerifier:
             messages: list[BaseMessage] = [
                 SystemMessage(content=PROMPT),
                 HumanMessage(content=[
-                    {"type": "text", "text": f"field: {req.field_path}\n{desc}"},
+                    {"type": "text", "text": f"field: {req.field_path}\n{desc}"
+                     + (f"\nRead the schedule that applies to: {req.hint}" if req.hint else "")},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_img}"}},
                 ]),
             ]
@@ -210,19 +222,50 @@ class VisionVerifier:
         return readings
 
 
+def _line_bands(ocr_text: str) -> list[dict[str, str]]:
+    """Every (wording, rate) pair the OCR lines hold; a multi-column line can hold several rates."""
+    bands = []
+    for line in ocr_text.splitlines():
+        start = 0
+        for match in _RATE.finditer(line):
+            if band_text := line[start:match.start()].strip():
+                bands.append({"band_text": band_text, "rate_text": match.group(0)})
+            start = match.end()
+    return bands
+
+
+def _read_bands(ocr_text: str, extracted: Sequence[Mapping]) -> list[dict[str, str]] | None:
+    """For each extracted band, the OCR band with the same rate and the same amount (billing's parsers), in order.
+    Presence per band, not a re-read of the whole table: corpus tables often list several funds, and the other funds'
+    rows must not count as extra bands. A band that is not found is left out, so the comparison disagrees."""
+    found = []
+    candidates = _line_bands(ocr_text)
+    for band in extracted:
+        try:
+            rate = parse_rate_bps(str(band.get("rate_text", "")))
+        except FeeTextError:
+            continue
+        amount = parse_amount_minor(str(band.get("band_text", "")))
+        for candidate in candidates:
+            try:
+                same_rate = parse_rate_bps(candidate["rate_text"]) == rate
+            except FeeTextError:
+                continue
+            if same_rate and parse_amount_minor(candidate["band_text"]) == amount:
+                found.append(candidate)
+                candidates.remove(candidate)
+                break
+    return found or None
+
+
 def read_local(field_path: str, ocr_text: str, extracted: object) -> object | None:
     """The OCR reading of one field, or None when it is not there (recorded as `unreadable`).
 
-    A fee table is truly re-read (mechanic b): every OCR line holding a rate becomes a band, so billing's parsers
-    produce an independent table. Text and dates have no parser to re-read them with, so they are confirmed by
-    presence (mechanic a): the extracted value, or a near match, appears in the crop."""
+    Everything is confirmed by presence (mechanic a): each fee band's rate and amount on one OCR line (a whole-table
+    re-read counted other funds' rows on multi-fund tables, measured on the corpus 2026-10-18), and text or dates as
+    the extracted value, or a near match, in the crop."""
     if verification_path(field_path) == "fee_tiers":
-        bands = []
-        for line in ocr_text.splitlines():
-            matches = list(_RATE.finditer(line))
-            if matches and (band_text := line[:matches[-1].start()].strip()):
-                bands.append({"band_text": band_text, "rate_text": matches[-1].group(0)})
-        return bands or None
+        return _read_bands(ocr_text, extracted if isinstance(extracted, list) else [])
     if not isinstance(extracted, str) or not extracted.strip():
         return None
     wanted = normalise_text(extracted)
@@ -278,8 +321,12 @@ def _checks(fields: Sequence[ExtractedField]) -> dict[str, tuple[object, list[uu
 
 
 def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Path, hmac_key: str, vault_key: str,
-                     vision: VisionVerifier | None = None, detector: PiiDetector | None = None) -> None:
-    """The VERIFY stage runner. Idempotent: a check already recorded for this run is kept, not repeated."""
+                     vision: VisionVerifier | None = None, detector: PiiDetector | None = None,
+                     only: frozenset[str] | None = None, record_event: bool = True) -> None:
+    """The VERIFY stage runner. Idempotent: a check already recorded for this run is kept, not repeated.
+
+    `only` limits the checks to these verification paths and `record_event=False` skips the `verified` event: both
+    serve re-checks of existing runs under new rules or a new prompt (new verifier ids append rows; the newest wins)."""
     run = dao.latest_run(session, version_id)
     if run is None:
         documents_dao.append_event(session, version_id, VersionStage.verified, {"run_id": None})
@@ -287,8 +334,18 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
         return
     tenant_id = documents_dao.get_document_for_version(session, version_id).tenant_id
     pdf_path = store.original_path(store_root, documents_dao.get_version(session, version_id).file_sha256)
-    checks = _checks(dao.run_fields(session, run.id))
+    fields = dao.run_fields(session, run.id)
+    checks = _checks(fields)
     by_id = {e.id: e for e in documents_dao.list_elements(session, version_id)}
+    # An inferred field has no wording of its own to crop: its evidence is the whole fee section, in page order.
+    fee_section = sorted({i for path in FEE_SECTION_FIELDS if path in checks for i in checks[path][1]},
+                         key=lambda i: by_id[i].ordinal)
+    for path in INFERRED_FIELDS & checks.keys():
+        checks[path] = (checks[path][0], fee_section)
+    if only is not None:
+        checks = {path: check for path, check in checks.items() if path in only}
+    fund = next((f.value for f in fields if f.field_path == "fund_or_account" and isinstance(f.value, str)), None)
+    fund_text = documents_dao.reveal(session, tenant_id, [fund], vault_key)[0] if fund else None
     boxes = documents_dao.element_boxes(session, list(by_id))
     texts = {path: documents_dao.reveal(session, tenant_id, [value], vault_key)[0]
              for path, (value, _ids) in checks.items() if isinstance(value, str)}
@@ -364,7 +421,9 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
                 redacted = redact_image(stacked, is_personal)
                 buf = io.BytesIO()
                 redacted.save(buf, format="PNG")
-                vision_requests.append(VisionRequest(field_path=path, image_png=buf.getvalue()))
+                # The fund names which schedule to read on a multi-fund table; never sent if it is personal data.
+                hint = fund_text if path == "fee_tiers" and fund_text and not is_personal(fund_text) else None
+                vision_requests.append(VisionRequest(field_path=path, image_png=buf.getvalue(), hint=hint))
                 extracted = texts.get(path, value)
                 vision_meta.append((path, kind, extracted))
 
@@ -400,7 +459,7 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
                     run.id,
                     path,
                     "vision",
-                    vision.model_id,
+                    f"{vision.model_id}@{PROMPT_ID}",
                     kind,
                     stored,
                     outcome,
@@ -424,5 +483,6 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
         event_detail["vision_ms"] = vision_ms
         event_detail["cost_usd"] = float(total_cost_usd)
 
-    documents_dao.append_event(session, version_id, VersionStage.verified, event_detail)
+    if record_event:
+        documents_dao.append_event(session, version_id, VersionStage.verified, event_detail)
     session.commit()
