@@ -26,6 +26,7 @@ from app import config
 from app.contracts import dao
 from app.contracts.agree import compare_field
 from app.contracts.models import ExtractedField, ExtractionRun, FieldLabel, FieldReview, FieldVerification
+from app.documents import dao as documents_dao
 from app.contracts.terms import SERVED_STATUSES, field_class, field_status, verification_path
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents.models import VersionEvent
@@ -380,7 +381,13 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
             bands = sorted((f for f in all_extracted_fields if f.run_id == rid and verification_path(f.field_path) == "fee_tiers"),
                            key=lambda f: dao._tier_index(f.field_path))
             return [f.value for f in bands] or None
-        return next((f.value for f in all_extracted_fields if f.run_id == rid and f.field_path == fpath), None)
+        value = next((f.value for f in all_extracted_fields if f.run_id == rid and f.field_path == fpath), None)
+        if not isinstance(value, str):
+            return value
+        # Stored values are tokenised where personal; labels are raw text, so compare the revealed value.
+        run = session.get(ExtractionRun, rid)
+        tenant_id = documents_dao.get_document_for_version(session, run.version_id).tenant_id
+        return documents_dao.reveal(session, tenant_id, [value], config.require("PII_VAULT_KEY"))[0]
 
     labelled_report: dict[str, dict] = {}
     for cls in ("A", "B", "C"):

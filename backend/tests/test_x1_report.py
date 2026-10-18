@@ -157,3 +157,23 @@ def test_min_sample_and_verdict_wording():
     assert verdict_label({"n": 60, "errors": 0, "target": 0.05, "passes": True}) == "PASS"
     assert verdict_label({"n": 60, "errors": 2, "target": 0.05, "passes": False}) == "FAIL"
     assert verdict_label({"n": 57, "errors": 3, "target": 0.05, "passes": False}) == "FAIL"  # errors fail regardless of n
+
+
+def test_labelled_error_reveals_tokenised_machine_values(db_session, tenant_id):
+    # Stored values are tokenised where personal; labels are raw text. Compare like with like.
+    from app import config
+    from app.documents import dao as documents_dao
+    from app.documents.redact import make_token
+
+    version = parsed_version(db_session, tenant_id)
+    token = make_token(tenant_id, "PERSON", "Fred Alger", config.PII_HMAC_KEY)
+    documents_dao.save_tokens(db_session, tenant_id, {token: ("PERSON", "Fred Alger")}, config.PII_VAULT_KEY)
+    t0 = datetime(2034, 1, 1, tzinfo=timezone.utc)
+    run = dao.save_run(db_session, version.id, CONFIG, {}, [
+        FieldResult("adviser", f"{token} Management, LLC", [], "q", True, [], "GOOD", FieldRouting.accepted)])
+    _event(db_session, version.id, VersionStage.stored, t0, {})
+    db_session.add(FieldLabel(run_id=run.id, field_path="adviser", labeller="adjudicated",
+                              label_value="Fred Alger Management, LLC", blind=True))
+    db_session.commit()
+    labelled = build_report(db_session, label="t", since=t0, chat_usd_per_answer=0.004)["stages"]["verify"]["confidence"]["labelled"]["B"]
+    assert (labelled["n"], labelled["errors"]) == (1, 0)
