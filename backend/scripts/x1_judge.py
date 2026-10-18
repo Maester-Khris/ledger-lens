@@ -86,7 +86,8 @@ def main() -> None:
     else:
         raise ValueError(f"Unsupported provider: {args.provider}")
 
-    chat_model = ChatOpenAI(model=args.model, api_key=api_key, base_url=base_url)
+    chat_model = ChatOpenAI(model=args.model, api_key=api_key, base_url=base_url,
+                            timeout=config.VERIFIER_TIMEOUT_SECONDS, max_retries=config.LLM_MAX_RETRIES)
     verifier = VisionVerifier(chat_model, f"judge:{args.model}")
     judge(args.csv, args.out, verifier)
     print(f"Judged {args.csv} -> {args.out} using {args.provider}/{args.model}")
