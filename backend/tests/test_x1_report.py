@@ -127,3 +127,23 @@ def test_labelled_error_is_measured_on_the_machine_value_even_after_a_human_fix(
     db_session.commit()
     labelled = build_report(db_session, label="t", since=t0, chat_usd_per_answer=0.004)["stages"]["verify"]["confidence"]["labelled"]["C"]
     assert (labelled["n"], labelled["errors"]) == (1, 1)
+
+
+def test_backfilled_documents_report_verify_work_not_wall_time_and_flag_missing_costs(db_session, tenant_id):
+    version = parsed_version(db_session, tenant_id)
+    t0 = datetime(2033, 1, 1, tzinfo=timezone.utc)
+    for stage, seconds, detail in (
+        (VersionStage.stored, 0, {}), (VersionStage.parsed, 20, {}), (VersionStage.indexed, 25, {"embedding_chars": 400}),
+        (VersionStage.extracted, 40, {"run_id": "x"}),  # predates token logging: no cost
+        (VersionStage.verified, 900_000, {"ocr_ms": 5000, "vision_ms": 3000, "cost_usd": 0.0003}),
+    ):
+        _event(db_session, version.id, stage, t0 + timedelta(seconds=seconds), detail)
+    db_session.commit()
+    report = build_report(db_session, label="t", since=t0, chat_usd_per_answer=0.004)
+    verify = report["stages"]["verify"]
+    assert verify["time_seconds"]["n"] == 0  # stored->verified spans weeks on a backfill: not a measurement
+    assert verify["work_seconds"]["median"] == 8.0  # OCR + vision time recorded by the stage itself
+    documents = report["projection_100k"]["documents"]
+    assert documents["usd"] is None and "extract" in documents["missing"]  # never a total that drops a stage
+    assert "not measured" in render_markdown(report)
+    assert "NO LABELS" in render_markdown(report)

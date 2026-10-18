@@ -145,6 +145,7 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
     parse_times: list[float] = []
     extract_times: list[float] = []
     verify_times: list[float] = []
+    verify_work: list[float] = []
     index_times: list[float] = []
     cpu_seconds_list: list[float] = []
     extract_usd_list: list[float] = []
@@ -165,19 +166,30 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
         verified = vevents.get(VersionStage.verified)
         indexed = vevents.get(VersionStage.indexed)
 
-        if stored and parsed:
+        # A backfilled document was indexed before X1 and verified weeks later: its gaps between events are not stage
+        # times. Only documents that went through the X1 order (verified before indexed) give wall-clock stage times.
+        x1_order = bool(verified and indexed and verified.created_at < indexed.created_at)
+        if verified:
+            work_ms = sum(float(verified.detail.get(k) or 0) for k in ("ocr_ms", "vision_ms"))
+            if work_ms:
+                verify_work.append(work_ms / 1000)  # the stage's own OCR + vision time, valid for backfills too
+        if not x1_order:
+            stored = parsed_for_time = None
+        else:
+            parsed_for_time = parsed
+        if stored and parsed_for_time:
             dt = (parsed.created_at - stored.created_at).total_seconds()
             if dt >= 0:
                 parse_times.append(dt)
-        if parsed and extracted:
+        if x1_order and parsed and extracted:
             dt = (extracted.created_at - parsed.created_at).total_seconds()
             if dt >= 0:
                 extract_times.append(dt)
-        if extracted and verified:
+        if x1_order and extracted and verified:
             dt = (verified.created_at - extracted.created_at).total_seconds()
             if dt >= 0:
                 verify_times.append(dt)
-        if verified and indexed:
+        if x1_order and verified and indexed:
             dt = (indexed.created_at - verified.created_at).total_seconds()
             if dt >= 0:
                 index_times.append(dt)
@@ -205,6 +217,7 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
             index_usd_list.append(cost)
 
         # End to end times: counted ONLY for documents whose verified event precedes their indexed event
+        stored = vevents.get(VersionStage.stored)
         if stored and verified and indexed:
             if verified.created_at < indexed.created_at:
                 t_rr = (verified.created_at - stored.created_at).total_seconds()
@@ -417,6 +430,7 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
         },
         "verify": {
             "time_seconds": _dist_dict(verify_times),
+            "work_seconds": _dist_dict(verify_work),
             "usd_per_doc": _dist_dict(verify_usd_per_doc_list),
             "usd_per_field_by_layer": usd_per_field_by_layer,
             "latency_ms_by_layer": latency_ms_by_layer,
@@ -439,15 +453,16 @@ def build_report(session: Session, *, label: str, since: datetime | None, chat_u
         "searchable_seconds": _dist_dict(searchable_times),
     }
 
-    med_extract_usd = stages["extract"]["usd_per_doc"]["median"] or 0.0
-    med_verify_usd = stages["verify"]["usd_per_doc"]["median"] or 0.0
-    med_index_usd = stages["index"]["usd_per_doc"]["median"] or 0.0
-    doc_100k_usd = 100_000 * (med_extract_usd + med_verify_usd + med_index_usd)
+    medians = {name: stages[name]["usd_per_doc"]["median"] for name in ("extract", "verify", "index")}
+    # A stage with no measured cost (events older than token logging) makes the total unknown, never smaller.
+    missing = [name for name, value in medians.items() if not value]
+    doc_100k_usd = None if missing else 100_000 * sum(medians.values())
     dau_usd_per_day = 100_000 * TURNS_PER_USER_PER_DAY * chat_usd_per_answer
 
     projection_100k = {
         "documents": {
             "usd": doc_100k_usd,
+            "missing": missing,
             "prices": {
                 config.EXTRACTION_MODEL: (float(config.EXTRACTION_PRICE_PER_MTOK[0]), float(config.EXTRACTION_PRICE_PER_MTOK[1])),
                 config.VERIFIER_MODEL: (float(config.VERIFIER_PRICE_PER_MTOK[0]), float(config.VERIFIER_PRICE_PER_MTOK[1])),
@@ -526,6 +541,8 @@ def render_markdown(report: dict) -> str:
     pr_time = _fmt_time(pr.get("time_seconds", {}))
     ex_time = _fmt_time(ex.get("time_seconds", {}))
     vr_time = _fmt_time(vr.get("time_seconds", {}))
+    if not vr.get("time_seconds", {}).get("n") and vr.get("work_seconds", {}).get("n"):
+        vr_time = f"work {_fmt_time(vr['work_seconds'])} (OCR + vision; backfill, no wall time)"
     ix_time = _fmt_time(ix.get("time_seconds", {}))
 
     pr_conf = f"parse success {pr.get('confidence', {}).get('parse_success_rate', 0.0) * 100:.1f}%"
@@ -565,7 +582,7 @@ def render_markdown(report: dict) -> str:
         ub_str = f"{ub * 100:.2f}%" if ub is not None else "—"
         tgt = row.get("target")
         tgt_str = f"{tgt * 100:.1f}%" if tgt is not None else "—"
-        verdict = "PASS" if row.get("passes") else "FAIL"
+        verdict = "NO LABELS" if not row.get("n") else "PASS" if row.get("passes") else "FAIL"
         gt = row.get("ground_truth") or "—"
         lines.append(f"| {cls} | {n} | {errs} | {ub_str} | {tgt_str} | {verdict} | {gt} |")
 
@@ -576,7 +593,11 @@ def render_markdown(report: dict) -> str:
         "### 100k Documents Ingestion",
     ])
     doc_proj = proj.get("documents", {})
-    lines.append(f"- **Estimated Cost:** ${_fmt_usd(doc_proj.get('usd'))[1:]}")
+    if doc_proj.get("usd") is None:
+        lines.append(f"- **Estimated Cost:** not measured: no cost recorded for {', '.join(doc_proj.get('missing', []))}"
+                     " on these documents (their events predate token logging)")
+    else:
+        lines.append(f"- **Estimated Cost:** ${_fmt_usd(doc_proj.get('usd'))[1:]}")
     lines.append("- **Prices:**")
     for m, p in doc_proj.get("prices", {}).items():
         if isinstance(p, (list, tuple)):
