@@ -104,3 +104,13 @@ def test_compare_field_dispatches_by_base_name():
     assert compare_field("signatories", ["Jane Doe"], ["JANE DOE"]).outcome == "agree"
     assert compare_field("adviser", "Acme Capital, Inc.", "acme capital").outcome == "agree"
     assert compare_field("governing_law", "Delaware", "New York").outcome == "disagree"
+
+
+def test_similarity_never_bridges_a_different_number_or_short_word():
+    assert compare_text("Acme Growth Fund 2", "Acme Growth Fund 3").outcome == "disagree"
+    assert compare_text("Acme Growth Fund I", "Acme Growth Fund II").outcome == "disagree"
+    assert compare_text("Acme Growth Fund Class A", "Acme Growth Fund Class B").outcome == "disagree"
+
+
+def test_int_rule_does_not_coerce():
+    assert compare_int(30, 30.9).outcome == "disagree"  # type: ignore[arg-type]

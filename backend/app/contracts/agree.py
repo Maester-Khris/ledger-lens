@@ -98,14 +98,13 @@ def compare_int(a: int | None, b: int | None) -> Comparison:
         return Comparison("agree")
     if a is None or b is None:
         return Comparison("disagree")
-    if a == b:
-        return Comparison("agree")
-    try:
-        if int(a) == int(b):
-            return Comparison("agree")
-    except (ValueError, TypeError):
-        pass
-    return Comparison("disagree")
+    return Comparison("agree" if a == b else "disagree")  # exact: no coercion, so 30.9 never matches 30
+
+
+def _exact_tokens(text: str) -> list[str]:
+    """Tokens a near-match must not change: numbers and short words (Fund 2 vs Fund 3, Fund I vs Fund II, Class A vs B).
+    Similarity is for OCR noise in long words, never for these."""
+    return sorted(t for t in text.split() if len(t) <= 3 or any(c.isdigit() for c in t))
 
 
 def compare_text(a: str | None, b: str | None) -> Comparison:
@@ -118,7 +117,7 @@ def compare_text(a: str | None, b: str | None) -> Comparison:
     norm_b = normalise_text(b if isinstance(b, str) else str(b))
     if norm_a == norm_b:
         return Comparison("agree")
-    if SequenceMatcher(None, norm_a, norm_b).ratio() >= TEXT_SIMILARITY:
+    if _exact_tokens(norm_a) == _exact_tokens(norm_b) and SequenceMatcher(None, norm_a, norm_b).ratio() >= TEXT_SIMILARITY:
         return Comparison("agree")
     return Comparison("disagree")
 
