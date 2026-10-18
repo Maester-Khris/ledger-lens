@@ -94,12 +94,21 @@ def compare_date(a: str | None, b: str | None) -> Comparison:
     return Comparison("agree" if da == db else "disagree")
 
 
-def compare_int(a: int | None, b: int | None) -> Comparison:
-    """Compare integer quantities with exact equality."""
+_COUNT = re.compile(r"\b\d+\b")
+
+
+def compare_int(a: int | None, b: int | str | None) -> Comparison:
+    """Compare integer quantities with exact equality. A reading given as text ("sixty (60) days' notice") counts by
+    the figure it writes; the figure, never the spelled-out word, so no word-to-number guessing."""
     if a is None and b is None:
         return Comparison("agree")
     if a is None or b is None:
         return Comparison("disagree")
+    if isinstance(b, str):
+        counts = {int(m) for m in _COUNT.findall(b)}
+        if not counts:
+            return Comparison("unreadable")
+        return Comparison("agree" if counts == {a} else "disagree")  # two different figures: ambiguous, disagree
     return Comparison("agree" if a == b else "disagree")  # exact: no coercion, so 30.9 never matches 30
 
 

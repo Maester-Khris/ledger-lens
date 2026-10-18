@@ -121,3 +121,10 @@ def test_us_numeric_dates_and_identical_text_agree():
     assert compare_date("12/30/2024", "December 30, 2024").outcome == "agree"
     assert compare_date("Commencement of Operations", "Commencement of Operations").outcome == "agree"  # same words
     assert compare_date("12/30/2024", "12/31/2024").outcome == "disagree"
+
+
+def test_notice_days_read_as_text_compare_by_their_day_count():
+    assert compare_int(60, "sixty (60) days' written notice").outcome == "agree"
+    assert compare_int(60, "60 days").outcome == "agree"
+    assert compare_int(30, "sixty (60) days").outcome == "disagree"
+    assert compare_int(30, "upon written notice").outcome == "unreadable"  # no count in the reading

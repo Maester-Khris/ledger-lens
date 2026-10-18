@@ -119,6 +119,10 @@ class PaymentTimingReading(BaseModel):
     value: Literal["arrears", "advance"] | None = None
 
 
+class IntReading(BaseModel):
+    value: int | None = None
+
+
 class TextReading(BaseModel):
     value: str | None = None
 
@@ -135,6 +139,8 @@ def _schema_for(field_path: str) -> type[BaseModel]:
             return BillingFrequencyReading
         case "payment_timing":
             return PaymentTimingReading
+        case "termination_notice_days":
+            return IntReading
         case _:
             return TextReading
 
