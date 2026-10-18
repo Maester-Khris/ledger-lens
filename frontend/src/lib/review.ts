@@ -100,6 +100,9 @@ export function flagReason(item: ReviewItemDto): string | null {
   if (v.detail) {
     return `${label}: ${v.detail}`;
   }
+  if (v.read_value === null || v.read_value === undefined) {
+    return `${label} found no value where extraction read one`;
+  }
   return `${label} read ${formatValue(v.read_value)}, extraction read ${formatValue(item.value)}`;
 }
 
@@ -160,6 +163,13 @@ export function canTakeVerifier(item: ReviewItemDto): boolean {
     return readValue.length === item.value.length;
   }
   return true;
+}
+
+export function takeBlockedReason(item: ReviewItemDto): string | null {
+  if (canTakeVerifier(item)) return null;
+  const readValue = item.verification?.read_value;
+  if (readValue === null || readValue === undefined) return 'The verifier read no value: keep, type or reject.';
+  return 'The tables have a different number of bands: reject or type the value.';
 }
 
 export function verifierCorrection(item: ReviewItemDto): unknown {

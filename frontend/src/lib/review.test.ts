@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DocumentSummary, ReviewItemDto, ToolInvocationDto, VerificationDto } from '../api';
 import {
   approvalTarget, bandRows, canTakeVerifier, diffParts, fieldTarget, flagReason, formatValue, parseCorrection, reviewReasons,
-  verifierCorrection,
+  takeBlockedReason, verifierCorrection,
 } from './review';
 
 describe('formatValue', () => {
@@ -120,6 +120,8 @@ describe('X1 diff card helpers', () => {
     expect(flagReason({ ...currency, verification: verification({ outcome: 'error', detail: 'timed out' }) }))
       .toBe('Vision check failed: timed out');
     expect(flagReason({ ...currency, verification: null })).toBeNull();
+    expect(flagReason({ ...table, verification: verification({ read_value: null, detail: null }) }))
+      .toBe('Vision check found no value where extraction read one');
   });
 
   it('pairs the two tables band by band and flags the differing band', () => {
@@ -140,6 +142,14 @@ describe('X1 diff card helpers', () => {
     expect(canTakeVerifier(currency)).toBe(true);
     expect(canTakeVerifier({ ...currency, verification: verification({ read_value: null }) })).toBe(false);
     expect(canTakeVerifier({ ...currency, verification: null })).toBe(false);
+  });
+
+  it('explains why the verifier value cannot be taken', () => {
+    expect(takeBlockedReason(table)).toBeNull();
+    expect(takeBlockedReason({ ...table, verification: verification({ read_value: null }) }))
+      .toBe('The verifier read no value: keep, type or reject.');
+    const shorter = { ...table, verification: verification({ read_value: (table.verification!.read_value as unknown[]).slice(0, 1) }) };
+    expect(takeBlockedReason(shorter)).toBe('The tables have a different number of bands: reject or type the value.');
   });
 
   it('turns a verifier band into the correction the API expects', () => {

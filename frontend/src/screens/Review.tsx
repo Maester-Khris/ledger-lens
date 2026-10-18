@@ -25,6 +25,7 @@ import {
   formatValue,
   parseCorrection,
   reviewReasons,
+  takeBlockedReason,
   verifierCorrection,
 } from '../lib/review';
 import './Review.css';
@@ -265,11 +266,7 @@ export function DiffCard({ item, selected, onSelect, onDone }: FieldReviewCardPr
             >
               Reject
             </button>
-            {!canTake && (
-              <span className="diff-card__note">
-                The tables have a different number of bands: reject or type the value.
-              </span>
-            )}
+            {takeBlockedReason(item) && <span className="diff-card__note">{takeBlockedReason(item)}</span>}
           </>
         )}
         {error && (
