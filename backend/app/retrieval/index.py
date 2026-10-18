@@ -32,7 +32,9 @@ def index_version(session: Session, version_id: uuid.UUID, *, embeddings: Embedd
     elements = [e for e in documents_dao.list_elements(session, version_id) if e.kind is not ElementKind.heading]
     session.commit()  # no transaction held open across network calls
 
-    vectors = embeddings.embed_documents([embedding_text(e.section_path, e.text_redacted) for e in elements])
+    texts = [embedding_text(e.section_path, e.text_redacted) for e in elements]
+    vectors = embeddings.embed_documents(texts)
+    embedding_chars = sum(len(t) for t in texts)
     namespace = str(document.tenant_id)
     vector_index.upsert(namespace, [
         VectorRecord(vector_id(version_id, e.ordinal), values, {"document_id": str(document.id), "version_id": str(version_id)})
@@ -42,6 +44,7 @@ def index_version(session: Session, version_id: uuid.UUID, *, embeddings: Embedd
     replaced = dao.replace_search_rows(session, tenant_id=document.tenant_id, document_id=document.id, version_id=version_id)
     documents_dao.append_event(session, version_id, VersionStage.indexed, {
         "element_count": len(elements), "embedding_model": config.EMBEDDING_MODEL,
+        "embedding_chars": embedding_chars,
     })
     session.commit()
 

@@ -91,6 +91,8 @@ PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "contracts")
 # Exact snapshot, never an alias: tool_invocations and chat_turns record it for audit.
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-4.1-2025-04-14")
 EXTRACTION_MODEL = os.environ.get("EXTRACTION_MODEL", CHAT_MODEL)
+# gpt-4.1 list price per 1M tokens (in, out), OpenAI pricing page; update with EXTRACTION_MODEL
+EXTRACTION_PRICE_PER_MTOK = (Decimal("2.00"), Decimal("8.00"))
 VERIFIER_MODEL = os.environ.get("VERIFIER_MODEL", "gpt-6-luna")
 VERIFIER_TIMEOUT_SECONDS = _float("VERIFIER_TIMEOUT_SECONDS", 30)
 VERIFIER_CONCURRENCY = int(os.environ.get("VERIFIER_CONCURRENCY", 16))
@@ -99,6 +101,7 @@ VERIFIER_PRICE_PER_MTOK = (Decimal("0.10"), Decimal("0.50"))
 # Changing either means recreating the Pinecone index and re-indexing every document.
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIMENSIONS = _int("EMBEDDING_DIMENSIONS", 1536)
+EMBEDDING_PRICE_PER_MTOK = Decimal("0.02")
 
 # LLM call limits
 CHAT_TIMEOUT_SECONDS = _float("CHAT_TIMEOUT_SECONDS", 30)
