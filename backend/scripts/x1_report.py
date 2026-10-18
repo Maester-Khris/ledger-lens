@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 import json
 import math
@@ -68,6 +68,25 @@ def class_verdict(errors: int, n: int, target: float) -> bool:
     if n <= 0:
         return False
     return clopper_pearson_upper(errors, n) <= target
+
+
+def min_sample(target: float) -> int:
+    """The smallest sample that can support `target` with zero errors (one-sided 95%)."""
+    n = 1
+    while clopper_pearson_upper(0, n) > target:
+        n += 1
+    return n
+
+
+def verdict_label(row: Mapping) -> str:
+    """FAIL only when the errors themselves fail; a clean sample that is merely too small says so."""
+    if not row.get("n"):
+        return "NO LABELS"
+    if row.get("passes"):
+        return "PASS"
+    if row.get("errors") == 0 and row["n"] < min_sample(row["target"]):
+        return f"SAMPLE TOO SMALL (needs {min_sample(row['target'])})"
+    return "FAIL"
 
 
 def cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float:
@@ -582,7 +601,7 @@ def render_markdown(report: dict) -> str:
         ub_str = f"{ub * 100:.2f}%" if ub is not None else "—"
         tgt = row.get("target")
         tgt_str = f"{tgt * 100:.1f}%" if tgt is not None else "—"
-        verdict = "NO LABELS" if not row.get("n") else "PASS" if row.get("passes") else "FAIL"
+        verdict = verdict_label(row)
         gt = row.get("ground_truth") or "—"
         lines.append(f"| {cls} | {n} | {errs} | {ub_str} | {tgt_str} | {verdict} | {gt} |")
 

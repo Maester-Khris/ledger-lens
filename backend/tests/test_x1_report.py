@@ -147,3 +147,13 @@ def test_backfilled_documents_report_verify_work_not_wall_time_and_flag_missing_
     assert documents["usd"] is None and "extract" in documents["missing"]  # never a total that drops a stage
     assert "not measured" in render_markdown(report)
     assert "NO LABELS" in render_markdown(report)
+
+
+def test_min_sample_and_verdict_wording():
+    from scripts.x1_report import min_sample, verdict_label
+    assert (min_sample(0.05), min_sample(0.10), min_sample(0.01)) == (59, 29, 299)
+    assert verdict_label({"n": 0}) == "NO LABELS"
+    assert verdict_label({"n": 57, "errors": 0, "target": 0.05, "passes": False}) == "SAMPLE TOO SMALL (needs 59)"
+    assert verdict_label({"n": 60, "errors": 0, "target": 0.05, "passes": True}) == "PASS"
+    assert verdict_label({"n": 60, "errors": 2, "target": 0.05, "passes": False}) == "FAIL"
+    assert verdict_label({"n": 57, "errors": 3, "target": 0.05, "passes": False}) == "FAIL"  # errors fail regardless of n
