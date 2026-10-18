@@ -308,7 +308,7 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
     for path, (value, ids) in sorted(checks.items()):
         images, kind = _evidence([by_id[i] for i in ids], boxes, pages, page_sizes, table=path == "fee_tiers")
         stacked = _stack(images)
-        stacked.save(crop_dir / f"{path}.png")  # unredacted, local only: the reviewer sees the real evidence
+        stacked.save(store.crop_path(store_root, run.id, path))  # unredacted, local only: the reviewer sees the real evidence
         crops[path] = (stacked, kind)
 
         if path in LAYER1_FIELDS:

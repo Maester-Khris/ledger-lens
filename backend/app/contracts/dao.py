@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import Select, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 
+from app.billing.fee_math import validate_tiers
 from app.contracts.errors import FieldAlreadyReviewed, FieldNotFound, ReviewInvalid
-from app.contracts.fields import FieldResult
+from app.contracts.fee_text import FeeBand, FeeTextError, tiers_from_bands
+from app.contracts.fields import FieldResult, GRADE_ORDER
 from app.contracts.agree import Outcome
 from app.contracts.models import ExtractedField, ExtractionRun, FieldReview, FieldVerification, GuestFieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
@@ -18,8 +20,9 @@ from app.documents.models import DocumentVersion
 from datetime import date, datetime
 from app.billing import dao as billing_dao
 from app.billing.errors import NoScheduleAssigned
-from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, field_group, field_label, field_reason,
-                                 field_sort_key, field_status, verification_path, verification_problem)
+from app.contracts.terms import (COMING_SOON, SERVED_STATUSES, FieldStatus, _split, field_class, field_group,
+                                 field_label, field_reason, field_sort_key, field_status, verification_path,
+                                 verification_problem)
 
 
 @dataclass(frozen=True)
@@ -79,6 +82,16 @@ class VerificationRow:
     output_tokens: int = 0
     cost_usd: Decimal = Decimal(0)
     latency_ms: int = 0
+
+
+@dataclass(frozen=True)
+class VerificationView:
+    layer: str            # "ocr_local" | "vision"
+    verifier: str
+    read_value: object | None   # tokenised where personal; the route reveals strings for display
+    outcome: str          # never "agree" here
+    detail: str | None
+    crop_url: str         # f"/reviews/{run_id}/crops/{verification_path}"
 
 
 def save_verification(session: Session, row: VerificationRow) -> None:
@@ -167,6 +180,8 @@ class PendingField:
     document_title: str
     version: int
     page: int | None
+    field_class: str
+    verification: VerificationView | None
 
 
 def _latest_run(session: Session, version_id: uuid.UUID) -> ExtractionRun | None:
@@ -192,6 +207,45 @@ def _needs_a_reviewer(field: ExtractedField, outcomes: dict[str, dict[str, Outco
     return problem is not None and problem != "awaiting verification"
 
 
+def _tier_index(field_path: str) -> int:
+    _base, idx = _split(field_path)
+    return 0 if idx is None else idx
+
+
+def _pick_verification(
+    v_rows: Sequence[FieldVerification],
+    v_path: str,
+    outcomes: dict[str, dict[str, Outcome]],
+    run_id: uuid.UUID,
+) -> VerificationView | None:
+    path_outcomes = outcomes.get(v_path, {})
+    if not any(outcome != "agree" for outcome in path_outcomes.values()):
+        return None
+
+    candidates = [
+        r for r in v_rows
+        if r.field_path == v_path and r.outcome != "agree" and path_outcomes.get(r.layer) == r.outcome
+    ]
+    if not candidates:
+        candidates = [r for r in v_rows if r.field_path == v_path and r.outcome != "agree"]
+    if not candidates:
+        return None
+
+    best = min(candidates, key=lambda r: (
+        0 if r.layer == "vision" else (1 if r.layer == "ocr_local" else 2),
+        0 if r.crop_kind != "page" else 1,
+        r.id,
+    ))
+    return VerificationView(
+        layer=best.layer,
+        verifier=best.verifier,
+        read_value=best.read_value,
+        outcome=best.outcome,
+        detail=best.detail,
+        crop_url=f"/reviews/{run_id}/crops/{v_path}",
+    )
+
+
 def pending_reviews(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.UUID | None = None) -> list[PendingField]:
     # ponytail: a few queries per contract; fine for a demo corpus, one joined query when it isn't
     pending: list[PendingField] = []
@@ -201,16 +255,183 @@ def pending_reviews(session: Session, tenant_id: uuid.UUID, overlay_guest: uuid.
             continue
         reviewed = set(_reviews_by_field(session, run.id, overlay_guest))
         outcomes = verification_outcomes(session, run.id)
-        fields = session.scalars(
-            select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path))
-        pending += [
-            PendingField(run.id, f.field_path, f.value, f.quote, f.grounded, list(f.validator_errors), f.page_grade,
-                         row.document.id, row.document.title, row.version.version,
-                         documents_dao.first_page(session, f.element_ids))
-            for f in fields
-            if f.field_path not in reviewed and _needs_a_reviewer(f, outcomes)
-        ]
+        v_rows = list(session.scalars(
+            select(FieldVerification).where(FieldVerification.run_id == run.id).order_by(FieldVerification.id)
+        ))
+        fields = list(session.scalars(
+            select(ExtractedField).where(ExtractedField.run_id == run.id).order_by(ExtractedField.field_path)
+        ))
+
+        tier_fields = sorted(
+            [f for f in fields if verification_path(f.field_path) == "fee_tiers"],
+            key=lambda f: _tier_index(f.field_path),
+        )
+        fee_table_qualifies = (
+            bool(tier_fields)
+            and not any(f.field_path in reviewed for f in tier_fields)
+            and any(_needs_a_reviewer(f, outcomes) for f in tier_fields)
+        )
+
+        fee_table_emitted = False
+        for f in fields:
+            if verification_path(f.field_path) == "fee_tiers":
+                if fee_table_qualifies and not fee_table_emitted:
+                    val_errors: list[str] = []
+                    for tf in tier_fields:
+                        for err in tf.validator_errors:
+                            if err not in val_errors:
+                                val_errors.append(err)
+                    lowest_grade = min((tf.page_grade for tf in tier_fields), key=lambda g: GRADE_ORDER.get(g, 99))
+                    tier_element_ids = [eid for tf in tier_fields for eid in tf.element_ids]
+                    first_pg = documents_dao.first_page(session, tier_element_ids)
+                    verification = _pick_verification(v_rows, "fee_tiers", outcomes, run.id)
+                    pending.append(PendingField(
+                        run_id=run.id,
+                        field_path="fee_tiers",
+                        value=[tf.value for tf in tier_fields],
+                        quote=tier_fields[0].quote,
+                        grounded=all(tf.grounded for tf in tier_fields),
+                        validator_errors=val_errors,
+                        page_grade=lowest_grade,
+                        document_id=row.document.id,
+                        document_title=row.document.title,
+                        version=row.version.version,
+                        page=first_pg,
+                        field_class=field_class("fee_tiers"),
+                        verification=verification,
+                    ))
+                    fee_table_emitted = True
+            else:
+                if f.field_path not in reviewed and _needs_a_reviewer(f, outcomes):
+                    v_path = verification_path(f.field_path)
+                    verification = _pick_verification(v_rows, v_path, outcomes, run.id)
+                    pending.append(PendingField(
+                        run_id=run.id,
+                        field_path=f.field_path,
+                        value=f.value,
+                        quote=f.quote,
+                        grounded=f.grounded,
+                        validator_errors=list(f.validator_errors),
+                        page_grade=f.page_grade,
+                        document_id=row.document.id,
+                        document_title=row.document.title,
+                        version=row.version.version,
+                        page=documents_dao.first_page(session, f.element_ids),
+                        field_class=field_class(f.field_path),
+                        verification=verification,
+                    ))
+
+    # ponytail: ordering by money at stake (the comparison's annual gap) is deferred; compare imports this DAO, so it needs a caller-side sort.
+    pending.sort(key=lambda p: {"A": 0, "B": 1, "C": 2}.get(p.field_class, 99))
     return pending
+
+
+def run_tenant(session: Session, run_id: uuid.UUID) -> uuid.UUID | None:
+    """The tenant owning the run's document (None if no such run)."""
+    run = session.get(ExtractionRun, run_id)
+    if run is None:
+        return None
+    doc = documents_dao.get_document_for_version(session, run.version_id)
+    return doc.tenant_id if doc is not None else None
+
+
+def _record_fee_tiers_review(
+    session: Session,
+    *,
+    tenant_id: uuid.UUID,
+    run_id: uuid.UUID,
+    decision: ReviewDecision,
+    corrected_value: object | None,
+    reason: str | None,
+    decided_by: str,
+    overlay_guest: uuid.UUID | None,
+) -> Review:
+    run = session.get(ExtractionRun, run_id)
+    if run is None or documents_dao.get_document_for_version(session, run.version_id).tenant_id != tenant_id:
+        raise FieldNotFound(f"Field fee_tiers of extraction run {run_id} does not exist.")
+
+    tier_fields = sorted(
+        [f for f in session.scalars(select(ExtractedField).where(ExtractedField.run_id == run_id))
+         if verification_path(f.field_path) == "fee_tiers"],
+        key=lambda f: _tier_index(f.field_path),
+    )
+    if not tier_fields:
+        raise FieldNotFound(f"Field fee_tiers of extraction run {run_id} does not exist.")
+
+    tier_paths = [f.field_path for f in tier_fields]
+    existing_real = session.scalars(
+        select(FieldReview.field_path).where(FieldReview.run_id == run_id, FieldReview.field_path.in_(tier_paths))
+    ).all()
+    if existing_real:
+        raise FieldAlreadyReviewed(f"Field {existing_real[0]} of extraction run {run_id} has already been reviewed.")
+
+    if overlay_guest is not None:
+        existing_guest = session.scalars(
+            select(GuestFieldReview.field_path).where(
+                GuestFieldReview.run_id == run_id,
+                GuestFieldReview.guest_id == overlay_guest,
+                GuestFieldReview.field_path.in_(tier_paths),
+            )
+        ).all()
+        if existing_guest:
+            raise FieldAlreadyReviewed(f"Field {existing_guest[0]} of extraction run {run_id} has already been reviewed.")
+
+    band_corrected_values: list[dict] = []
+    if decision is ReviewDecision.corrected:
+        if not isinstance(corrected_value, list) or len(corrected_value) != len(tier_fields):
+            raise ReviewInvalid("A corrected fee table must provide a list with exactly as many items as bands.")
+        for b in corrected_value:
+            if not isinstance(b, Mapping) or "band_text" not in b or "rate_text" not in b:
+                raise ReviewInvalid("Each band in corrected fee table must include 'band_text' and 'rate_text'.")
+        try:
+            fee_bands = [FeeBand(str(b["band_text"]), str(b["rate_text"])) for b in corrected_value]
+            tiers = tiers_from_bands(fee_bands)
+            validate_tiers(tiers)
+        except (FeeTextError, ValueError) as exc:
+            raise ReviewInvalid(f"Invalid fee tiers in review: {exc}") from exc
+
+        band_corrected_values = [
+            {
+                "band_text": b["band_text"],
+                "rate_text": b["rate_text"],
+                "up_to_minor": tier.up_to_minor,
+                "rate_bps": format(tier.rate_bps.normalize(), "f"),
+            }
+            for b, tier in zip(corrected_value, tiers)
+        ]
+
+    rows_to_add: list[Review] = []
+    if overlay_guest is not None:
+        for i, band_field in enumerate(tier_fields):
+            val = band_corrected_values[i] if decision is ReviewDecision.corrected else None
+            rows_to_add.append(GuestFieldReview(
+                guest_id=overlay_guest,
+                run_id=run_id,
+                field_path=band_field.field_path,
+                decision=decision,
+                corrected_value=val,
+                reason=reason,
+            ))
+    else:
+        for i, band_field in enumerate(tier_fields):
+            val = band_corrected_values[i] if decision is ReviewDecision.corrected else None
+            rows_to_add.append(FieldReview(
+                run_id=run_id,
+                field_path=band_field.field_path,
+                decision=decision,
+                corrected_value=val,
+                decided_by=decided_by,
+                reason=reason,
+            ))
+
+    session.add_all(rows_to_add)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise FieldAlreadyReviewed(f"A band of fee_tiers for extraction run {run_id} has already been reviewed.") from exc
+
+    return rows_to_add[0]
 
 
 def record_review(
@@ -227,6 +448,19 @@ def record_review(
 ) -> Review:
     if (decision is ReviewDecision.corrected) != (corrected_value is not None):
         raise ReviewInvalid("A corrected value is required for 'corrected' and not allowed for other decisions.")
+
+    if field_path == "fee_tiers":
+        return _record_fee_tiers_review(
+            session,
+            tenant_id=tenant_id,
+            run_id=run_id,
+            decision=decision,
+            corrected_value=corrected_value,
+            reason=reason,
+            decided_by=decided_by,
+            overlay_guest=overlay_guest,
+        )
+
     field = session.get(ExtractedField, (run_id, field_path))
     run = session.get(ExtractionRun, run_id) if field is not None else None
     if run is None or documents_dao.get_document_for_version(session, run.version_id).tenant_id != tenant_id:
