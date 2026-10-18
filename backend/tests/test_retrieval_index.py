@@ -43,6 +43,8 @@ def test_index_writes_search_rows_vectors_and_event(db_session, tenant_id):
     assert embeddings.seen == ["3. Fees\nFees are billed quarterly in arrears."]
     assert [m.id for m in index.query(str(tenant_id), embeddings.embed_query("x"), 5, None)] == [vector_id(version.id, 1)]
     assert documents_dao.version_events(db_session, version.id)[-1].stage is VersionStage.indexed
+    # X1 report: embeddings return no usage, so the event records what was embedded (characters)
+    assert documents_dao.version_events(db_session, version.id)[-1].detail["embedding_chars"] == len(embeddings.seen[0])
 
 
 def test_indexing_v2_replaces_v1_search_rows_and_vectors(db_session, tenant_id):
