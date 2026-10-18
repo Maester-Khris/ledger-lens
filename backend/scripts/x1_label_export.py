@@ -106,11 +106,11 @@ def export(
 
 
 # Personal fields never reach a third-party judge: their crop would arrive blacked out, so a label would be noise.
-PERSONAL_FIELDS = frozenset({"client"})
+PERSONAL_FIELDS = frozenset({"client", "signatories"})  # people's names: redaction blacks them out
 
 
 def judge_population(population: Sequence[tuple[uuid.UUID, str, str]]) -> list[tuple[uuid.UUID, str, str]]:
-    return [item for item in population if item[1] not in PERSONAL_FIELDS]
+    return [item for item in population if item[1].split("[")[0] not in PERSONAL_FIELDS]
 
 
 def render_missing_crops(session, sample: Sequence[tuple[uuid.UUID, str, str]], *, store_root: Path) -> int:

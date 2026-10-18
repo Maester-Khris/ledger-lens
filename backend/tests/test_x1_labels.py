@@ -186,7 +186,8 @@ def test_crop_vs_page_scores_both_against_the_labels():
 
 def test_judge_population_excludes_personal_fields():
     from scripts.x1_label_export import judge_population
-    population = [(uuid.UUID(int=1), "client", "B"), (uuid.UUID(int=1), "adviser", "B"), (uuid.UUID(int=1), "governing_law", "C")]
+    population = [(uuid.UUID(int=1), "client", "B"), (uuid.UUID(int=1), "adviser", "B"), (uuid.UUID(int=1), "governing_law", "C"),
+                  (uuid.UUID(int=1), "signatories[0]", "C")]
     assert [p for _r, p, _c in judge_population(population)] == ["adviser", "governing_law"]
 
 
