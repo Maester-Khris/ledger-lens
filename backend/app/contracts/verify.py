@@ -49,6 +49,7 @@ _RATE = re.compile(r"\d+(?:\.\d+)?\s*(?:%|bps\b|bp\b|basis points?\b)", re.I)
 CLASS_A_FIELDS = frozenset({"fee_tiers", "fee_basis", "fee_method", "currency", "billing_frequency", "payment_timing"})
 CLASS_B_FIELDS = frozenset({"adviser", "fund_or_account", "effective_date"})
 ALL_VERIFY_FIELDS = LAYER1_FIELDS | CLASS_A_FIELDS | CLASS_B_FIELDS
+MAX_DETAIL_CHARS = 500  # a provider error message is stored for the reviewer, bounded like pipeline errors
 VISION_SAMPLE_RATE = 0.10  # ponytail, a fixed audit rate; tune with labels
 
 PROMPT_PATH = Path(__file__).parent / "prompts" / "verify_v1.md"
@@ -85,12 +86,6 @@ class VisionReading:
 class Band(BaseModel):
     band_text: str
     rate_text: str
-
-    def get(self, key: str, default: Any = None) -> Any:
-        return getattr(self, key, default)
-
-    def __getitem__(self, key: str) -> Any:
-        return getattr(self, key)
 
 
 class FeeTiersReading(BaseModel):
@@ -373,6 +368,7 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
                 extracted = texts.get(path, value)
                 vision_meta.append((path, kind, extracted))
 
+        session.commit()  # no transaction held open across the provider calls (up to the timeout each)
         readings = vision.read(vision_requests)
         in_price, out_price = config.VERIFIER_PRICE_PER_MTOK
 
@@ -386,7 +382,7 @@ def run_verification(session: Session, version_id: uuid.UUID, *, store_root: Pat
 
             if reading.failed is not None:
                 outcome = "error"
-                detail = reading.failed
+                detail = reading.failed[:MAX_DETAIL_CHARS]
                 stored = None
             else:
                 comparison = compare_field(path, extracted, reading.value)
