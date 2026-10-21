@@ -137,6 +137,8 @@ DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "ye
 CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
 CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
 CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
+CHAT_MAX_IN_FLIGHT = _int("CHAT_MAX_IN_FLIGHT", 0)  # X3: chat turns in flight per process; 0 = no limit
+CHAT_BUSY_RETRY_SECONDS = _int("CHAT_BUSY_RETRY_SECONDS", 3)  # Retry-After base; 0 to 2 s of jitter is added
 
 # Shared rate-limit windows (N5). Set = the limiter lives in Redis, correct across workers and replicas; unset = in
 # process memory (local development, single process). Short timeouts: a Redis outage must fail fast (and open).

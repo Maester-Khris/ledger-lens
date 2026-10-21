@@ -1,3 +1,4 @@
+import logging
 import math
 import uuid
 from collections.abc import Iterator
@@ -7,11 +8,15 @@ from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app import config
+from app.assistant import admission
 from app.assistant import dao as assistant_dao
-from app.errors import GuestRequired, RateLimited
+from app.assistant.admission import Slot
+from app.errors import AssistantBusy, GuestRequired, RateLimited
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 from app.rate_limit import RedisWindowLimiter, SlidingWindowLimiter, admit
+
+logger = logging.getLogger(__name__)
 
 # ponytail: no authentication yet; the acting user is fixed. Replace with the authenticated principal.
 DECIDED_BY = "demo_user"
@@ -105,3 +110,23 @@ def limit_chat(request: Request, guest_id: Annotated[uuid.UUID | None, Depends(g
     wait = admit([(by_guest, f"guest:{guest_id}"), (by_ip, f"ip:{client_ip(request)}")])
     if wait > 0:
         raise RateLimited(math.ceil(wait))
+
+
+def take_turn_slot() -> Iterator[Slot]:
+    """Must be the first dependency of the chat route, because get_guest_id already writes (touch_guest) while
+    dependencies resolve, and a refused turn must write nothing and use none of the guest's rate-limit allowance.
+    Releases only when an exception passes through it (a later dependency or the route failed before a response
+    existed). Once a response exists, the response owns the slot. This relies only on exceptions reaching a yield
+    dependency, which every FastAPI version does, and not on when its normal exit runs (that differs between 0.115 and
+    0.143)."""
+    limit = config.CHAT_MAX_IN_FLIGHT
+    try:
+        slot = admission.admit(limit)
+    except admission.Busy:
+        logger.warning("chat_busy in_flight=%d limit=%d", admission.in_flight(), limit)
+        raise AssistantBusy(admission.retry_after_seconds(config.CHAT_BUSY_RETRY_SECONDS))
+    try:
+        yield slot
+    except BaseException:
+        slot.release()
+        raise

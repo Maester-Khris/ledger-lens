@@ -39,6 +39,22 @@ class RateLimited(DomainError):
         return {"Retry-After": str(self.retry_after)}
 
 
+class AssistantBusy(DomainError):
+    """Past this process's limit of chat turns in flight (X3). It is a 503, not a 429: the server is full, and the
+    caller did nothing wrong."""
+
+    status = 503
+    type_slug = "busy"
+    title = "Assistant busy"
+
+    def __init__(self, retry_after: int) -> None:
+        super().__init__(f"The assistant is busy right now; try again in {retry_after} seconds.", retry_after=retry_after)
+        self.retry_after = retry_after
+
+    def headers(self) -> dict[str, str]:
+        return {"Retry-After": str(self.retry_after)}
+
+
 class TurnNotFound(DomainError):
     """The chat turn does not exist, or belongs to another guest: both look the same to the caller."""
 

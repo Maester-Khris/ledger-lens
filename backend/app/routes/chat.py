@@ -7,13 +7,15 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from sqlalchemy.orm import Session, sessionmaker
+from starlette.types import Receive, Scope, Send
 
 from app import config
+from app.assistant.admission import Slot
 from app.assistant.feedback import MAX_COMMENT_LENGTH, FeedbackInput, record_feedback
 from app.assistant.models import FeedbackRating
 from app.assistant.service import AssistantRuntime, run_turn
 from app.assistant.timing import TimingInput, record_timing
-from app.deps import get_guest_id, get_overlay_guest, get_session, get_tenant_id, limit_chat
+from app.deps import get_guest_id, get_overlay_guest, get_session, get_tenant_id, limit_chat, take_turn_slot
 from app.documents import dao as documents_dao
 from app.errors import GuestRequired
 from app.documents.errors import DocumentNotFound
@@ -38,9 +40,26 @@ class ChatIn(BaseModel):
     document_id: uuid.UUID | None = None
 
 
-@router.post("", dependencies=[Depends(limit_chat)])
+class _TurnStream(StreamingResponse):
+    """Holds the turn slot until the streamed turn ends however it ends (finished, failed, client gone). A finally in
+    the generator is not enough: on the ASGI 2.4 path, which newer Starlette takes under uvicorn, a disconnect makes
+    send raise, the generator is left unclosed, and a background task never runs."""
+
+    def __init__(self, content: AsyncIterator[str], slot: Slot, **kwargs: object) -> None:
+        super().__init__(content, **kwargs)  # type: ignore[arg-type]
+        self.slot = slot
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self.slot.release()
+
+
+@router.post("", dependencies=[Depends(take_turn_slot), Depends(limit_chat)])
 async def chat(
     body: ChatIn,
+    slot: Annotated[Slot, Depends(take_turn_slot)],
     tenant_id: Annotated[uuid.UUID, Depends(get_tenant_id)],
     guest_id: Annotated[uuid.UUID | None, Depends(get_guest_id)],
     overlay_guest: Annotated[uuid.UUID | None, Depends(get_overlay_guest)],
@@ -59,7 +78,7 @@ async def chat(
                                     guest_id=guest_id, document_id=body.document_id, overlay_guest=overlay_guest):
             yield f"event: {event.type}\ndata: {json.dumps(event.data)}\n\n"
 
-    return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
+    return _TurnStream(stream(), slot=slot, media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
 
 class FeedbackIn(BaseModel):
