@@ -20,6 +20,8 @@ class ScriptedChatModel(BaseChatModel):
     replies: list[Any] = Field(default_factory=list)
     prompts: list[str] = Field(default_factory=list)
     tool_choices: list[Any] = Field(default_factory=list)
+    # Token logprobs for each structured (answer) reply in order, as OpenAI returns them with logprobs=True.
+    answer_logprobs: list[list[float]] = Field(default_factory=list)
 
     @property
     def _llm_type(self) -> str:
@@ -43,7 +45,12 @@ class ScriptedChatModel(BaseChatModel):
         def run(messages: list[BaseMessage]) -> Any:
             self.prompts.append(_render(messages))
             parsed = self._next(BaseModel)
-            return {"raw": AIMessage(content=""), "parsed": parsed, "parsing_error": None} if include_raw else parsed
+            metadata = {}
+            if self.answer_logprobs:
+                tokens = [{"token": "x", "logprob": value} for value in self.answer_logprobs.pop(0)]
+                metadata = {"logprobs": {"content": tokens}}
+            raw = AIMessage(content="", response_metadata=metadata)
+            return {"raw": raw, "parsed": parsed, "parsing_error": None} if include_raw else parsed
 
         return RunnableLambda(run)
 
