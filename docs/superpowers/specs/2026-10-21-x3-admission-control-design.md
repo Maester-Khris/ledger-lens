@@ -89,12 +89,19 @@ depend on dependency exit timing (Claude's call; pinning is out of scope), and `
 **both**: the shared env (`$PYDEV/bin/pytest`) and inside the load image (`docker run ... ledgerlens-load-app pytest
 tests/test_admission.py`, DB-free). Both runs are recorded.
 
-Shape (Claude's call): `admission.admit()` returns a `Slot` with an idempotent `release()`, or raises `Busy`. The
-route takes the slot **first thing in its body** and calls the rate limit itself (`limit_chat` moves from
-`dependencies=[...]` into the body, after the slot; it stays in `deps.py` unchanged). A `try/except BaseException`
-around the rate-limit call and the document check releases the slot and re-raises (case 4). The generator's `finally`
-releases it (cases 1 to 3), and `StreamingResponse(..., background=BackgroundTask(slot.release))` covers case 5. The
-release is idempotent, so the overlap between `finally` and the background task is harmless. A test asserts that the
+Shape (Claude's call): `admission.admit()` returns a `Slot` with an idempotent `release()`, or raises `Busy`. The slot
+must be taken **before any other dependency**, because `get_guest_id` already writes (`touch_guest`) while
+dependencies resolve. So a dependency `take_turn_slot` comes first in the route's `dependencies=[...]`, before
+`limit_chat`. FastAPI resolves the decorator list in order, before the parameters, and the route reads the same
+cached slot as a parameter. It is a `yield` dependency that releases **only when an exception passes through it**
+(`except BaseException: slot.release(); raise`; case 4). It relies only on exceptions reaching a `yield`
+dependency, which both FastAPI versions do, not on when the normal exit runs. Once a response exists,
+the response releases the slot itself: a small `StreamingResponse` subclass whose `__call__` is
+`try: await super().__call__(...) finally: slot.release()` (cases 1, 2, 3 and 5). A generator `finally` or a
+`BackgroundTask` is not enough. On the ASGI 2.4 path, which newer Starlette takes under uvicorn, a disconnect makes
+`send` raise. The generator is then left unclosed and the background task never runs. The release is idempotent, so
+the dependency and the response may both call it. The disconnect test covers both ways a disconnect shows up: an
+`http.disconnect` from `receive`, and a `send` that raises `OSError`. A test asserts that the
 in-flight count is back to 0 after each case. Validation errors on the body (422) happen before the route runs, so
 they never take a slot.
 
