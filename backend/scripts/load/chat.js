@@ -63,7 +63,9 @@ function isBusy(response) {
 
 function failureKind(response, outcome) {
   if (response.timings.duration >= 55000) return 'timeout';
-  if (response.status === 200) return outcome === null ? 'cut' : 'error_event';
+  // Behind nginx a replica that dies mid-stream drops the connection (status 0, no headers); direct, the 200 just ends.
+  if (response.status === 0 || (response.status === 200 && outcome === null)) return 'cut';
+  if (response.status === 200) return 'error_event';
   return `http_${response.status}`;
 }
 

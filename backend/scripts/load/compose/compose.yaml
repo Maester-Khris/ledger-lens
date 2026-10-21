@@ -1,4 +1,5 @@
-# Local proof that the chat limiter holds across replicas (N5). Nothing here reaches Railway, OpenAI or Pinecone.
+# Local proof that the chat limiter holds across replicas (N5), and the 4-replica replica-loss run (X3,
+# replica_loss.sh). Nothing here reaches Railway, OpenAI or Pinecone.
 # The local Postgres container (fintech-ledger-db) is attached to this network by limiter_check.sh.
 name: ledgerlens-load
 
@@ -22,8 +23,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://ledger_app:localdev@fintech-ledger-db:5432/ledger_dev
       DEMO_MODE: "1"
-      CHAT_LIMIT_PER_GUEST: "10"
+      CHAT_LIMIT_PER_GUEST: ${CHAT_LIMIT_PER_GUEST-10}  # replica_loss.sh raises it so it never triggers
       CHAT_LIMIT_PER_IP: "100000"  # one client sends everything: isolate the per-guest limit
+      CHAT_MAX_IN_FLIGHT: ${CHAT_MAX_IN_FLIGHT-64}  # X3: per replica (one worker each)
       CHAT_LIMIT_WINDOW_SECONDS: "600"
       REDIS_URL: ${REDIS_URL-redis://redis:6379/0}  # REDIS_URL= (empty) runs the in-memory limiter
       OPENAI_BASE_URL: http://mock:8090/v1
@@ -38,7 +40,9 @@ services:
     <<: *app
     command: uvicorn scripts.load.mock_openai:app --host 0.0.0.0 --port 8090 --log-level warning
     environment:
-      MOCK_DELAY_SCALE: "0.05"  # the check counts admissions, not latency
+      MOCK_DELAY_SCALE: ${MOCK_DELAY_SCALE-0.05}  # the limiter check counts admissions, not latency; 1 = calibrated
+      MOCK_LLM_MEAN_S: ${MOCK_LLM_MEAN_S-1.25}
+      MOCK_LLM_SIGMA: ${MOCK_LLM_SIGMA-0.55}
       HEALTH_PORT: "8090"  # load.Dockerfile HEALTHCHECK
 
   redis:

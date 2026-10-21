@@ -56,3 +56,18 @@ scripts/load/limiter_check.sh redis    # pass = exactly 10 admitted: one window 
 ```
 
 Results land in `reports/load/<date>-limiter-<mode>.json`.
+
+## Four replicas, one killed and restarted (X3)
+
+`compose/replica_loss.sh` runs the same stack with 4 replicas (each `CHAT_MAX_IN_FLIGHT=64`, guest limit raised so
+it never triggers, the calibrated mock), holds one level of conversations, hard-kills one replica (`docker kill`: a
+crash, its streams are cut) and starts it again. nginx is set up like a load balancer (re-resolves replicas every
+5 s, skips a failed one for 5 s, 2 s connect timeout); a busy 503 is not retried at nginx. `replica_buckets.py`
+prints 15 s buckets (turns/s, p95, busy, failures by kind, served per replica), the before / during / after phases,
+cut and hung streams, and recovery after the restart.
+
+```bash
+cd backend
+scripts/load/compose/replica_loss.sh x3-b-4-replicas 320 6m 120 240   # kill at 2:00, start at 4:00 of the hold
+$PYDEV/bin/python scripts/load/replica_buckets.py reports/load/<date>-x3-b-4-replicas 360
+```
