@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig, normalizeApiBase, sendFeedback, streamChat } from './api';
+import { API_BASE, checkHealth, decideToolInvocation, listPostings, reversePosting, getConfig, normalizeApiBase, sendFeedback, streamChat, BusyError } from './api';
 
 type Call = { url: string; init?: RequestInit };
 
@@ -137,4 +137,32 @@ it('a failed timing post never reaches the caller', async () => {
   await new Promise(r => setTimeout(r, 10));
   const timingCall = calls.find(c => c.url.includes('/timing'));
   expect(timingCall).toBeDefined();
+});
+
+function respondProblem(body: unknown, status: number, headers: Record<string, string> = {}): void {
+  vi.stubGlobal('fetch', () => Promise.resolve(new Response(JSON.stringify(body),
+    { status, headers: { 'Content-Type': 'application/problem+json', ...headers } })));
+}
+
+it('streamChat throws BusyError with Retry-After on a busy 503', async () => {
+  respondProblem({ type: '/problems/busy', detail: 'The assistant is busy right now; try again in 4 seconds.', retry_after: 4 },
+    503, { 'Retry-After': '4' });
+  const error = await streamChat('s', 'q', () => {}).catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(BusyError);
+  expect((error as BusyError).retryAfterSeconds).toBe(4);
+  expect((error as BusyError).message).toBe('The assistant is busy right now; try again in 4 seconds.');
+});
+
+it('streamChat falls back to the body, then 3 s, when a busy 503 has no Retry-After', async () => {
+  respondProblem({ type: '/problems/busy', detail: 'busy', retry_after: 5 }, 503);
+  expect(((await streamChat('s', 'q', () => {}).catch((e: unknown) => e)) as BusyError).retryAfterSeconds).toBe(5);
+  respondProblem({ type: '/problems/busy', detail: 'busy' }, 503);
+  expect(((await streamChat('s', 'q', () => {}).catch((e: unknown) => e)) as BusyError).retryAfterSeconds).toBe(3);
+});
+
+it('streamChat throws a plain error on a non-busy 503', async () => {
+  respondProblem({}, 503);
+  const error = await streamChat('s', 'q', () => {}).catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(Error);
+  expect(error).not.toBeInstanceOf(BusyError);
 });
