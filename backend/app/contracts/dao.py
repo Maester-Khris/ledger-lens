@@ -1,3 +1,5 @@
+import json
+import re
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -16,7 +18,7 @@ from app.contracts.agree import Outcome
 from app.contracts.models import ExtractedField, ExtractionRun, FieldLabel, FieldReview, FieldVerification, GuestFieldReview
 from app.contracts.types import FieldRouting, ReviewDecision
 from app.documents import dao as documents_dao
-from app.documents.models import DocumentVersion
+from app.documents.models import Document, DocumentVersion
 from datetime import date, datetime
 from app.billing import dao as billing_dao
 from app.billing.errors import NoScheduleAssigned
@@ -633,4 +635,44 @@ def save_labels(session: Session, rows: Sequence[LabelRow]) -> None:
             blind=r.blind,
         ))
     session.flush()
+
+
+@dataclass(frozen=True)
+class AdjudicatedLabel:
+    document_key: str
+    title: str
+    field_path: str
+    value: object
+
+
+def adjudicated_labels(session: Session, tenant_id: uuid.UUID) -> list[AdjudicatedLabel]:
+    """Return owner-adjudicated ground-truth labels for the tenant's documents so eval anchor cases can measure the key writer's own error rate."""
+    rows = session.execute(
+        select(Document.document_key, Document.title, FieldLabel.field_path, FieldLabel.label_value)
+        .select_from(FieldLabel)
+        .join(ExtractionRun, ExtractionRun.id == FieldLabel.run_id)
+        .join(DocumentVersion, DocumentVersion.id == ExtractionRun.version_id)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(FieldLabel.labeller == "adjudicated", Document.tenant_id == tenant_id)
+        .order_by(Document.document_key, FieldLabel.field_path)
+    )
+    return [AdjudicatedLabel(*row) for row in rows]
+
+
+def accepted_values(session: Session, tenant_id: uuid.UUID) -> dict[str, set[str]]:
+    """Collect distinct accepted JSON values per base field across the tenant's contracts so underspecified questions only ask about fields that actually vary."""
+    rows = session.execute(
+        select(ExtractedField.field_path, ExtractedField.value)
+        .select_from(ExtractedField)
+        .join(ExtractionRun, ExtractionRun.id == ExtractedField.run_id)
+        .join(DocumentVersion, DocumentVersion.id == ExtractionRun.version_id)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(ExtractedField.routing == FieldRouting.accepted, Document.tenant_id == tenant_id)
+    )
+    values: dict[str, set[str]] = {}
+    for field_path, value in rows:
+        base = re.sub(r"\[\d+\]$", "", field_path)
+        values.setdefault(base, set()).add(json.dumps(value, sort_keys=True))
+    return values
+
 
