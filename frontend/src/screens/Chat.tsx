@@ -4,7 +4,7 @@ import { ArrowUpIcon, SparkleIcon } from '../components/Icons';
 import { Markdown } from '../components/Markdown';
 import { ApprovalCard } from '../components/ApprovalCard';
 import { StatusPill } from '../components/StatusPill';
-import { type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, listDocuments, streamChat, listToolInvocations } from '../api';
+import { BusyError, type ChatEvent, type Citation, type ToolInvocationDto, type DocumentSummary, type UnvalidatedDto, listDocuments, streamChat, listToolInvocations } from '../api';
 import { DocumentCards } from '../components/workspace/DocumentCards';
 import { ScopeChip } from '../components/workspace/ScopeChip';
 import { DocumentPanel, type PanelTab } from '../components/workspace/DocumentPanel';
@@ -14,6 +14,7 @@ import { AuditLog } from '../components/workspace/AuditLog';
 import { LedgerTimeline } from '../components/workspace/LedgerTimeline';
 import { UnvalidatedNotice } from '../components/workspace/UnvalidatedNotice';
 import { DocumentViewer } from '../components/DocumentViewer';
+import { busyMessage, isWaiting, nextBusyStep } from '../lib/busy';
 import { startersFor } from '../lib/starters';
 import { citationTarget, type ViewerTarget } from '../lib/viewer';
 import { FeedbackControl } from '../components/FeedbackControl';
@@ -39,6 +40,7 @@ function AssistantHead({ label, variant, detail }: AssistantHeadProps) {
 type Turn = {
   question: string;
   step: string | null;
+  notice?: string | null;
   outcome: 'pending' | 'answer' | 'refused' | 'clarify' | 'error';
   text: string;
   citations: Citation[];
@@ -146,7 +148,19 @@ export function Chat() {
   }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const busy = turns.some((t) => t.outcome === 'pending');
+  const [busyUntil, setBusyUntil] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
+  const busy = isWaiting(turns.some((t) => t.outcome === 'pending'), busyUntil, now);
+
+  useEffect(() => {
+    if (busyUntil === null) return;
+    const timer = window.setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= busyUntil) setBusyUntil(null);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [busyUntil]);
 
   useEffect(() => {
     listDocuments()
@@ -166,7 +180,7 @@ export function Chat() {
     if (!question.trim() || busy) return;
     setInputValue('');
     setCardsOpen(false);
-    setTurns((all) => [...all, { question, step: null, outcome: 'pending', text: '', citations: [], unvalidated: [], turnId: null }]);
+    setTurns((all) => [...all, { question, step: null, notice: null, outcome: 'pending', text: '', citations: [], unvalidated: [], turnId: null }]);
     const onEvent = (event: ChatEvent) => {
       if (event.type === 'progress') updateLast({ step: event.data.step });
       else if (event.type === 'unvalidated') setTurns((all) => all.map((t, i) => (i === all.length - 1 ? { ...t, unvalidated: [...t.unvalidated, event.data] } : t)));
@@ -174,9 +188,30 @@ export function Chat() {
       else updateLast({ outcome: event.type, text: event.data.text, citations: event.data.citations, turnId: event.data.turn_id });
     };
     try {
-      await streamChat(sessionId, question, onEvent, { documentId: scopeId ?? undefined });
-    } catch (error) {
-      updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          await streamChat(sessionId, question, onEvent, { documentId: scopeId ?? undefined });
+          break;
+        } catch (error) {
+          if (error instanceof BusyError) {
+            const step = nextBusyStep(error.retryAfterSeconds, attempt);
+            const current = Date.now();
+            const until = current + step.waitMs;
+            setNow(current);
+            setBusyUntil(until);
+            if (step.kind === 'retry') {
+              updateLast({ notice: busyMessage(until, current) });
+              await new Promise((resolve) => setTimeout(resolve, step.waitMs));
+              updateLast({ notice: null });
+              continue;
+            }
+            updateLast({ notice: null, outcome: 'error', text: busyMessage(until, current) });
+            break;
+          }
+          updateLast({ outcome: 'error', text: error instanceof Error ? error.message : 'Chat failed' });
+          break;
+        }
+      }
     } finally {
       inputRef.current?.focus();
       refreshApprovals(sessionId);
@@ -236,7 +271,12 @@ export function Chat() {
                     <div className="chat__bubble--user">{turn.question}</div>
                   </div>
                   <div className="chat__turn chat__turn--assistant" aria-live="polite">
-                    {turn.outcome === 'pending' && <AssistantHead label={turn.step ?? 'thinking'} variant="accent" />}
+                    {turn.outcome === 'pending' && (
+                      <AssistantHead
+                        label={turn.notice && busyUntil !== null ? busyMessage(busyUntil, now) : (turn.notice ?? turn.step ?? 'thinking')}
+                        variant="accent"
+                      />
+                    )}
                     {turn.unvalidated.map((notice, i) => (
                       <UnvalidatedNotice key={i} notice={notice} />
                     ))}
