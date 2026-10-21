@@ -23,6 +23,7 @@ const BASE_URL = __ENV.BASE_URL || 'http://127.0.0.1:8012';
 const STEPS = (__ENV.STEPS || '5,10,20,40,80,160').split(',').map((s) => Number(s.trim()));
 const STEP_HOLD = __ENV.STEP_HOLD || '1m';
 const TURNS = Number(__ENV.TURNS || 2);
+const MAX_BUSY_RETRIES = 3; // as the chat screen (frontend/src/lib/busy.ts): same guest, same question, after Retry-After
 
 const questions = new SharedArray('golden answerable questions', () => JSON.parse(open('./questions.json')));
 const turnDuration = new Trend('chat_turn_duration', true);
@@ -85,8 +86,17 @@ export default function () {
   const sessionId = `load-${__VU}-${__ITER}-${Date.now()}`;
   for (let i = 0; i < TURNS; i++) {
     const message = questions[Math.floor(Math.random() * questions.length)];
-    const turn = http.post(`${BASE_URL}/chat`, JSON.stringify({ session_id: sessionId, message }),
-      { headers, tags: { name: 'chat' }, timeout: '120s' });
+    let turn;
+    for (let attempt = 0; ; attempt++) {
+      turn = http.post(`${BASE_URL}/chat`, JSON.stringify({ session_id: sessionId, message }),
+        { headers, tags: { name: 'chat' }, timeout: '120s' });
+      if (!isBusy(turn) || attempt === MAX_BUSY_RETRIES) break;
+      // A busy turn is retried by the same guest, as the chat screen does; starting over with a new guest would add a
+      // POST /guests (a DB write admission does not cover) that no real visitor sends.
+      turnBusy.add(true);
+      busyDuration.add(turn.timings.duration);
+      sleep(Number(turn.headers['Retry-After'] || 3));
+    }
     const busy = turn.status === 429 || isBusy(turn);
     const outcome = turn.status === 200 ? finalEvent(turn.body) : null;
     const served = ['answer', 'refused', 'clarify'].includes(outcome);
@@ -108,8 +118,8 @@ export default function () {
       turnsServed.add(1, { upstream });
       if (outcome === 'answer') turnsAnswered.add(1);
     } else {
-      // busy or failed: the conversation ends here, as a guest would give up. A busy guest first waits the
-      // Retry-After it was given, so a refused virtual user does not loop on POST /guests and add load of its own.
+      // busy after every retry, or failed: the conversation ends here, as a guest would give up. A busy guest first
+      // waits the Retry-After it was given (the chat screen then holds a busy state).
       if (busy) sleep(Number(turn.headers['Retry-After'] || 3));
       break;
     }

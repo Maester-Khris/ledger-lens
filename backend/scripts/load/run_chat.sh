@@ -10,7 +10,8 @@
 # the thread holding the GIL: Python CPU work, not waits). Summarise with scripts/load/profile_top.py. py-spy runs
 # inside any BOX and takes CPU from it, so profile without BOX: proportions do not depend on the box.
 # X3: CHAT_MAX_IN_FLIGHT=<n> sets the API's per-worker limit of chat turns in flight (unset = no limit); NO_ABORT=1
-# runs the whole ladder past k6's stop rule, to measure overload instead of stopping at it.
+# runs the whole ladder past k6's stop rule, to measure overload instead of stopping at it. Keep-alive 75 s (nginx's
+# default, as behind a proxy): at uvicorn's 5 s, k6 reused sockets the server was closing after a busy wait (X3 A1).
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -38,7 +39,7 @@ MOCK=$!
 env -u ENV_FILE OPENAI_BASE_URL="http://127.0.0.1:$MOCK_PORT/v1" OPENAI_API_KEY=mock LOADTEST_STUB_VECTORS=1 \
   DEMO_MODE= LANGFUSE_PUBLIC_KEY= LANGFUSE_SECRET_KEY= SENTRY_DSN= CHAT_MAX_IN_FLIGHT="${CHAT_MAX_IN_FLIGHT:-0}" \
   "${CONFINE[@]}" "${PROFILER[@]}" "$PYDEV/bin/uvicorn" app.main:app --host 127.0.0.1 --port "$API_PORT" --workers "${BOX_WORKERS:-1}" \
-  --log-level warning > "$OUT.api.log" 2>&1 &
+  --timeout-keep-alive 75 --log-level warning > "$OUT.api.log" 2>&1 &
 API=$!
 SAMPLER=
 trap 'pkill -P $API 2>/dev/null; kill $API $MOCK $SAMPLER 2>/dev/null || true' EXIT
