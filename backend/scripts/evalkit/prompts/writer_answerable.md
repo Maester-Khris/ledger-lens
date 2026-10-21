@@ -6,7 +6,7 @@ Write exactly 2 questions a client or an operations analyst would ask about THIS
 different clause (for example the fee rate or schedule, how often fees are billed, how fees are calculated, the
 governing law, termination notice, the effective date, the parties). Name the agreement in each question (by its fund
 or adviser name) so it is clear which contract is meant.
-$false_premise_rule
+$false_premise_rule$anchor_rule
 Rules:
 - The answer must be stated in the text. Do not ask about anything the text does not say.
 - "reference" is the correct answer in one or two sentences, using the text's own figures.

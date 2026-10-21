@@ -5,8 +5,8 @@ from pathlib import Path
 
 from scripts.evalkit import check_key
 from scripts.evalkit.cases import Case, read_cases
-from scripts.evalkit.check_key import (CHECKER_MODEL, accept_verdicts, check_batches, data_verdicts, prepare_batch,
-                                       run_agy, underspecified_ok)
+from scripts.evalkit.check_key import (CHECKER_MODEL, accept_verdicts, check_batches, data_verdicts, passage_cases,
+                                       prepare_batch, run_agy, underspecified_ok)
 from scripts.evalkit.checkpoint import Checkpoint
 
 
@@ -140,3 +140,10 @@ def test_data_verdicts_cover_underspecified_cases_only():
              _case("a")]
     rows = data_verdicts(cases, {"governing_law": {'"Delaware"', '"Ontario"'}, "currency": {'"USD"'}})
     assert [(r["case_id"], r["agrees"], r["checker"]) for r in rows] == [("u1", True, "data"), ("u2", False, "data")]
+
+
+def test_passages_are_only_fetched_for_unchecked_out_of_corpus_cases():
+    out = dict(category="out_of_corpus", key=None, expect="refuse", reference=None, expect_numbers=(),
+               gold_element_ids=(), page=None)
+    cases = [_case("o1", **out), _case("o2", **out), _case("a")]
+    assert [c.id for c in passage_cases(cases, done={"o1"})] == ["o2"]

@@ -11,8 +11,8 @@ from app.contracts.fields import FieldResult
 from app.contracts.types import FieldRouting
 from scripts.evalkit.checkpoint import Checkpoint
 from scripts.evalkit.providers import DailyBudgetExceeded
-from scripts.evalkit.write_key import (JUNK_WRITER, WRITERS, WriteItem, anchor_item, anchor_question, assign_writers,
-                                       document_item, document_text, junk_item, parse_anchor, parse_cases, run_writers)
+from scripts.evalkit.write_key import (JUNK_WRITER, OUTPUT_TOKENS, WRITERS, WriteItem, anchor_question, assign_writers,
+                                       document_item, document_text, junk_item, parse_anchors, parse_cases, run_writers)
 from tests.test_contracts_dao import CONFIG
 from tests.test_retrieval_index import parsed_version
 
@@ -136,24 +136,56 @@ def test_anchor_question_names_the_field_and_contract():
     assert "fee tiers" in question and "2" in question and "Acme Fund advisory agreement" in question
 
 
-def test_anchor_item_keeps_the_human_label_out_of_the_prompt():
-    label = AdjudicatedLabel(document_key="acme", title="Acme", field_path="governing_law", value="Ontario")
-    item = anchor_item(label, ELEMENTS, WRITERS[1])
-    assert item.id == "anchor:acme:governing_law" and item.kind == "anchor"
-    assert "governing_law" in item.prompt and "[e1] p1:" in item.prompt
+def _labelled_item(*labels):
+    return document_item("acme", "Acme Fund advisory agreement", ELEMENTS, WRITERS[1], false_premise=False, labels=labels)
+
+
+def test_output_reservation():
+    assert OUTPUT_TOKENS == 1000
+
+
+def test_document_without_labels_has_no_anchor_rule():
+    assert '"anchors"' not in _item().prompt
+
+
+def test_anchor_questions_ride_on_the_document_call_without_the_human_label():
+    # One call per contract: the anchor questions share the document text instead of re-sending it (Groq daily cap).
+    label = AdjudicatedLabel(document_key="acme", title="Acme Fund advisory agreement", field_path="governing_law",
+                             value="Ontario")
+    item = _labelled_item(label)
+    assert item.labels == (label,)
+    assert "governing_law" in item.prompt and '"anchors"' in item.prompt and item.prompt.count("[e1] p1:") == 1
     assert "Ontario" not in item.prompt
 
 
-def test_parse_anchor_keeps_the_label_for_the_report_only():
-    item = anchor_item(_label(), ELEMENTS, WRITERS[1])
-    case = parse_anchor(json.dumps({"value": "monthly", "gold_element_ids": ["e2"], "page": 2}), item=item)
+def test_parse_anchors_keeps_the_label_for_the_report_only():
+    item = _labelled_item(_label())
+    reply = json.dumps({"cases": [GOOD], "anchors": [{"field_path": "billing_frequency", "value": "monthly",
+                                                      "gold_element_ids": ["e2"], "page": 2}]})
+    [case] = parse_anchors(reply, item=item)
+    assert case.id == "anchor:acme:billing_frequency#0"
     assert case.origin == "anchor" and case.field_path == "billing_frequency"
     assert case.reference == "monthly" and case.anchor_value == "monthly"
     assert case.gold_element_ids == ("e2",) and case.writer == WRITERS[1]
 
 
-def test_parse_anchor_bad_reply_is_none():
-    assert parse_anchor("nope", item=anchor_item(_label(), ELEMENTS, WRITERS[1])) is None
+def test_parse_anchors_skips_unstated_and_unasked_terms():
+    item = _labelled_item(_label())
+    reply = json.dumps({"cases": [], "anchors": [{"field_path": "billing_frequency", "value": None},
+                                                 {"field_path": "currency", "value": "USD"}]})
+    assert parse_anchors(reply, item=item) == []
+
+
+def test_parse_anchors_bad_reply_is_empty():
+    assert parse_anchors("nope", item=_labelled_item(_label())) == []
+
+
+def test_anchor_cases_are_written_with_the_document_row(tmp_path):
+    reply = json.dumps({"cases": [GOOD], "anchors": [{"field_path": "billing_frequency", "value": "monthly",
+                                                      "gold_element_ids": ["e2"], "page": 2}]})
+    summary, written, _ = _run(tmp_path, [_labelled_item(_label())], {w: (lambda p: reply) for w in WRITERS})
+    [row] = written.rows()
+    assert [c["origin"] for c in row["cases"]] == ["written", "anchor"]
 
 
 def _run(tmp_path, items, clients, limiters=None):

@@ -174,6 +174,12 @@ def check_batches(
     }
 
 
+def passage_cases(cases: Sequence[Case], done: set[str]) -> list[Case]:
+    """Out-of-corpus cases still to check: their corpus passages cost an embedding call each, so a resumed run must
+    not fetch them again for cases already checked."""
+    return [c for c in cases if c.category == "out_of_corpus" and c.id not in done]
+
+
 def underspecified_ok(values_by_field: Mapping[str, set[str]], field_path: str) -> bool:
     """Return True when a field has at least two distinct accepted values across contracts, making an unnamed-contract question genuinely underspecified."""
     return len(values_by_field.get(field_path, set())) >= 2
@@ -241,25 +247,24 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         hmac_key = config.require("PII_HMAC_KEY")
         vault_key = config.require("PII_VAULT_KEY")
-        for case in cases:
-            if case.category == "out_of_corpus":
-                tokenised = documents_dao.tokenize_known_values(
-                    session, DEMO_TENANT_ID, case.question, hmac_key, vault_key,
-                )
-                top_hits = dense_matches(
-                    session,
-                    tenant_id=DEMO_TENANT_ID,
-                    query=tokenised,
-                    embeddings=runtime.embeddings,
-                    vector_index=runtime.vector_index,
-                )[:8]
-                ev_rows = retrieval_dao.evidence_rows(session, [eid for eid, _ in top_hits])
-                lines = [
-                    f"[{eid}] p{ev_rows[eid][0].page_start}: {ev_rows[eid][0].text_redacted}"
-                    for eid, _ in top_hits
-                    if eid in ev_rows
-                ]
-                corpus_passages[case.id] = "\n".join(lines)
+        for case in passage_cases(cases, verdicts.done()):
+            tokenised = documents_dao.tokenize_known_values(
+                session, DEMO_TENANT_ID, case.question, hmac_key, vault_key,
+            )
+            top_hits = dense_matches(
+                session,
+                tenant_id=DEMO_TENANT_ID,
+                query=tokenised,
+                embeddings=runtime.embeddings,
+                vector_index=runtime.vector_index,
+            )[:8]
+            ev_rows = retrieval_dao.evidence_rows(session, [eid for eid, _ in top_hits])
+            lines = [
+                f"[{eid}] p{ev_rows[eid][0].page_start}: {ev_rows[eid][0].text_redacted}"
+                for eid, _ in top_hits
+                if eid in ev_rows
+            ]
+            corpus_passages[case.id] = "\n".join(lines)
 
     done_ids = verdicts.done()
     underspecified_cases = [c for c in cases if c.category == "underspecified"]

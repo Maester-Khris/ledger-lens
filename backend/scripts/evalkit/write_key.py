@@ -28,7 +28,7 @@ WRITERS: tuple[str, str] = ("qwen/qwen3.8-27b", "openai/gpt-oss-120b")
 JUNK_WRITER: str = "qwen/qwen3.8-27b"
 JUNK_COUNT: int = 20
 MAX_DOC_CHARS: int = 20000
-OUTPUT_TOKENS: int = 1500
+OUTPUT_TOKENS: int = 1000
 PROMPTS: Path = Path(__file__).parent / "prompts"
 
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
@@ -52,7 +52,7 @@ class WriteItem:
     prompt: str
     document_key: str | None = None
     known_element_ids: frozenset[str] = frozenset()
-    label: AdjudicatedLabel | None = None
+    labels: tuple[AdjudicatedLabel, ...] = ()  # anchor questions asked in the same call as the document's cases
 
 
 def _load_prompt(name: str) -> Template:
@@ -98,15 +98,23 @@ def document_item(
     writer: str,
     *,
     false_premise: bool,
+    labels: Sequence[AdjudicatedLabel] = (),
 ) -> WriteItem:
-    """Build a prompt item asking a writer model for answerable (and optionally false-premise) questions on one contract."""
+    """Build one call per contract: its answerable (and optionally false-premise) questions, plus the anchor questions
+    for the fields the owner labelled by hand. Anchors ride on the same call so the contract text is sent once: sent
+    per label, the 128 labels alone would pass the two writers' 400k tokens a day. The human values never enter it."""
     text, ids = document_text(elements)
     rule = (PROMPTS / "writer_false_premise_rule.md").read_text(encoding="utf-8") if false_premise else ""
+    anchor_rule = ""
+    if labels:
+        questions = "\n".join(f"- {label.field_path}: {anchor_question(label.field_path, title)}" for label in labels)
+        anchor_rule = _load_prompt("writer_anchor.md").substitute(questions=questions)
     prompt = _load_prompt("writer_answerable.md").substitute(
         document_key=document_key,
         title=title,
         text=text,
         false_premise_rule=rule,
+        anchor_rule=anchor_rule,
     )
     return WriteItem(
         id=f"doc:{document_key}",
@@ -115,6 +123,7 @@ def document_item(
         prompt=prompt,
         document_key=document_key,
         known_element_ids=ids,
+        labels=tuple(labels),
     )
 
 
@@ -144,31 +153,6 @@ def anchor_question(field_path: str, title: str) -> str:
     """Turn a field path and contract title into a natural question so the key writer answers the same question as a user."""
     name = re.sub(r"\[(\d+)\]", lambda m: f" number {int(m.group(1)) + 1}", field_path.replace("_", " "))
     return f"What is the {name} in the {title}?"
-
-
-def anchor_item(
-    label: AdjudicatedLabel,
-    elements: Sequence[ElementLike],
-    writer: str,
-) -> WriteItem:
-    """Build an anchor prompt item while keeping the human adjudicated value off the prompt so the writer cannot leak it."""
-    text, ids = document_text(elements)
-    question = anchor_question(label.field_path, label.title)
-    prompt = _load_prompt("writer_anchor.md").substitute(
-        title=label.title,
-        question=question,
-        field_path=label.field_path,
-        text=text,
-    )
-    return WriteItem(
-        id=f"anchor:{label.document_key}:{label.field_path}",
-        kind="anchor",
-        writer=writer,
-        prompt=prompt,
-        document_key=label.document_key,
-        known_element_ids=ids,
-        label=label,
-    )
 
 
 def parse_cases(reply: str, *, item: WriteItem) -> list[Case]:
@@ -222,39 +206,41 @@ def parse_cases(reply: str, *, item: WriteItem) -> list[Case]:
     return cases
 
 
-def parse_anchor(reply: str, *, item: WriteItem) -> Case | None:
-    """Parse an anchor reply into an answerable Case that retains the human label for measuring key error rate."""
-    if item.label is None:
-        return None
+def parse_anchors(reply: str, *, item: WriteItem) -> list[Case]:
+    """Turn the "anchors" list of a document reply into anchor cases, one per labelled field the writer stated. Each
+    keeps the human label in anchor_value for the report only; unstated (null) and unasked fields are skipped."""
     try:
         data = json.loads(_strip_fence(reply))
     except (json.JSONDecodeError, TypeError):
-        return None
-    if not isinstance(data, dict) or data.get("value") is None:
-        return None
-    value = data["value"]
-    reference = value if isinstance(value, str) else json.dumps(value)
-    if not reference:
-        return None
-    raw_ids = data.get("gold_element_ids") or ()
-    if not isinstance(raw_ids, (list, tuple)):
-        return None
-    page = data.get("page")
-    label = item.label
-    return Case(
-        id=f"{item.id}#0",
-        category="answerable",
-        question=anchor_question(label.field_path, label.title),
-        expect="answer",
-        document_key=label.document_key,
-        reference=reference,
-        gold_element_ids=tuple(str(x) for x in raw_ids),
-        page=page if isinstance(page, int) else None,
-        writer=item.writer,
-        origin="anchor",
-        field_path=label.field_path,
-        anchor_value=label.value,
-    )
+        return []
+    entries = data.get("anchors") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        return []
+    stated = {e["field_path"]: e for e in entries if isinstance(e, dict) and isinstance(e.get("field_path"), str)}
+    cases: list[Case] = []
+    for label in item.labels:
+        entry = stated.get(label.field_path)
+        if entry is None or entry.get("value") is None:
+            continue
+        value = entry["value"]
+        raw_ids = entry.get("gold_element_ids") or ()
+        ids = tuple(str(x) for x in raw_ids if str(x) in item.known_element_ids) if isinstance(raw_ids, (list, tuple)) else ()
+        page = entry.get("page")
+        cases.append(Case(
+            id=f"anchor:{label.document_key}:{label.field_path}#0",
+            category="answerable",
+            question=anchor_question(label.field_path, label.title),
+            expect="answer",
+            document_key=label.document_key,
+            reference=value if isinstance(value, str) else json.dumps(value),
+            gold_element_ids=ids,
+            page=page if isinstance(page, int) else None,
+            writer=item.writer,
+            origin="anchor",
+            field_path=label.field_path,
+            anchor_value=label.value,
+        ))
+    return cases
 
 
 def run_writers(
@@ -298,11 +284,9 @@ def run_writers(
                     last_error = str(exc) or exc.__class__.__name__
                     continue
 
-                if item.kind == "anchor":
-                    anchor_case = parse_anchor(reply, item=item)
-                    cases = [anchor_case] if anchor_case is not None else []
-                else:
-                    cases = parse_cases(reply, item=item)
+                cases = parse_cases(reply, item=item)
+                if cases:  # anchors only count alongside the document's own cases
+                    cases += parse_anchors(reply, item=item)
 
                 if cases:
                     with lock:
@@ -365,6 +349,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         labels = contracts_dao.adjudicated_labels(session, DEMO_TENANT_ID)
         accepted = contracts_dao.accepted_values(session, DEMO_TENANT_ID)
 
+    labels_by_key: dict[str, list[AdjudicatedLabel]] = {}
+    for label in labels:
+        labels_by_key.setdefault(label.document_key, []).append(label)
     items: list[WriteItem] = []
     for i, key in enumerate(sorted_keys):
         items.append(
@@ -374,6 +361,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 elements_by_key[key],
                 writers[key],
                 false_premise=(i % 5 == 0),
+                labels=labels_by_key.get(key, ()),
             )
         )
 
@@ -381,10 +369,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     fields = sorted(field for field, vals in accepted.items() if len(vals) >= 2)
     for category in ("out_of_corpus", "underspecified", "nonsense", "off_topic"):
         items.append(junk_item(category, JUNK_WRITER, titles=titles, fields=fields))
-
-    for label in labels:
-        if label.document_key in elements_by_key:
-            items.append(anchor_item(label, elements_by_key[label.document_key], writers[label.document_key]))
 
     clients: dict[str, Callable[[str], str]] = {
         model: (lambda m: lambda p: str(chat_client("groq", m).invoke(p).content))(model)

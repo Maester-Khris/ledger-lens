@@ -4,6 +4,7 @@ import json
 from scripts.evalkit.assemble_key import assemble, explained_cases, run_tiebreaks, tiebreaker_for
 from scripts.evalkit.cases import MIX, Case
 from scripts.evalkit.checkpoint import Checkpoint
+from scripts.evalkit.providers import DailyBudgetExceeded
 
 
 def _case(case_id, category="answerable", writer="qwen/qwen3.8-27b", origin="written", **extra):
@@ -55,6 +56,13 @@ def test_tiebreak_prompt_carries_the_case_reason_and_text(tmp_path):
 def test_unreadable_tiebreak_counts_as_not_kept(tmp_path):
     summary, checkpoint = _tiebreak(tmp_path, [(_case("a"), "r")], lambda prompt: "no idea")
     assert checkpoint.rows()[0]["keep"] is False and summary["unreadable"] == 1
+
+
+def test_daily_budget_stops_tiebreaks_without_recording(tmp_path):
+    def spent(prompt):
+        raise DailyBudgetExceeded("spent")
+    summary, checkpoint = _tiebreak(tmp_path, [(_case("a"), "r")], spent)
+    assert checkpoint.done() == set() and summary["stopped"] == "daily_budget"
 
 
 def test_rerun_does_not_repeat_tiebreaks(tmp_path):

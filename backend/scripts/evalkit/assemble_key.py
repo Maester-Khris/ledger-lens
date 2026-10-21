@@ -13,7 +13,7 @@ from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 from scripts.evalkit.cases import CATEGORIES, MIX, Case, from_golden, write_cases
 from scripts.evalkit.checkpoint import Checkpoint, summary_line
-from scripts.evalkit.providers import GROQ_LIMITS, TokenLimiter, chat_client, estimate_tokens
+from scripts.evalkit.providers import GROQ_LIMITS, DailyBudgetExceeded, TokenLimiter, chat_client, estimate_tokens
 from scripts.evalkit.write_key import OUTPUT_TOKENS, document_text
 
 PROMPTS: Path = Path(__file__).parent / "prompts"
@@ -91,6 +91,13 @@ def run_tiebreaks(
         is_unreadable = False
         try:
             raw_reply = clients[tiebreaker](prompt)
+        except DailyBudgetExceeded:
+            # A quota stop is not a verdict: leave the case unrecorded so the next run decides it.
+            return {"kept": kept, "rejected": rejected, "unreadable": unreadable, "skipped": skipped,
+                    "stopped": "daily_budget"}
+        except Exception:
+            raw_reply = ""  # a failed call is recorded as unreadable, as the reply would be
+        try:
             parsed = json.loads(_strip_fence(raw_reply))
             if (
                 isinstance(parsed, dict)
@@ -123,6 +130,7 @@ def run_tiebreaks(
         "rejected": rejected,
         "unreadable": unreadable,
         "skipped": skipped,
+        "stopped": None,
     }
 
 
@@ -240,7 +248,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             return _call
 
         clients = {model: _make_client(model) for model in TIEBREAKERS}
-        run_tiebreaks(disputed, clients, texts, tb_checkpoint)
+        tb_summary = run_tiebreaks(disputed, clients, texts, tb_checkpoint)
+        if tb_summary["stopped"]:
+            print(summary_line("assemble_key", stopped=tb_summary["stopped"], tiebreaks_left=len(disputed) - len(tb_checkpoint.done())))
+            return
         tb_checkpoint.finish()
 
     tiebreak_rows = _read_jsonl_or_checkpoint(key_dir / "tiebreaks.jsonl", key="case_id")
