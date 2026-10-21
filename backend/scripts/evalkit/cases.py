@@ -51,6 +51,8 @@ def validate(case: Case) -> list[str]:
         problems.append(f"unknown category: {case.category}")
     if case.expect not in EXPECTS:
         problems.append(f"unknown expect: {case.expect}")
+    # The 37 carried-in golden cases predate reference answers and gold passages; the report rates them only where
+    # they have them.
     if case.origin != "golden":
         if case.category == "answerable":
             if not case.reference:
