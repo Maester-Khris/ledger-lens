@@ -27,7 +27,7 @@ def problem_response(
 def install_problem_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def domain_error(_: Request, exc: DomainError) -> JSONResponse:
-        if exc.status >= 500:
+        if exc.status >= 500 and exc.is_fault:
             logger.error("domain error %s: %s", exc.type_slug, exc.detail)
         return problem_response(
             exc.status, exc.type_slug, exc.title, exc.detail, headers=exc.headers(), **exc.extensions

@@ -239,3 +239,10 @@ def test_a_send_that_fails_mid_stream_frees_the_slot(app, monkeypatch):
 def test_a_send_that_fails_before_the_first_chunk_frees_the_slot(app):
     _failing_send_scenario(app, "http.response.start")
     assert admission.in_flight() == 0
+
+
+def test_a_busy_refusal_is_a_warning_not_an_error_log(client, held_slot, caplog):
+    """Under overload every refusal is expected: one ERROR line (and Sentry event) per refusal would flood both."""
+    with caplog.at_level("WARNING"):
+        assert client.post("/chat", json=BODY).status_code == 503
+    assert [r.levelname for r in caplog.records if "busy" in r.getMessage()] == ["WARNING"]

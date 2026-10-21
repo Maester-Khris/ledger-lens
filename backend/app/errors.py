@@ -4,6 +4,7 @@ class DomainError(Exception):
     status: int = 500
     type_slug: str = "internal-error"
     title: str = "Internal error"
+    is_fault: bool = True  # a 5xx that is our fault is logged as an error
 
     def __init__(self, detail: str, **extensions: object) -> None:
         super().__init__(detail)
@@ -46,6 +47,7 @@ class AssistantBusy(DomainError):
     status = 503
     type_slug = "busy"
     title = "Assistant busy"
+    is_fault = False  # shedding load is the intended answer; deps.take_turn_slot logs a warning
 
     def __init__(self, retry_after: int) -> None:
         super().__init__(f"The assistant is busy right now; try again in {retry_after} seconds.", retry_after=retry_after)
