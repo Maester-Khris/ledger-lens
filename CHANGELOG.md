@@ -391,6 +391,23 @@ after it, write-up only.
       column and none of their conclusions rests on it.
 - [ ] `ops` — **X0** the expanded corpus on the public demo: local demo ingest, dump and restore to Railway, the demo
       Pinecone index refilled. Until it lands, every corpus claim says "local" → **Epic 1.5**
+      **Partial 2026-10-21:** built beside the live demo, which is untouched (its `railway` database and `contract-demo`
+      index were only read). The live database was snapshotted and restored locally as `ledger_demo_x0` (its 4
+      documents and all guest activity kept with the same ids), then the 98 other `ledger_dev` filings were ingested
+      with the demo PII keys (same bytes, keys, titles, source URLs), verified (X1) and indexed into a new Pinecone index
+      `contract-demo-v2` (the 124 live vectors copied in first). 102 documents, 0 failed, 67 min on one local worker;
+      806 fields accepted and 738 routed to review on the new documents; 2,605 elements all with boxes (the 4 old ones
+      backfilled, 141/141 matched); 902 field verifications; 2,118 search rows = 2,118 vectors. Shipped as a **new**
+      database `railway_x0` in the same Railway Postgres (migrated to `0017` as `ledger_owner`, data restored): all 37
+      tables equal row for row to `ledger_demo_x0`. Spend $1.37 at list price (extraction $1.31, verification $0.03,
+      embeddings ≈ $0.003, a 2-question chat check ≈ $0.03), within the $1.4 estimate. Spot check: a fee question on a
+      new filing answers with the right rate and citation; `governing-law` still hedges at 0.46 (see Deferred).
+      **Left:** (1) copy the originals into the Railway volume (`script.demo.sh copy-originals`): blocked on 2026-10-21
+      by Railway's major outage (dashboard, API, `railway ssh` down); until then a citation on a new document cannot
+      open its PDF, which is harmless because nothing points at `railway_x0` yet; (2) the cutover, held until this
+      branch is deployed (the deployed graph re-sends the 102 titles on every model call, about 4x the cost per turn):
+      the Railway API's `DATABASE_URL` to `railway_x0` and `PINECONE_INDEX=contract-demo-v2`; rollback is setting both
+      back. Check live activity first (`script.demo.sh x0-check`): turns newer than the 14:41 snapshot would be lost.
 - [ ] `documents` — **X1** automated ingestion quality verification (mentor review: no check that an extracted value
       is correct; "confidently wrong" extractions pass review today). The verifier is independent of the extractor:
       extraction stays on the parsed text, verification reads the **page image** with a different model; a
@@ -446,12 +463,66 @@ after it, write-up only.
         hold a list → **Not epic-tracked**
       - Deferred: vision prompt v3 for single-rate fees (read as "no fee table"); `fee_basis` containment rule
         (32 review items where the verifier quotes a longer phrase) → **Not epic-tracked**
-- [ ] `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
-      one clean), labelled synthetic → **Not epic-tracked** (review 2026-10-04: the corpus is US only)
-- [ ] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
+- [x] `api` — **X3** admission control (a fast "busy" answer past a turns-in-flight limit), then a 4-replica run with
       one replica stopped → **Not epic-tracked**
+      Spec `docs/superpowers/specs/2026-10-21-x3-admission-control-design.md`, plan
+      `docs/superpowers/plans/2026-10-21-x3-admission-control.md`. **Done 2026-10-21 (local):** a per-process limit on
+      chat turns in flight (`CHAT_MAX_IN_FLIGHT`, default 0 = off; MediCoord's design), taken by the chat route's first
+      dependency, before the guest lookup and the rate limit: past it `POST /chat` answers 503 `/problems/busy` with
+      `Retry-After` 3-5 s, writes nothing and uses none of the guest's allowance. The slot is released by the response
+      itself, so a finished, failed or abandoned stream gives it back on every FastAPI version in use (0.115 shared env;
+      the unpinned load image / Railway install moved from 0.143 to 0.158 during X3); 15 tests, run on 0.115 and 0.158
+      (`57466cc`, `0796e21`). **Review fix (`fd9516b`):** the slot dependency was a sync generator, which FastAPI runs
+      in its thread pool, so the count changed on a worker thread on admit and on the event loop on release; an
+      unlocked `+=` / `-=` across threads can lose an update and leave the count off for good. It is now async (runs
+      on the event loop), with a test that fails on the old code; full suite 621 passed. The runs below used the sync
+      version; the fix removes a thread-pool hop from admission, so it can only match or improve them. The chat screen
+      retries on its own up to 3 times ("High demand, retrying in N seconds."), then holds a busy state for 60 s with
+      send locked (`b9cb60f`; checked in the running app).
+
+      | Run (1 vCPU / 1 GB, one worker) | Turns/s at 160 / 320 conv. | p95 at 160 / 320 | Busy at 320 (share, p95) | Failed / timeouts | Table |
+      |---|---|---|---|---|---|
+      | A0, no limit | 11.53 / 11.65 | 17.29 s / **32.82 s** | none | 0 / 0 | `2026-10-21-x3-a0-no-limit.steps.md` |
+      | A1, limit 64 (`x3-a1-limit-64-r2`) | **14.40 / 14.55** | **6.89 s / 7.00 s** | 80%, **76 ms** | 0 / 0 | `2026-10-21-x3-a1-limit-64.steps.md` |
+
+      Every one-replica target met: p95 of admitted turns at most 8.8 s, busy p95 under 100 ms, 0 timeouts, at least
+      13.3 turns/s. Past the knee the limit keeps the box at its best throughput with unloaded latency, and turns the
+      excess into an answer in 56-76 ms instead of a 30 s wait. Model calls in flight capped at 64 (A0: 232).
+      **4 replicas, one killed** (`2026-10-21-x3-b-4-replicas.steps.md`; Compose, 1 CPU / 1 GB each, limit 64 each,
+      nginx round-robin, Redis shared, 320 conversations for 6 min, `docker kill` at 2:00, `docker start` at 4:00):
+      34.61 turns/s before, 29.35 on 3 replicas, 35.69 after; p95 9.54 / 9.26 / 9.51 s; busy 19.9% / 42.9% / 18.9%.
+      The kill cost one 15 s bucket: 60 streams cut (the last 0.12 s after the kill), 6 nginx 502s, 1 guest; **0 hung,
+      0 timeouts**. The load moved to the survivors as busy replies, not slower turns. The restarted replica served
+      again **11.9 s** after `docker start`, with **0 failures after the restart**. Limit: local, one machine (8 cores;
+      the 4 replicas share it with k6, the mock and Postgres, so p95 sits above the one-replica runs); a cgroup or
+      Compose quota approximates a vCPU; mock timing, not live provider latency; nginx stands in for Railway's edge;
+      one run each.
+      **Harness defect found and fixed:** the first A1 run (kept in the report) missed busy p95 (202 ms) and turns/s
+      (10.67) at 320, with 823 instant `POST /guests` failures: after a busy reply k6 started over with a new guest
+      (no visitor does that), and reused sockets uvicorn's 5 s keep-alive was closing. k6 now retries with the same
+      guest, as the chat screen does, and the load API keeps connections 75 s (`68d2a5f`). The B run used the old harness.
 
 ### Deferred
+
+- `documents` — **X2** 2 to 3 synthetic Canadian household agreements (CAD, Ontario governing law, one over-billed,
+  one clean), labelled synthetic; deferred by the owner on 2026-10-21 → **Not epic-tracked** (review 2026-10-04: the
+  corpus is US only)
+- `api` — `POST /guests` is outside admission control: every new guest is a DB write that the in-flight limit does not
+  cover, so a flood of new guests takes CPU from admitted turns (seen in the first X3 A1 run). Cover it with the
+  per-IP limit or a cheap admission check if it matters for the demo → **Not epic-tracked**
+- `api` — `fastapi` is unpinned in `requirements.txt`: the shared env runs 0.115 / Starlette 0.38, the load image (the
+  same install Railway does) was 0.143 / Starlette 1.8 in the morning and 0.158 / Starlette 1.9 after a rebuild the same
+  afternoon, so Railway gets whatever is latest at deploy time; `yield`-dependency timing differs between them. X3's
+  tests pass on 0.115, 0.143 and 0.158; pin one version → **Not epic-tracked**
+- `ops` — `CHAT_MAX_IN_FLIGHT` is not set on Railway yet (default 0 = off). 64 is the measured value for one 1 vCPU /
+  1 GB worker on the mock; set it there once the deploy box is confirmed (per worker: N workers admit N x 64) →
+  **Not epic-tracked**
+- `scripts` — `corpus_report.py` predates X1's stage order (verify now runs before index), so it reports finished
+  documents whose last event is `indexed` as "not extracted" with 0 fields; read the stage order from the pipeline →
+  **Not epic-tracked**
+- `ops` — a data-only restore filtered to `TABLE DATA` entries skips the dump's `SEQUENCE SET` entries, so
+  `version_events_id_seq` restarted at 1 and the next insert collided (found and fixed during X0); any restore list
+  must keep both → **Not epic-tracked**
 
 - `retrieval` — the relevance threshold is no longer clean on the 102-document corpus: `governing-law` (answerable)
   scores 0.446 while junk scores 0.445 and 0.456, so 0.46 refuses a real question and 0.43 relies on the model to
