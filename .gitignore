@@ -80,6 +80,8 @@ model.tar.gz
 *.out
 *.err
 .DS_Store
+# Raw red-team transcripts: local paths and full model output; the triaged result is in docs/security/
+backend/reports/security/promptfoo-*.json
 Thumbs.db
 
 # ----------------------
