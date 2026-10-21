@@ -1,7 +1,7 @@
 import logging
 import math
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
@@ -112,9 +112,11 @@ def limit_chat(request: Request, guest_id: Annotated[uuid.UUID | None, Depends(g
         raise RateLimited(math.ceil(wait))
 
 
-def take_turn_slot() -> Iterator[Slot]:
+async def take_turn_slot() -> AsyncIterator[Slot]:
     """Must be the first dependency of the chat route, because get_guest_id already writes (touch_guest) while
     dependencies resolve, and a refused turn must write nothing and use none of the guest's rate-limit allowance.
+    Async on purpose: FastAPI runs a sync generator dependency in its thread pool, so the count would change on a worker
+    thread here and on the event loop in _TurnStream, and an unlocked += / -= across threads can lose an update for good.
     Releases only when an exception passes through it (a later dependency or the route failed before a response
     existed). Once a response exists, the response owns the slot. This relies only on exceptions reaching a yield
     dependency, which every FastAPI version does, and not on when its normal exit runs (that differs between 0.115 and

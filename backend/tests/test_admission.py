@@ -3,6 +3,7 @@
 matters, since a process that leaks them ends up refusing every turn."""
 import asyncio
 import contextlib
+import inspect
 import json
 import uuid
 from collections.abc import AsyncIterator
@@ -90,6 +91,12 @@ def test_admit_counts_up_to_the_limit_then_refuses():
     second.release()
     third.release()
     assert admission.in_flight() == 0
+
+
+def test_the_slot_is_taken_on_the_event_loop_not_in_the_thread_pool():
+    # A sync generator dependency runs in FastAPI's thread pool, while _TurnStream releases on the event loop: the
+    # unlocked count would then change on two threads and could lose an update for good.
+    assert inspect.isasyncgenfunction(deps.take_turn_slot)
 
 
 def test_release_twice_frees_one_slot():
