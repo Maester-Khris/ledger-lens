@@ -29,6 +29,20 @@ Limits: one chat call's time is drawn independently of its prompt size; turn tim
 (no traces were recorded for the real runs); the mock reproduces golden-set timing, not live provider latency, rate
 limits or outages; the stub index skips Pinecone's network time, which the mock delay absorbs.
 
+## Admission control (X3)
+
+`CHAT_MAX_IN_FLIGHT=<n>` caps chat turns in flight per API worker (unset or 0 = no limit); past it `POST /chat`
+answers 503 `/problems/busy` with `Retry-After` at once. `chat.js` counts those as busy (not failed), records how
+long a refusal took (`chat_busy_duration`), and tags each failure with its kind (`guest`, `cut`, `timeout`,
+`http_<status>`, `error_event`). `NO_ABORT=1` runs the whole ladder past the stop rule, to measure overload.
+`per_step.py` appends Busy %, Busy p95 and Timeouts.
+
+```bash
+cd backend
+BOX=1:1G:1 NO_ABORT=1 scripts/load/run_chat.sh x3-a0-no-limit 5,10,20,40,80,160,320
+BOX=1:1G:1 NO_ABORT=1 CHAT_MAX_IN_FLIGHT=64 scripts/load/run_chat.sh x3-a1-limit-64 5,10,20,40,80,160,320
+```
+
 ## Two replicas, shared rate limit (N5)
 
 `compose/` runs nginx (round-robin, `X-Upstream` names the replica that answered) in front of 2 API replicas of

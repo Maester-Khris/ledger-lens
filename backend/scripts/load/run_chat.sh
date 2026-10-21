@@ -9,6 +9,8 @@
 # PROFILE=1 starts the API under py-spy and writes <label>.profile.txt (collapsed stacks, 100 Hz, all workers, only
 # the thread holding the GIL: Python CPU work, not waits). Summarise with scripts/load/profile_top.py. py-spy runs
 # inside any BOX and takes CPU from it, so profile without BOX: proportions do not depend on the box.
+# X3: CHAT_MAX_IN_FLIGHT=<n> sets the API's per-worker limit of chat turns in flight (unset = no limit); NO_ABORT=1
+# runs the whole ladder past k6's stop rule, to measure overload instead of stopping at it.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -34,7 +36,7 @@ MOCK_LLM_MEAN_S=1.25 MOCK_LLM_SIGMA=0.55 "$PYDEV/bin/uvicorn" scripts.load.mock_
   --host 127.0.0.1 --port "$MOCK_PORT" --log-level warning > "$OUT.mock.log" 2>&1 &
 MOCK=$!
 env -u ENV_FILE OPENAI_BASE_URL="http://127.0.0.1:$MOCK_PORT/v1" OPENAI_API_KEY=mock LOADTEST_STUB_VECTORS=1 \
-  DEMO_MODE= LANGFUSE_PUBLIC_KEY= LANGFUSE_SECRET_KEY= SENTRY_DSN= \
+  DEMO_MODE= LANGFUSE_PUBLIC_KEY= LANGFUSE_SECRET_KEY= SENTRY_DSN= CHAT_MAX_IN_FLIGHT="${CHAT_MAX_IN_FLIGHT:-0}" \
   "${CONFINE[@]}" "${PROFILER[@]}" "$PYDEV/bin/uvicorn" app.main:app --host 127.0.0.1 --port "$API_PORT" --workers "${BOX_WORKERS:-1}" \
   --log-level warning > "$OUT.api.log" 2>&1 &
 API=$!
@@ -66,9 +68,9 @@ TICKS=$(getconf CLK_TCK)
 ) > "$OUT.box.tsv" &
 SAMPLER=$!
 
-echo "== k6 $LABEL steps=$STEPS hold=$HOLD box=${BOX:-whole machine} ($(date -Is))"
+echo "== k6 $LABEL steps=$STEPS hold=$HOLD box=${BOX:-whole machine} max_in_flight=${CHAT_MAX_IN_FLIGHT:-0} no_abort=${NO_ABORT:-} ($(date -Is))"
 docker run --rm -i --network host --user "$(id -u):$(id -g)" \
-  -e BASE_URL="http://127.0.0.1:$API_PORT" -e STEPS="$STEPS" -e STEP_HOLD="$HOLD" \
+  -e BASE_URL="http://127.0.0.1:$API_PORT" -e STEPS="$STEPS" -e STEP_HOLD="$HOLD" -e NO_ABORT="${NO_ABORT:-}" \
   -v "$PWD/scripts/load:/scripts:ro" -v "$PWD/reports/load:/out" \
   grafana/k6 run /scripts/chat.js --summary-export "/out/$(basename "$OUT").k6.json" \
   --out "csv=/out/$(basename "$OUT").k6.csv" 2>&1 | tail -40
