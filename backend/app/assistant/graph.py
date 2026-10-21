@@ -70,6 +70,14 @@ class TurnState(TypedDict, total=False):
     unvalidated: Annotated[list[str], operator.add]  # document ids with fields the agent may not use
     system_notices: Annotated[list[str], operator.add]
     partial: Answer | None  # the sections of a per-contract answer that passed, kept in case the retry ends in a refusal
+    confidence: float | None  # mean token logprob of the last answer call (chat eval; nothing acts on it yet)
+
+
+def mean_logprob(raw: AIMessage) -> float | None:
+    """Mean token logprob of one model reply: how sure the model was of its wording, not whether it is true, so the
+    eval reads it against judged correctness, never as a probability. None when the provider sent no logprobs."""
+    tokens = (raw.response_metadata.get("logprobs") or {}).get("content") or []
+    return sum(token["logprob"] for token in tokens) / len(tokens) if tokens else None
 
 
 def prompt_version() -> str:
@@ -209,7 +217,8 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnabl
         else:
             messages = [*head, *model_view(state["messages"], "answer")]
         result = await structured.ainvoke(messages)
-        return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}
+        return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1,
+                "confidence": mean_logprob(result["raw"])}
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]

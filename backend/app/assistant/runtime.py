@@ -18,12 +18,17 @@ def _vector_index() -> VectorIndex:
     return PineconeVectorIndex(config.require("PINECONE_API_KEY"), config.PINECONE_INDEX)
 
 
+def _chat_model() -> ChatOpenAI:
+    # logprobs: the answer call's token logprobs become the turn's confidence (chat eval, measured only for now).
+    return ChatOpenAI(model=config.CHAT_MODEL, temperature=0, timeout=config.CHAT_TIMEOUT_SECONDS,
+                      max_retries=config.LLM_MAX_RETRIES, logprobs=True)
+
+
 @lru_cache(maxsize=1)
 def get_runtime() -> AssistantRuntime:
     """Composition root for real clients. Tests replace it via FastAPI dependency overrides."""
     return AssistantRuntime(
-        chat_model=ChatOpenAI(model=config.CHAT_MODEL, temperature=0, timeout=config.CHAT_TIMEOUT_SECONDS,
-                              max_retries=config.LLM_MAX_RETRIES),
+        chat_model=_chat_model(),
         embeddings=OpenAIEmbeddings(model=config.EMBEDDING_MODEL, timeout=config.EMBEDDING_TIMEOUT_SECONDS,
                                     max_retries=config.LLM_MAX_RETRIES),
         vector_index=_vector_index(),

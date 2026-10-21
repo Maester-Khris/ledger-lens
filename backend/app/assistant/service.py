@@ -125,9 +125,11 @@ def _final(
     kind: Literal["answer", "refused", "clarify"],
     text: str,
     citations: list[dict],
+    confidence: float | None = None,
 ) -> TurnEvent:
-    """The event that ends a turn. It names the turn so the client can attach feedback to it (spec P5 D5)."""
-    return TurnEvent(kind, {"text": text, "citations": citations, "turn_id": str(turn_id)})
+    """The event that ends a turn. It names the turn so the client can attach feedback to it (spec P5 D5), and
+    carries the answer call's confidence for the chat eval (the frontend ignores it)."""
+    return TurnEvent(kind, {"text": text, "citations": citations, "turn_id": str(turn_id), "confidence": confidence})
 
 
 @dataclass(frozen=True)
@@ -148,6 +150,7 @@ def _close_turn(
 ) -> TurnEnd:
     """Everything after the graph that reads the database, in one short session: notices, clarification, reveal."""
     answer = state["answer"]
+    confidence = state.get("confidence")
     events = list(_unvalidated_events(session, tenant_id, state.get("unvalidated", []), overlay_guest))
     input_tokens, output_tokens = _usage(state.get("messages", []))
     retrieved = state.get("retrieved", [])
@@ -163,7 +166,7 @@ def _close_turn(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
-        return TurnEnd([*events, _final(turn_id, "refused", text, [citation])], ChatOutcome.refused, record)
+        return TurnEnd([*events, _final(turn_id, "refused", text, [citation], confidence)], ChatOutcome.refused, record)
 
     if answer.refused:
         # P4: every refusal but N11 is fixed text plus a system reason; the model's own wording is never shown.
@@ -176,7 +179,7 @@ def _close_turn(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
-        return TurnEnd([*events, _final(turn_id, "refused", text, [citation])], ChatOutcome.refused, record)
+        return TurnEnd([*events, _final(turn_id, "refused", text, [citation], confidence)], ChatOutcome.refused, record)
 
     if answer.clarification:
         text = _clarifying_question(session, tenant_id, document_id)
@@ -187,7 +190,7 @@ def _close_turn(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
-        return TurnEnd([*events, _final(turn_id, "clarify", text, [])], ChatOutcome.clarified, record)
+        return TurnEnd([*events, _final(turn_id, "clarify", text, [], confidence)], ChatOutcome.clarified, record)
 
     cited = [state["citations"][c] | {"id": c} for c in answer.citations if c in state.get("citations", {})]
     record = dict(
@@ -199,7 +202,7 @@ def _close_turn(
     )
     [text, *quotes] = documents_dao.reveal(session, tenant_id, [answer.text, *(c.get("quote", "") for c in cited)], vault_key)
     shown = [c | ({"quote": q} if "quote" in c else {}) for c, q in zip(cited, quotes)]
-    return TurnEnd([*events, _final(turn_id, "answer", text, shown)], ChatOutcome.answered, record)
+    return TurnEnd([*events, _final(turn_id, "answer", text, shown, confidence)], ChatOutcome.answered, record)
 
 
 async def run_turn(
