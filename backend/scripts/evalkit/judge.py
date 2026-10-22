@@ -22,6 +22,7 @@ JUDGE_MODEL: str = "claude-sonnet-5-5"
 BATCH_SIZE: int = 20
 PROMPTS: Path = Path(__file__).parent / "prompts"
 DISALLOWED_TOOLS: str = "Bash Edit Write Read Glob Grep WebFetch WebSearch Task NotebookEdit"
+JUDGE_SYSTEM_PROMPT: str = "You are a careful evaluation judge. Reply with the requested JSON object only."
 
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
 
@@ -148,6 +149,13 @@ def run_cli_batch(inputs: Sequence[dict[str, Any]], folder: Path) -> list[dict[s
         JUDGE_MODEL,
         "--output-format",
         "json",
+        # Isolation: a fixed system prompt, no skills or slash commands, no MCP servers, no tools. Without these the
+        # judge would also load the operator's global CLAUDE.md, hooks and plugins (about 2x the tokens per batch) and
+        # could be steered by them. Judgments were identical with and without, on a 2-case probe.
+        "--system-prompt",
+        JUDGE_SYSTEM_PROMPT,
+        "--disable-slash-commands",
+        "--strict-mcp-config",
         "--disallowedTools",
         DISALLOWED_TOOLS,
     ]

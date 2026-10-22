@@ -75,6 +75,8 @@ def test_cli_batch_folder_holds_only_the_batch(tmp_path, monkeypatch):
     assert command[:2] == ["claude", "-p"]
     assert command[command.index("--model") + 1] == JUDGE_MODEL
     assert "--allowedTools" in command or "--disallowedTools" in command
+    # An isolated judge: own system prompt, no skills, no MCP, nothing the operator's global setup could add.
+    assert "--system-prompt" in command and "--disable-slash-commands" in command and "--strict-mcp-config" in command
 
 
 def test_cli_batch_unreadable_output_is_empty(tmp_path, monkeypatch):
