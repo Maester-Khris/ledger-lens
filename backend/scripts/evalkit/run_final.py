@@ -9,7 +9,7 @@ import asyncio
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
 import os
 from pathlib import Path
@@ -65,6 +65,14 @@ def _normalise_number(value: str) -> str:
     return format(Decimal(value).normalize(), "f")
 
 
+def _try_normalise(value: str) -> str | None:
+    """A written case may carry an expected value that is not a number; it is skipped, never a crash mid-run."""
+    try:
+        return _normalise_number(value)
+    except InvalidOperation:
+        return None
+
+
 def answer_row(case: Case, reply: Reply, seconds: float, retried: bool) -> dict[str, Any]:
     """Build one checkpointed evaluation row using redacted text and quotes from the stored turn when present."""
     turn = reply.turn
@@ -94,7 +102,7 @@ def answer_row(case: Case, reply: Reply, seconds: float, retried: bool) -> dict[
         c.get("page") == case.page for c in citations
     )
     found_numbers = numbers_in(text)
-    numbers_ok = {_normalise_number(n) for n in case.expect_numbers} <= found_numbers
+    numbers_ok = {n for n in map(_try_normalise, case.expect_numbers) if n is not None} <= found_numbers
 
     return {
         "case_id": case.id,

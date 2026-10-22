@@ -2,6 +2,7 @@
 import argparse
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass
+from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
 import re
@@ -18,6 +19,7 @@ from scripts.evalkit.cases import Case, validate
 from scripts.evalkit.checkpoint import Checkpoint, summary_line
 from scripts.evalkit.providers import (
     GROQ_LIMITS,
+    GROQ_SETTINGS,
     DailyBudgetExceeded,
     TokenLimiter,
     chat_client,
@@ -28,7 +30,11 @@ WRITERS: tuple[str, str] = ("qwen/qwen3.8-27b", "openai/gpt-oss-120b")
 JUNK_WRITER: str = "qwen/qwen3.8-27b"
 JUNK_COUNT: int = 20
 MAX_DOC_CHARS: int = 20000
-OUTPUT_TOKENS: int = 1000
+OUTPUT_TOKENS: int = 2500  # the completion cap of GROQ_SETTINGS: what a call may use, reserved in the limiter
+# What a correct reply looks like follows from the case's category, never from the writer: asked to echo "answer", a
+# model wrote the whole fee text into the field and every case of that reply was rejected.
+EXPECT_FOR: dict[str, str] = {"answerable": "answer", "false_premise": "refuse", "out_of_corpus": "refuse",
+                              "nonsense": "refuse", "off_topic": "refuse", "underspecified": "clarify"}
 PROMPTS: Path = Path(__file__).parent / "prompts"
 
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
@@ -155,6 +161,21 @@ def anchor_question(field_path: str, title: str) -> str:
     return f"What is the {name} in the {title}?"
 
 
+def numeric_values(values: Sequence[object]) -> tuple[str, ...]:
+    """Keep only the expected values that are numbers, written without %, $ or thousands commas. The runner compares
+    them as decimals with the numbers found in the answer; a writer also listed dates ("December 2013"), which cannot
+    be compared that way and are covered by the reference answer anyway."""
+    kept: list[str] = []
+    for value in values:
+        text = str(value).strip().replace(",", "").replace("$", "").rstrip("%").strip()
+        try:
+            Decimal(text)
+        except InvalidOperation:
+            continue
+        kept.append(text)
+    return tuple(kept)
+
+
 def parse_cases(reply: str, *, item: WriteItem) -> list[Case]:
     """Parse and validate a writer's JSON reply, dropping malformed entries or citations to unseen element ids."""
     try:
@@ -174,9 +195,9 @@ def parse_cases(reply: str, *, item: WriteItem) -> list[Case]:
             continue
         question = entry.get("question")
         category = entry.get("category")
-        expect = entry.get("expect")
-        if not isinstance(question, str) or not question or not isinstance(category, str) or not isinstance(expect, str):
+        if not isinstance(question, str) or not question or category not in EXPECT_FOR:
             continue
+        expect = EXPECT_FOR[category]
         reference = entry.get("reference")
         premise_id = entry.get("premise_element_id")
         field_path = entry.get("field_path")
@@ -188,7 +209,7 @@ def parse_cases(reply: str, *, item: WriteItem) -> list[Case]:
             expect=expect,
             document_key=item.document_key,
             reference=reference if isinstance(reference, str) and reference else None,
-            expect_numbers=tuple(str(x) for x in raw_numbers),
+            expect_numbers=numeric_values(raw_numbers),
             gold_element_ids=tuple(str(x) for x in raw_ids),
             page=page if isinstance(page, int) else None,
             premise_element_id=str(premise_id) if premise_id else None,
@@ -283,6 +304,7 @@ def run_writers(
                 except Exception as exc:
                     last_error = str(exc) or exc.__class__.__name__
                     continue
+                # a reply that does not parse is kept (its head) in the failed row, so the cause can be read
 
                 cases = parse_cases(reply, item=item)
                 if cases:  # anchors only count alongside the document's own cases
@@ -299,7 +321,7 @@ def run_writers(
                         written_count += 1
                     succeeded = True
                     break
-                last_error = "empty parse"
+                last_error = f"empty parse: {reply[:300]!r}"
 
             if not succeeded:
                 with lock:
@@ -371,7 +393,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         items.append(junk_item(category, JUNK_WRITER, titles=titles, fields=fields))
 
     clients: dict[str, Callable[[str], str]] = {
-        model: (lambda m: lambda p: str(chat_client("groq", m).invoke(p).content))(model)
+        model: (lambda m: lambda p: str(chat_client("groq", m, **GROQ_SETTINGS[m]).invoke(p).content))(model)
         for model in WRITERS
     }
     limiters: dict[str, TokenLimiter] = {

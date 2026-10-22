@@ -90,3 +90,8 @@ def test_cli_refuses_without_yes(tmp_path, capsys, monkeypatch):
         main(["--key", str(tmp_path), "--run", "r1"])
     assert stop.value.code != 0 and asked == []
     assert "estimate" in capsys.readouterr().out.lower()
+
+
+def test_a_non_numeric_expected_value_is_skipped_not_a_crash():
+    row = answer_row(_case(expect_numbers=("0.75", "December 2013")), _answer(), 1.0, False)
+    assert row["numbers_ok"] is True

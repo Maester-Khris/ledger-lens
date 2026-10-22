@@ -31,6 +31,15 @@ GROQ_LIMITS: dict[str, int] = {
     "tokens_per_day": 200000,
 }
 
+# Groq's open models are reasoning models. Unbounded, one call spent its whole 2,048-token completion on hidden
+# reasoning and returned an empty reply (finish_reason "length"), which burned the daily token cap on 50 failed
+# documents. Low reasoning and an explicit completion cap give a real reply at about half the tokens.
+GROQ_SETTINGS: dict[str, dict] = {
+    "qwen/qwen3.8-27b": {"reasoning_effort": "none", "max_tokens": 2500},
+    "openai/gpt-oss-120b": {"reasoning_effort": "low", "max_tokens": 2500},
+    "openai/gpt-oss-20b": {"reasoning_effort": "low", "max_tokens": 2500},
+}
+
 _MINUTE_SECONDS = 60.0
 _DAY_SECONDS = 86400.0
 
@@ -114,6 +123,8 @@ def chat_client(
     *,
     temperature: float = 0.0,
     timeout: float = 120,
+    reasoning_effort: str | None = None,
+    max_tokens: int | None = None,
 ) -> ChatOpenAI:
     if provider not in PROVIDERS:
         raise ValueError(f"Unsupported provider: {provider}")
@@ -129,6 +140,10 @@ def chat_client(
         "api_key": api_key,
         "max_retries": 2,
     }
+    if reasoning_effort is not None:
+        kwargs["reasoning_effort"] = reasoning_effort
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
     base_url = PROVIDERS[provider]
     if base_url is not None:
         kwargs["base_url"] = base_url

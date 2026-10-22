@@ -13,7 +13,8 @@ from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
 from scripts.evalkit.cases import CATEGORIES, MIX, Case, from_golden, write_cases
 from scripts.evalkit.checkpoint import Checkpoint, summary_line
-from scripts.evalkit.providers import GROQ_LIMITS, DailyBudgetExceeded, TokenLimiter, chat_client, estimate_tokens
+from scripts.evalkit.providers import (GROQ_LIMITS, GROQ_SETTINGS, DailyBudgetExceeded, TokenLimiter, chat_client,
+                                       estimate_tokens)
 from scripts.evalkit.write_key import OUTPUT_TOKENS, document_text
 
 PROMPTS: Path = Path(__file__).parent / "prompts"
@@ -244,7 +245,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         def _make_client(model: str) -> Callable[[str], str]:
             def _call(prompt: str) -> str:
                 limiters[model].acquire(estimate_tokens(prompt) + OUTPUT_TOKENS)
-                return str(chat_client("groq", model).invoke(prompt).content)
+                return str(chat_client("groq", model, **{**GROQ_SETTINGS[model], "max_tokens": 600}).invoke(prompt).content)
             return _call
 
         clients = {model: _make_client(model) for model in TIEBREAKERS}

@@ -2,7 +2,7 @@
 import pytest
 
 from scripts.evalkit import providers
-from scripts.evalkit.providers import GROQ_LIMITS, PROVIDERS, DailyBudgetExceeded, TokenLimiter, chat_client, estimate_tokens
+from scripts.evalkit.providers import GROQ_LIMITS, GROQ_SETTINGS, PROVIDERS, DailyBudgetExceeded, TokenLimiter, chat_client, estimate_tokens
 
 
 class FakeTime:
@@ -112,3 +112,16 @@ def test_missing_key_is_an_error(tmp_path, monkeypatch):
 def test_unknown_provider_is_an_error():
     with pytest.raises(ValueError):
         chat_client("mistral", "x")
+
+
+def test_groq_settings_bound_reasoning_and_completion_for_every_groq_model():
+    for model in ("qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"):
+        assert GROQ_SETTINGS[model]["max_tokens"] == 2500 and GROQ_SETTINGS[model]["reasoning_effort"]
+
+
+def test_client_passes_reasoning_effort_and_max_tokens(tmp_path, monkeypatch):
+    env = tmp_path / ".env.demo"
+    env.write_text("GROQ_API_KEY=k\n")
+    monkeypatch.setattr(providers, "ENV_FILE", env)
+    client = chat_client("groq", "openai/gpt-oss-20b", reasoning_effort="low", max_tokens=600)
+    assert client.reasoning_effort == "low" and client.max_tokens == 600

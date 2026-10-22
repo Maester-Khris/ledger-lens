@@ -102,6 +102,21 @@ def test_parse_cases_builds_valid_cases_with_stable_ids():
     assert case.gold_element_ids == ("e2",) and case.expect_numbers == ("0.75",)
 
 
+def test_the_writers_expect_field_is_ignored():
+    # A model asked to echo "expect": "answer" wrote the fee text there; the category decides what is expected.
+    [case] = parse_cases(_reply(GOOD | {"expect": "The base fee rate shall be 1.10% of the first $500 million."}), item=_item())
+    assert case.expect == "answer"
+
+
+def test_expected_numbers_keep_only_numeric_values():
+    [case] = parse_cases(_reply(GOOD | {"expect_numbers": ["1.10%", "$500,000,000", "December 2013", "19"]}), item=_item())
+    assert case.expect_numbers == ("1.10", "500000000", "19")
+
+
+def test_unknown_category_is_dropped():
+    assert parse_cases(_reply(GOOD | {"category": "trivia"}), item=_item()) == []
+
+
 def test_parse_cases_drops_unknown_element_ids():
     assert parse_cases(_reply(GOOD | {"gold_element_ids": ["e9"]}), item=_item()) == []
 
@@ -141,7 +156,7 @@ def _labelled_item(*labels):
 
 
 def test_output_reservation():
-    assert OUTPUT_TOKENS == 1000
+    assert OUTPUT_TOKENS == 2500
 
 
 def test_document_without_labels_has_no_anchor_rule():
@@ -262,3 +277,8 @@ def test_adjudicated_labels_and_accepted_values(db_session, tenant_id):
     assert [(l.field_path, l.value) for l in labels] == [("governing_law", "Ontario")]
     values = dao.accepted_values(db_session, tenant_id)
     assert values["governing_law"] >= {'"Ontario"'} and values["billing_frequency"] >= {'"monthly"'}
+
+
+def test_a_failed_row_keeps_the_head_of_the_unparseable_reply(tmp_path):
+    summary, _, failed = _run(tmp_path, [_item()], {w: (lambda p: "<think>no json</think>") for w in WRITERS})
+    assert "<think>no json" in failed.rows()[0]["error"]
