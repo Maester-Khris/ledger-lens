@@ -14,7 +14,7 @@ from app.ledger.types import DEMO_TENANT_ID
 from scripts.evalkit.cases import CATEGORIES, MIX, Case, from_golden, write_cases
 from scripts.evalkit.checkpoint import Checkpoint, summary_line
 from scripts.evalkit.providers import (GROQ_LIMITS, GROQ_SETTINGS, DailyBudgetExceeded, TokenLimiter, chat_client,
-                                       estimate_tokens)
+                                       estimate_tokens, is_daily_limit)
 from scripts.evalkit.write_key import OUTPUT_TOKENS, document_text
 
 PROMPTS: Path = Path(__file__).parent / "prompts"
@@ -96,7 +96,10 @@ def run_tiebreaks(
             # A quota stop is not a verdict: leave the case unrecorded so the next run decides it.
             return {"kept": kept, "rejected": rejected, "unreadable": unreadable, "skipped": skipped,
                     "stopped": "daily_budget"}
-        except Exception:
+        except Exception as exc:
+            if is_daily_limit(exc):
+                return {"kept": kept, "rejected": rejected, "unreadable": unreadable, "skipped": skipped,
+                        "stopped": "daily_budget"}
             raw_reply = ""  # a failed call is recorded as unreadable, as the reply would be
         try:
             parsed = json.loads(_strip_fence(raw_reply))
@@ -238,7 +241,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     tb_checkpoint = Checkpoint(key_dir / "tiebreaks.jsonl", key="case_id")
     if disputed:
         limiters = {
-            model: TokenLimiter(**GROQ_LIMITS, usage_log=key_dir / f"usage-{model.replace('/', '_')}.jsonl")
+            model: TokenLimiter(**{**GROQ_LIMITS, "tokens_per_day": None}, usage_log=key_dir / f"usage-{model.replace('/', '_')}.jsonl")
             for model in TIEBREAKERS
         }
 

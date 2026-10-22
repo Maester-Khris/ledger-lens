@@ -44,6 +44,13 @@ _MINUTE_SECONDS = 60.0
 _DAY_SECONDS = 86400.0
 
 
+def is_daily_limit(error: BaseException) -> bool:
+    """True when Groq refused a call because the model's tokens-per-day budget is spent. That budget is a token bucket
+    refilling at limit/86400 a second (3,671 missing tokens: "try again in 26m25.9s"), not a 24-hour window, so only
+    the server knows the balance: a refusal is a clean stop to resume after the refill, never a failed document."""
+    return "tokens per day" in str(error).lower()
+
+
 class DailyBudgetExceeded(Exception):
     """Raised when a request would exceed the model's 24-hour token budget."""
 
@@ -53,7 +60,7 @@ class TokenLimiter:
         self,
         tokens_per_minute: int,
         requests_per_minute: int,
-        tokens_per_day: int,
+        tokens_per_day: int | None,
         clock: Callable[[], float] = time.time,
         sleep: Callable[[float], None] = time.sleep,
         usage_log: Path | None = None,
@@ -87,7 +94,7 @@ class TokenLimiter:
         now = self.clock()
         self._entries = [(t, tok) for t, tok in self._entries if t > now - _DAY_SECONDS]
         day_tokens = sum(tok for _, tok in self._entries)
-        if day_tokens + tokens > self.tokens_per_day:
+        if self.tokens_per_day is not None and day_tokens + tokens > self.tokens_per_day:
             raise DailyBudgetExceeded(
                 f"Request of {tokens} tokens exceeds remaining daily budget ({self.tokens_per_day - day_tokens})"
             )

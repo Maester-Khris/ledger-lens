@@ -115,3 +115,10 @@ def test_summary_counts_per_category():
     assert summary["categories"]["off_topic"] == {"have": 0, "target": MIX["off_topic"]}
     assert summary["writers"] == {"qwen/qwen3.8-27b": 1, "openai/gpt-oss-120b": 1}
     assert summary["key"] == 2
+
+
+def test_a_groq_daily_limit_error_stops_tiebreaks_without_recording(tmp_path):
+    def spent(prompt):
+        raise RuntimeError("Error code: 429 - Rate limit reached on tokens per day (TPD): Limit 200000, Used 199000")
+    summary, checkpoint = _tiebreak(tmp_path, [(_case("a"), "r")], spent)
+    assert summary["stopped"] == "daily_budget" and checkpoint.done() == set()

@@ -24,6 +24,7 @@ from scripts.evalkit.providers import (
     TokenLimiter,
     chat_client,
     estimate_tokens,
+    is_daily_limit,
 )
 
 WRITERS: tuple[str, str] = ("qwen/qwen3.8-27b", "openai/gpt-oss-120b")
@@ -302,6 +303,10 @@ def run_writers(
                         stopped = "daily_budget"
                     return
                 except Exception as exc:
+                    if is_daily_limit(exc):  # the server's balance is spent: stop, the item is retried on the next run
+                        with lock:
+                            stopped = "daily_budget"
+                        return
                     last_error = str(exc) or exc.__class__.__name__
                     continue
                 # a reply that does not parse is kept (its head) in the failed row, so the cause can be read
@@ -397,7 +402,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         for model in WRITERS
     }
     limiters: dict[str, TokenLimiter] = {
-        model: TokenLimiter(**GROQ_LIMITS, usage_log=out.parent / f"usage-{model.replace('/', '_')}.jsonl")
+        # Pacing only (per minute): the daily budget refills continuously and Groq reports it, see is_daily_limit.
+        model: TokenLimiter(**{**GROQ_LIMITS, "tokens_per_day": None},
+                            usage_log=out.parent / f"usage-{model.replace('/', '_')}.jsonl")
         for model in WRITERS
     }
     written = Checkpoint(out)

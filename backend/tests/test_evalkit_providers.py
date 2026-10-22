@@ -125,3 +125,17 @@ def test_client_passes_reasoning_effort_and_max_tokens(tmp_path, monkeypatch):
     monkeypatch.setattr(providers, "ENV_FILE", env)
     client = chat_client("groq", "openai/gpt-oss-20b", reasoning_effort="low", max_tokens=600)
     assert client.reasoning_effort == "low" and client.max_tokens == 600
+
+
+def test_a_limiter_without_a_daily_cap_never_raises_for_the_day():
+    fake = FakeTime()
+    limiter = _limiter(fake, tokens_per_minute=1_000_000, tokens_per_day=None)
+    for _ in range(3):
+        limiter.acquire(150000)
+
+
+def test_groq_daily_limit_errors_are_recognised():
+    from scripts.evalkit.providers import is_daily_limit
+    daily = RuntimeError("Error code: 429 - Rate limit reached ... on tokens per day (TPD): Limit 200000, Used 198638")
+    assert is_daily_limit(daily)
+    assert not is_daily_limit(RuntimeError("Rate limit reached ... on tokens per minute (TPM): Limit 8000"))

@@ -282,3 +282,10 @@ def test_adjudicated_labels_and_accepted_values(db_session, tenant_id):
 def test_a_failed_row_keeps_the_head_of_the_unparseable_reply(tmp_path):
     summary, _, failed = _run(tmp_path, [_item()], {w: (lambda p: "<think>no json</think>") for w in WRITERS})
     assert "<think>no json" in failed.rows()[0]["error"]
+
+
+def test_a_groq_daily_limit_error_stops_cleanly_without_a_failed_row(tmp_path):
+    def spent(prompt):
+        raise RuntimeError("Error code: 429 - Rate limit reached on tokens per day (TPD): Limit 200000, Used 199000")
+    summary, written, failed = _run(tmp_path, [_item(key="a"), _item(key="b")], {w: spent for w in WRITERS})
+    assert summary["stopped"] == "daily_budget" and failed.done() == set() and written.done() == set()
