@@ -69,19 +69,28 @@ section "Measured numbers"; full results in `backend/reports/`.
       checked by Claude Opus 5.5 at medium effort (30 verdicts by Gemini High before its quota ended); `gpt-4.1`, one
       run, judged by Claude Sonnet 5.5 (28 of 29 agree with the API judge). 79.4% correct (72.8–84.8%, n=175), citation
       recall 94.8% and precision 93.3%, junk refused 80.3% (false premise 55.0%, n=20), over-refusal 17.4%, context
-      recall 83.4%; 26 of 36 wrong answers were retrieval failures. `MIN_DENSE_SIMILARITY` set to 0.50 locally (sweep
-      0.38–0.50). OpenAI about $2.70, Anthropic about $0.41. Limits: LLM-written and LLM-checked key, checker and judge
+      recall 83.4%; 26 of 36 wrong answers were retrieval failures. Measured at `MIN_DENSE_SIMILARITY` 0.50 (sweep
+      0.38–0.50); the golden gate then failed at 0.50 (4 of 27 over-refused) and at 0.44 (2 of 27) and passed at 0.43
+      (config hash `820a555c46c3`, the same as N7's gate 5), so 0.43 is the deployed value. 27 of the 33 over-refusals had
+      passages retrieved, so the threshold explains few of them. OpenAI about $2.70 for the run plus about $1.4 for three
+      golden gates (list prices), Anthropic about $0.41. Limits: LLM-written and LLM-checked key, checker and judge
       the same family, 36% of anchors differ from the human label under strict matching (upper bound 44.2%, mostly
       form). Report `backend/reports/eval-final/2026-10-23-chat-eval/report.md`, key summary and sweep in
       `backend/reports/eval-key/2026-10-22/`; method in the README.
+- [x] `frontend` — X4 follow-up: the pages show the new evidence → **Not epic-tracked**
+      **Done 2026-10-23:** landing proof table now lists the golden gate at 0.43 and the corpus-wide run with intervals;
+      the dashboard's golden-set card reads the passing gate (`backend/reports/eval-820a555c46c3.json`, the plain name the
+      dashboard looks up); the Documents pipeline shows a gap of 10 minutes or more as time waited (`+2.9 d`) instead of
+      a stage duration; the dashboard review text names the verifier reason. The review queue of 828 is the 758 fields
+      routed to review plus fields extraction accepted but an independent re-reading flagged.
 
 ### Scope — After the merge (keeps the sprint open after `/end-sprint`)
 
 - [ ] `ops` — **X0, last steps:** copy the originals into the Railway volume (`script.demo.sh copy-originals`, blocked
       on 2026-10-21 by Railway's outage), then, once this branch is deployed, point the API at `railway_x0` and
       `contract-demo-v2` (runbook `backend/script.demo.md`, local) → **Epic 1.5**
-- [ ] `ops` — set `MIN_DENSE_SIMILARITY=0.50` on the demo when this branch is deployed (X4's sweep choice; only the local
-      `.env` has it, the code default and the demo are 0.46) → **Not epic-tracked**
+- [ ] `ops` — set `MIN_DENSE_SIMILARITY=0.43` on the demo when this branch is deployed (the golden gate passes at 0.43;
+      the code default and the demo are 0.46, the local `.env` is 0.43) → **Not epic-tracked**
 - [ ] `ops` — **R1** the load numbers re-measured remotely, MediCoord's method: a separate Railway staging service on
       the merged code with the provider mock beside it, k6 from the laptop; ladder, admission at 64 and a one-hour soak
       → **Not epic-tracked**
@@ -94,6 +103,9 @@ section "Measured numbers"; full results in `backend/reports/`.
   (3 key cases have a heading as their gold passage) → **Not epic-tracked**
 - `assistant` — false-premise refusals are 55.0% (34.2–74.2%, n=20): the chat goes along with a wrong premise in 9 of
   20 cases → **Not epic-tracked**
+- `assistant` — over-refusal: 27 of the 33 refused answerable cases had passages retrieved (8 of them the gold
+  passage), so the answer step or the citation check refuses, not the relevance gate; find out why; the golden gate's
+  0% over-refusal rule fails on a single refusal of a high-scoring scoped question → **Not epic-tracked**
 - `assistant` — an escalation path on retrieval and generation, and a runtime context-sufficiency check, designed
   from X4's numbers (the logprob confidence did not separate right from wrong answers) → **Not epic-tracked**
 - `scripts` — key quality: hand-adjudicate the 40 anchor mismatches and about 30 checker verdicts (including the 4

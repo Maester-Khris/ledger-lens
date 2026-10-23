@@ -177,7 +177,7 @@ export function Dashboard() {
                     <QueueRow
                       count={data.stats.reviews_pending}
                       label="extracted fields to review"
-                      detail="Held back because the quote couldn't be grounded, a validator failed, or the page was hard to read."
+                      detail="Held back because the quote couldn't be grounded, a validator failed, the page was hard to read, or an independent re-reading disagreed."
                       to="/review"
                       action="Review fields"
                     />

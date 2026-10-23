@@ -33,6 +33,21 @@ describe('pipelineSteps', () => {
     ]);
   });
 
+  it('shows a long gap between steps as time waited, not as the stage taking that long', () => {
+    // a corpus ingested in stages over days showed "Fee terms verified 253429.2s" for a 5-page document
+    const steps = pipelineSteps(
+      [
+        event('stored', '2026-10-15T06:50:00Z'),
+        event('parsed', '2026-10-15T07:16:46.9Z'), // 1606.9 s after the previous step
+        event('extracted', '2026-10-15T07:25:00Z'), // 493.1 s
+        event('verified', '2026-10-18T05:50:00Z'), // 253,500 s, about 2.9 days
+        event('indexed', '2026-10-18T09:50:00Z'), // 4 hours
+      ],
+      'ready',
+    );
+    expect(steps.map((s) => s.duration)).toEqual([null, '+27 min', '493.1s', '+2.9 d', '+4.0 h']);
+  });
+
   it('labels stages in product language', () => {
     expect(pipelineSteps([STORED], 'processing')[1].label).toBe('Parsed + PII tokenised (Docling, Presidio)');
   });

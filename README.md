@@ -81,7 +81,7 @@ the API judge):
 
 | Area | Result | Limit |
 |---|---|---|
-| Answer quality | 79.4% correct (72.8 to 84.8%, n=175 answerable); citations 94.8% recall (91.6 to 96.8%), 93.3% precision (89.0 to 95.9%); 17.4% over-refusal (12.6 to 23.4%) | LLM-written and LLM-checked key (checker and judge are the same family); 36% of anchor reference answers differ from human labels under strict matching (upper bound 44.2%), mostly form; threshold 0.50 locally, demo still 0.46 |
+| Answer quality | 79.4% correct (72.8 to 84.8%, n=175 answerable); citations 94.8% recall (91.6 to 96.8%), 93.3% precision (89.0 to 95.9%); 17.4% over-refusal (12.6 to 23.4%): 27 of the 33 refused answerable cases had passages retrieved, 8 of them the gold passage, so the model or the citation check refuses more than the relevance threshold does | LLM-written and LLM-checked key (checker and judge are the same family); 36% of anchor reference answers differ from human labels under strict matching (upper bound 44.2%), mostly form; measured at threshold 0.50, the deployed threshold is 0.43 (see the golden set below) |
 | Refusals | 80.3% of junk refused (70.0 to 87.7%, n=76): out of corpus 88.0%, underspecified 75.0%, nonsense and off topic 100%, **false premise 55.0% (34.2 to 74.2%, n=20)** | three junk categories are short of target, so their intervals are wide |
 | Retrieval | gold passage reached the model for 83.4% of answerable cases (77.2 to 88.2%); 26 of 36 wrong answers were retrieval failures, 10 generation failures | 32 of 175 gold passages are outside the dense top 20 (3 are unindexed headings); `SEARCH_CANDIDATES` 20 to 50 would recover 12 of them, not yet tried |
 
@@ -89,7 +89,7 @@ Earlier, smaller checks:
 
 | Area | Result | How | Limit |
 |---|---|---|---|
-| Golden set | 28/28 answerable questions answered with the right citation and numbers; 21/21 junk refused | 49 cases, real model | curated questions on 4 documents; threshold 0.43 (demo 0.46) |
+| Golden set | at threshold 0.43: 28/28 answerable answered with a citation, 26/28 with the right numbers, 21/21 junk refused, 0% over-refusal (gate passes). At 0.44 the gate fails (2 of 27 over-refused), at 0.50 it fails (4 of 27) | 49 cases, real model, one run per threshold | curated questions on 4 documents; the gate allows no over-refusal, so one refusal on a high-scoring scoped question fails it |
 | Extraction | 0 errors in 59 auto-accepted fee fields (95% upper bound 4.95%) | blind labels, LLM judge, owner-adjudicated | one corpus; LLM-judged labels |
 
 #### Evaluation protocol in brief
@@ -103,8 +103,9 @@ Code in `backend/scripts/evalkit/`, one command per stage, each stage reading on
    still disputed is dropped. 111 anchor cases built on 128 human-adjudicated contract fields measure the key's own
    error rate.
 2. **Threshold.** `MIN_DENSE_SIMILARITY` is swept from 0.38 to 0.50 on retrieval scores alone (answerable passages cut
-   against junk let through), then frozen before the final run: 0.50.
-3. **Final run.** Every case goes through the deployed chat (`gpt-4.1`) once, with the frozen threshold.
+   against junk let through). The sweep alone suggested 0.50 and the final run used it; the golden gate then showed
+   0.50 over-refuses 4 of 27 golden answerable cases, so the deployed threshold is 0.43, where the gate passes.
+3. **Final run.** Every case goes through the deployed chat (`gpt-4.1`) once, at the threshold of that run (0.50).
 4. **Judge.** Claude Sonnet 5.5 splits each answer into statements and scores correctness, citation recall and
    citation precision (ALCE); validated against the Anthropic API on a sample (28 of 29 agree).
 5. **Report.** Every rate with n and a Wilson 95% interval, wrong answers split into retrieval failures (the gold
@@ -112,7 +113,8 @@ Code in `backend/scripts/evalkit/`, one command per stage, each stage reading on
 
 Rules: no model grades its own family's output; prompts are frozen before the stage that uses them; each stage
 checkpoints every row and resumes from the last one; every paid call is announced with its estimate first; only
-redacted text leaves the machine; a checker is trusted only after negative controls (corrupted cases it must reject).
+redacted text leaves the machine; a checker is trusted only after negative controls (corrupted cases it must reject); the
+golden set is the regression gate for any threshold or prompt change, run at the value being deployed.
 To measure a change, rerun the final run and judge on the same key with a new run id and compare the metric against
 its interval. Limits: the checker and the judge are the same model family, one run, three junk categories under target.
 
