@@ -43,6 +43,8 @@ section "Measured numbers"; full results in `backend/reports/`.
       **Done 2026-10-17:** `docs/superpowers/specs/2026-10-17-bot-and-agent-defense-design.md` (design only).
 - [x] `docs` — write-up: README "Measured numbers" → **Not epic-tracked**
       **Done 2026-10-21:** CPU, tokens and cost, overload and replica loss, extraction verification.
+      **Updated 2026-10-23:** answer quality, refusals and retrieval with margins from X4; the section is now two parts,
+      system performance and RAG pipeline evaluation, with the evaluation protocol in brief.
 
 ### Scope — Next
 
@@ -62,12 +64,24 @@ section "Measured numbers"; full results in `backend/reports/`.
       **Done 2026-10-21 (local):** past 64 turns in flight a fast 503; at 4x the knee p95 7.0 s instead of 32.8 s; one of
       4 replicas killed: 0 hung turns, back in 11.9 s. A thread-pool race in the slot fixed at review (`fd9516b`);
       `backend/reports/load/2026-10-21-x3-*.steps.md`.
+- [x] `assistant` — **X4** corpus-wide chat eval: answer key, threshold sweep and one judged run → **Not epic-tracked**
+      **Done 2026-10-23 (local):** a 277-case key over all 102 documents (190 answerable, 87 junk and explained),
+      checked by Claude Opus 5.5 at medium effort (30 verdicts by Gemini High before its quota ended); `gpt-4.1`, one
+      run, judged by Claude Sonnet 5.5 (28 of 29 agree with the API judge). 79.4% correct (72.8–84.8%, n=175), citation
+      recall 94.8% and precision 93.3%, junk refused 80.3% (false premise 55.0%, n=20), over-refusal 17.4%, context
+      recall 83.4%; 26 of 36 wrong answers were retrieval failures. `MIN_DENSE_SIMILARITY` set to 0.50 locally (sweep
+      0.38–0.50). OpenAI about $2.70, Anthropic about $0.41. Limits: LLM-written and LLM-checked key, checker and judge
+      the same family, 36% of anchors differ from the human label under strict matching (upper bound 44.2%, mostly
+      form). Report `backend/reports/eval-final/2026-10-23-chat-eval/report.md`, key summary and sweep in
+      `backend/reports/eval-key/2026-10-22/`; method in the README.
 
 ### Scope — After the merge (keeps the sprint open after `/end-sprint`)
 
 - [ ] `ops` — **X0, last steps:** copy the originals into the Railway volume (`script.demo.sh copy-originals`, blocked
       on 2026-10-21 by Railway's outage), then, once this branch is deployed, point the API at `railway_x0` and
       `contract-demo-v2` (runbook `backend/script.demo.md`, local) → **Epic 1.5**
+- [ ] `ops` — set `MIN_DENSE_SIMILARITY=0.50` on the demo when this branch is deployed (X4's sweep choice; only the local
+      `.env` has it, the code default and the demo are 0.46) → **Not epic-tracked**
 - [ ] `ops` — **R1** the load numbers re-measured remotely, MediCoord's method: a separate Railway staging service on
       the merged code with the provider mock beside it, k6 from the laptop; ladder, admission at 64 and a one-hour soak
       → **Not epic-tracked**
@@ -75,8 +89,20 @@ section "Measured numbers"; full results in `backend/reports/`.
 ### Deferred
 
 - `documents` — **X2** synthetic Canadian household agreements (the corpus is US only) → **Not epic-tracked**
-- `retrieval` — recalibrate the relevance threshold on the 102-document corpus: at the demo's 0.46 `governing-law`
-  is refused, at 0.43 junk sits next to it → **Not epic-tracked**
+- `retrieval` — raise `SEARCH_CANDIDATES` from 20 to 50 and re-run the eval (12 of the 32 gold passages missing from
+  the dense top 20 rank 21–50; 100 would reach 18), try document-scoped dense search, and index `heading` elements
+  (3 key cases have a heading as their gold passage) → **Not epic-tracked**
+- `assistant` — false-premise refusals are 55.0% (34.2–74.2%, n=20): the chat goes along with a wrong premise in 9 of
+  20 cases → **Not epic-tracked**
+- `assistant` — an escalation path on retrieval and generation, and a runtime context-sufficiency check, designed
+  from X4's numbers (the logprob confidence did not separate right from wrong answers) → **Not epic-tracked**
+- `scripts` — key quality: hand-adjudicate the 40 anchor mismatches and about 30 checker verdicts (including the 4
+  contested cases); fix the 3 heading-gold cases; refill underspecified, off_topic and nonsense (12, 11 and 8 of 20)
+  with a corrected junk writer prompt; record in the spec that the checker is now Claude Opus, the judge's family →
+  **Not epic-tracked**
+- `scripts` — eval tooling: a paired comparison of two runs by case id; an error row after two failures is not retried
+  on resume; a finished checkpoint cannot be resumed with a larger sample; the CLI judge (`run_cli_batch`) still drops
+  failed batches without saying why → **Not epic-tracked**
 - `assistant` — "What is the management fee?" with no contract named was borderline until L2; prefer contracts with
   a validated rate → **Not epic-tracked**
 - `contracts` — fee schedules fail validation on most new filings (flat fees with empty band text, "up to $X"

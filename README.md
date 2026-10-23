@@ -57,17 +57,64 @@ OpenAI and Pinecone, about $0.50 a run): `$PYDEV/bin/pytest -m eval tests/eval -
 
 ## Measured numbers
 
-Local runs, each with its method and limit; full results in `backend/reports/`.
+Local runs, each with its method and limit; full results in `backend/reports/`. Two questions, measured separately.
+
+### Part 1: System performance
+
+*Does the service stay fast, cheap and correct under load and failure?*
 
 | Area | Result | How | Limit |
 |---|---|---|---|
-| Answer quality | 28/28 answerable questions answered with the right citation and numbers; 21/21 junk refused | golden set, 49 cases, real model | curated questions; threshold 0.43 (demo 0.46) |
 | Cost | $0.0093 per turn median, 3 model calls; 4.4k prompt tokens per turn (was about 24k) | Langfuse, one traced golden run | list prices |
 | CPU | 41 ms per turn (was 61); peak 15.2 turns/s on 1 vCPU / 1 GB (was 10.1), 0 failed | k6 ladder, provider mock | one machine, mock latency |
 | Overload | at 4x capacity, p95 7.0 s with admission control against 32.8 s without; a refused turn answers in 76 ms | k6, limit 64 turns in flight | one run each |
 | Replica loss | one of 4 replicas killed: 0 hung turns, 0 timeouts, back in 11.9 s | Docker Compose, nginx | local |
-| Extraction | 0 errors in 59 auto-accepted fee fields (95% upper bound 4.95%) | blind labels, LLM judge, owner-adjudicated | one corpus; LLM-judged labels |
 | Ledger | 500 concurrent requests: 0 duplicates, 0 imbalances, 0 lost updates | `pytest -m stress`, 50 clients | local |
+
+### Part 2: RAG pipeline evaluation
+
+*When the chat answers, is the answer right and cited, and when it does not know, does it say so?* Rates carry a 95%
+interval; the protocol is summarised after the tables.
+
+Corpus-wide run (277 cases over all 102 documents, `gpt-4.1`, one run, judged by Claude Sonnet 5.5; 28 of 29 agree with
+the API judge):
+
+| Area | Result | Limit |
+|---|---|---|
+| Answer quality | 79.4% correct (72.8 to 84.8%, n=175 answerable); citations 94.8% recall (91.6 to 96.8%), 93.3% precision (89.0 to 95.9%); 17.4% over-refusal (12.6 to 23.4%) | LLM-written and LLM-checked key (checker and judge are the same family); 36% of anchor reference answers differ from human labels under strict matching (upper bound 44.2%), mostly form; threshold 0.50 locally, demo still 0.46 |
+| Refusals | 80.3% of junk refused (70.0 to 87.7%, n=76): out of corpus 88.0%, underspecified 75.0%, nonsense and off topic 100%, **false premise 55.0% (34.2 to 74.2%, n=20)** | three junk categories are short of target, so their intervals are wide |
+| Retrieval | gold passage reached the model for 83.4% of answerable cases (77.2 to 88.2%); 26 of 36 wrong answers were retrieval failures, 10 generation failures | 32 of 175 gold passages are outside the dense top 20 (3 are unindexed headings); `SEARCH_CANDIDATES` 20 to 50 would recover 12 of them, not yet tried |
+
+Earlier, smaller checks:
+
+| Area | Result | How | Limit |
+|---|---|---|---|
+| Golden set | 28/28 answerable questions answered with the right citation and numbers; 21/21 junk refused | 49 cases, real model | curated questions on 4 documents; threshold 0.43 (demo 0.46) |
+| Extraction | 0 errors in 59 auto-accepted fee fields (95% upper bound 4.95%) | blind labels, LLM judge, owner-adjudicated | one corpus; LLM-judged labels |
+
+#### Evaluation protocol in brief
+
+Code in `backend/scripts/evalkit/`, one command per stage, each stage reading only the previous stage's file.
+
+1. **Key.** Two Groq models (`qwen3.8-27b`, `gpt-oss-120b`) write questions, reference answers and gold passages from the
+   redacted text of each document, plus out-of-corpus, false-premise, underspecified, nonsense and off-topic cases.
+   Every case is checked in an isolated batch by a different model (Claude Opus 5.5; 30 early verdicts by Gemini 4
+   Argon High; underspecified cases by a database query). A rejection goes to a Groq model of the other family; a case
+   still disputed is dropped. 111 anchor cases built on 128 human-adjudicated contract fields measure the key's own
+   error rate.
+2. **Threshold.** `MIN_DENSE_SIMILARITY` is swept from 0.38 to 0.50 on retrieval scores alone (answerable passages cut
+   against junk let through), then frozen before the final run: 0.50.
+3. **Final run.** Every case goes through the deployed chat (`gpt-4.1`) once, with the frozen threshold.
+4. **Judge.** Claude Sonnet 5.5 splits each answer into statements and scores correctness, citation recall and
+   citation precision (ALCE); validated against the Anthropic API on a sample (28 of 29 agree).
+5. **Report.** Every rate with n and a Wilson 95% interval, wrong answers split into retrieval failures (the gold
+   passage never arrived) and generation failures, results split by writer.
+
+Rules: no model grades its own family's output; prompts are frozen before the stage that uses them; each stage
+checkpoints every row and resumes from the last one; every paid call is announced with its estimate first; only
+redacted text leaves the machine; a checker is trusted only after negative controls (corrupted cases it must reject).
+To measure a change, rerun the final run and judge on the same key with a new run id and compare the metric against
+its interval. Limits: the checker and the judge are the same model family, one run, three junk categories under target.
 
 ## Ledger guarantees
 
