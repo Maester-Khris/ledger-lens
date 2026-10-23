@@ -15,8 +15,7 @@ OVERLAY_TTL = timedelta(hours=24)
 
 
 def purge_stale_overlays(session: Session, tenant_id: uuid.UUID, now: datetime) -> None:
-    stale = assistant_dao.stale_guest_ids(session, tenant_id, before=now - OVERLAY_TTL)
-    if stale:
-        contracts_dao.purge_guest_reviews(session, stale)
-        governance_dao.purge_guest_decisions(session, stale)
-        session.commit()
+    stale = assistant_dao.stale_guests(tenant_id, before=now - OVERLAY_TTL)
+    contracts_dao.purge_guest_reviews(session, stale)
+    governance_dao.purge_guest_decisions(session, stale)
+    session.commit()

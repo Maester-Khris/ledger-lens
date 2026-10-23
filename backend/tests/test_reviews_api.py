@@ -7,6 +7,7 @@ from app.contracts import dao
 from app.contracts.fields import FieldResult
 from app.contracts.types import FieldRouting
 from app.documents.models import DocumentElement
+from tests.support import verify_all
 from tests.test_retrieval_index import parsed_version
 
 CONFIG = dao.RunConfig("contract-terms-v1", "scripted", "p", Decimal(0), "c" * 64, "d" * 64)
@@ -20,6 +21,7 @@ def _run(db_session, tenant_id):
         FieldResult("fee_method", "cliff", element_ids[:1], "on the entire", False, [], "FAIR", FieldRouting.needs_review),
         FieldResult("termination_notice_days", 30, [], "thirty days", False, ["not a number"], "GOOD", FieldRouting.needs_review),
     ])
+    verify_all(db_session, run.id)
     db_session.commit()
     return version, run
 

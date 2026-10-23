@@ -1,0 +1,7333 @@
+{
+ "model": "gemini-3.5-flash-lite",
+ "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+ "prices": {
+  "in": 0.15,
+  "out": 1.25
+ },
+ "documents": 76,
+ "input_tokens": 185033,
+ "output_tokens": 66019,
+ "usd": 0.1102787,
+ "latency_ms": {
+  "median": 2976,
+  "p95": 5751
+ },
+ "score": {
+  "by_class": {
+   "A": {
+    "n": 59,
+    "correct": 47,
+    "accuracy": 0.7966101694915254
+   },
+   "B": {
+    "n": 48,
+    "correct": 42,
+    "accuracy": 0.875
+   },
+   "C": {
+    "n": 21,
+    "correct": 14,
+    "accuracy": 0.6666666666666666
+   }
+  },
+  "overall": {
+   "n": 128,
+   "correct": 103,
+   "accuracy": 0.8046875
+  },
+  "review_rate": 0.45545378850957535,
+  "failed_documents": 0
+ },
+ "outputs": [
+  {
+   "version_id": "00ca252e-e174-4532-81b9-08a881f7cfe7",
+   "error": null,
+   "input_tokens": 817,
+   "output_tokens": 736,
+   "latency_ms": 2507,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "JPMorgan Limited Duration Bond ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "J.P. Morgan Investment Management Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "J.P. Morgan Exchange-Traded Fund Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "August 22, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Timothy J. Clemens",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Brian S. Shlissel",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "",
+      "rate_text": "0.20%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "04bc2d4c-011a-41bb-b03a-d6ad4277046a",
+   "error": null,
+   "input_tokens": 2257,
+   "output_tokens": 941,
+   "latency_ms": 2773,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Thrivent Small-Mid Cap Equity ETF",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Thrivent Asset Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Thrivent ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "August 30, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "February 25, 2026",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Michael W. Kremenak",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jeffrey D. Cloutier",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "average daily net assets",
+      "rate_text": "0.65%",
+      "up_to_minor": null,
+      "rate_bps": "65"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "08fffd62-1933-4df1-a2d9-74591a0fa10c",
+   "error": null,
+   "input_tokens": 3116,
+   "output_tokens": 1234,
+   "latency_ms": 3368,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Volumetric Fund, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Volumetric Advisers, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Volumetric Fund, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "July 16, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "July 16, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jeffrey Gibs",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on the first $10 million of the average daily net assets",
+      "rate_text": "2.00%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "from $10 million to $25 million",
+      "rate_text": "1.90%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "from $25 million to $50 million",
+      "rate_text": "1.80%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "from $50 million to $100 million",
+      "rate_text": "1.50%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "over $100 million",
+      "rate_text": "1.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "0dfb933b-5a7b-4111-8fe7-74ca6bc37ce7",
+   "error": null,
+   "input_tokens": 1000,
+   "output_tokens": 812,
+   "latency_ms": 2515,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Capital Advisors Growth Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Capital Advisors, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "ADVISORS SERIES TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "February 2, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jeff Rauman",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Keith Goddard",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on the first $50 million",
+      "rate_text": "0.75%",
+      "up_to_minor": 5000000000,
+      "rate_bps": "75"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "thereafter",
+      "rate_text": "0.65%",
+      "up_to_minor": null,
+      "rate_bps": "65"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "112edf40-6116-4c5a-8b60-8429bceee515",
+   "error": null,
+   "input_tokens": 1586,
+   "output_tokens": 801,
+   "latency_ms": 2542,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "ASYMshares\u2122ASYMmetric S&P 500 ETF \u00ae",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "ASYMmetric ETFs, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "the State of New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "ASYMmetric ETFs Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 25, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "ASYMmetric ETFs Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "ASYMmetric ETFs, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "ASYMshares\u2122ASYMmetric S&P 500 ETF \u00ae",
+      "rate_text": "0.95%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "13fb112e-3548-4baf-8fb6-abe1c331214e",
+   "error": null,
+   "input_tokens": 1988,
+   "output_tokens": 546,
+   "latency_ms": 1948,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "The Gabelli Focused Growth and Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Gabelli Funds, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Gabelli Equity Series Funds, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 21, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "1e740f7e-be4b-43f4-ba96-b091752735a3",
+   "error": null,
+   "input_tokens": 1440,
+   "output_tokens": 812,
+   "latency_ms": 2707,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "2ndVote Life Neutral Plus ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "2nd VOTE ADVISERS, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "daily net assets under management ('AUM') of each respective Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "2nd VOTE FUNDS",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "[June XX, 2022]",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Daniel Grant",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Daniel Grant",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "2ndVote Life Neutral Plus ETF",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "21012d01-133f-48de-8aec-6fa142e91941",
+   "error": null,
+   "input_tokens": 2946,
+   "output_tokens": 845,
+   "latency_ms": 2671,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "BNY Mellon Small Cap Value Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "BNY Mellon Investment Adviser, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net asset value",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "BNY Mellon Investment Funds I",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 1, 2008",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 1, 2008",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jeff Prusnofsky Jeff Prusnofsky, Vice President",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "James Bitetto James Bitetto, Secretary",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.80%",
+      "rate_text": "0.80%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "21aeea45-4aca-4de3-a11e-7adcbdff50da",
+   "error": null,
+   "input_tokens": 5795,
+   "output_tokens": 1283,
+   "latency_ms": 3463,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "AIM Global Trends Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "A I M Advisors, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Texas",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "AIM Series Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 1, 2001",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 1, 2001",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "ROBERT H. GRAHAM",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "M. MAYO",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "ROBERT H. GRAHAM",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "M. MAYO",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "First $500 million",
+      "rate_text": "0.975%",
+      "up_to_minor": 50000000000,
+      "rate_bps": "97.5"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "Next $500 million",
+      "rate_text": "0.95%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "95"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "Next $500 million",
+      "rate_text": "0.925%",
+      "up_to_minor": 150000000000,
+      "rate_bps": "92.5"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "On amounts thereafter",
+      "rate_text": "0.90%",
+      "up_to_minor": null,
+      "rate_bps": "90"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "26e5ba57-8070-464b-8576-e6345db218d4",
+   "error": null,
+   "input_tokens": 1953,
+   "output_tokens": 830,
+   "latency_ms": 2534,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "NexPoint Merger Arbitrage Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Highland Capital Management Fund Advisors, L.P.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Managed Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Highland Funds I",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "October 25, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October 25, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Treasurer Highland Capital Management Fund Advisors, L.P.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Executive Vice President",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "based on an annual rate of 1.00%",
+      "rate_text": "1.00%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "281b0b04-e6e9-4210-951a-0e1105f9502f",
+   "error": null,
+   "input_tokens": 1046,
+   "output_tokens": 812,
+   "latency_ms": 2434,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Thornburg Core Plus Bond ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Thornburg Investment Management, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net asset value",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Thornburg ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 19, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 19, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Curtis Holloway",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Nimish Bhatt Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Thornburg Core Plus Bond ETF",
+      "rate_text": "0.45%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "322bedfd-6a7d-4a4e-8339-a6a82bc193f2",
+   "error": null,
+   "input_tokens": 6659,
+   "output_tokens": 865,
+   "latency_ms": 2661,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Hood River Small-Cap Growth Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Hood River Capital Management LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Manager Directed Portfolios",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "May 20, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "May 20, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Douglas J. Neilson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Brian Smoluch",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Hood River Small-Cap Growth Fund",
+      "rate_text": "0.90%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "33cd5c09-a232-428b-991c-04647b13b921",
+   "error": null,
+   "input_tokens": 2592,
+   "output_tokens": 546,
+   "latency_ms": 2164,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "FPA Global Allocation ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "First Pacific Advisors, L.P.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "INVESTMENT MANAGERS SERIES TRUST III",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "05/27/2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "382e9f50-3795-4c2b-8adc-13a86725d68d",
+   "error": null,
+   "input_tokens": 1322,
+   "output_tokens": 779,
+   "latency_ms": 2781,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Syntax Stratified LargeCap ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Syntax Advisors, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Syntax ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "August 1, 2017",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "January 6, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Rory Riggs",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Rory Riggs",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Syntax Stratified LargeCap ETF",
+      "rate_text": "0.30%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "3833f921-a83c-431c-a34b-8d8d834e5078",
+   "error": null,
+   "input_tokens": 2248,
+   "output_tokens": 686,
+   "latency_ms": 2211,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "The Gabelli Enterprise Mergers & Acquisitions Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Gabelli Funds, LLC",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Maryland",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Gabelli 787 Fund, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "/s/ John C. Ball     ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "/s/ John C. Bal      ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "40c7f9b7-b0fc-4ee9-abd8-4a5fe94fcf03",
+   "error": null,
+   "input_tokens": 1141,
+   "output_tokens": 1142,
+   "latency_ms": 3026,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Client's accounts",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Maple Ridge Wealth Advisors Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Province of Ontario",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "combined household market value of the Client's accounts",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Marie Tremblay and Luc Tremblay",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 15, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "January 1, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "CAD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "quarterly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 30,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Maple Ridge Wealth Advisors Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Marie Tremblay",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Luc Tremblay",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "On the first $1,000,000",
+      "rate_text": "1.00%",
+      "up_to_minor": 100000000,
+      "rate_bps": "100"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "On the next $1,500,000",
+      "rate_text": "0.85%",
+      "up_to_minor": 250000000,
+      "rate_bps": "85"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "On assets in excess of $2,500,000",
+      "rate_text": "0.65%",
+      "up_to_minor": null,
+      "rate_bps": "65"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "4267cfd0-8984-4159-ace0-5a172b8d6ca0",
+   "error": null,
+   "input_tokens": 2038,
+   "output_tokens": 708,
+   "latency_ms": 2322,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Global Atlantic Select Advisor Managed Risk Portfolio",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Global Atlantic Investment Advisors, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "the laws of the State of Indiana",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "FORETHOUGHT VARIABLE INSURANCE TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "February 3, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "May 1, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Eric D. Todd                               |",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Eric D. Todd                               |",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "4529dbad-1446-4067-8da7-50743dd18856",
+   "error": null,
+   "input_tokens": 1719,
+   "output_tokens": 721,
+   "latency_ms": 2225,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "U.S. Defense ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "TIDAL INVESTMENTS LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "TIDAL TRUST III",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "July 22, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Eric Falkeis                                         ",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jay Pestrichelli                                     |",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "U.S. Defense ETF",
+      "rate_text": "0.45%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "4a2bb6b7-9252-41e6-bfe3-7d065ca59877",
+   "error": null,
+   "input_tokens": 2233,
+   "output_tokens": 783,
+   "latency_ms": 3012,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "NYLIM MacKay Muni Insured ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "New York Life Investment Management LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "NYLIM Active ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 16, 2026",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 16, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jack R. Benintende",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Kirk C. Lehneis",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "up to $500 million",
+      "rate_text": "0.40%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "4d1253ef-d07d-4751-94cb-def548d13f08",
+   "error": null,
+   "input_tokens": 3052,
+   "output_tokens": 779,
+   "latency_ms": 2648,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Vident International Equity Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Vident Advisory, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "ETF Series Solutions",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 21, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 21, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Michael D. Barolsky",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Deborah Kimery",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Vident International Equity Fund",
+      "rate_text": "0.59%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "63e90559-fe14-4c67-b77c-f100393e03cf",
+   "error": null,
+   "input_tokens": 1013,
+   "output_tokens": 673,
+   "latency_ms": 3893,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Abacus FCF International Leaders ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "ABACUS FCF ADVISORS LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "ABACUS FCF ETF TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "DECEMBER 2, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "February 1, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Derin Cohen",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Abacus FCF International Leaders ETF",
+      "rate_text": "0.54%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "6901dc82-c2d3-458e-92c0-54261f432cdf",
+   "error": null,
+   "input_tokens": 1423,
+   "output_tokens": 724,
+   "latency_ms": 2584,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "State Street Small/Mid Cap Equity Index Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October 27, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Bruce Rosenberg Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Ann M. Carpenter Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "State Street Small/Mid Cap Equity Index Fund",
+      "rate_text": "0.03%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "6c54a412-7cb7-4654-8c7e-6d256fe559ff",
+   "error": null,
+   "input_tokens": 2400,
+   "output_tokens": 736,
+   "latency_ms": 2571,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Kensington Dynamic Growth Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Advisors Preferred, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Maryland",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Advisors Preferred Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October 14, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Catherine Ayers-Rigsby",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Catherine Ayers-Rigsby",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Bruce P. DeLaurentis",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "700f52fc-5497-4437-9ba6-f59022c8449d",
+   "error": null,
+   "input_tokens": 1755,
+   "output_tokens": 753,
+   "latency_ms": 2971,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Bridge Builder Core Bond Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Olive Street Investment Advisers, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Bridge Builder Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "February 16, 2022",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Julius A Drelick III",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Julius A Drelick III",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Bridge Builder Core Bond Fund",
+      "rate_text": "0.32%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "71203280-1250-47e1-8f32-ad21d5520299",
+   "error": null,
+   "input_tokens": 915,
+   "output_tokens": 949,
+   "latency_ms": 3379,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Nationwide Destination 2025 Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "NATIONWIDE FUND ADVISORS",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "NATIONWIDE MUTUAL FUNDS",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "August 28, 2007",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Kevin T. Jestice",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Kevin T. Jestice",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.13% of average daily net assets",
+      "rate_text": "0.13%",
+      "up_to_minor": null,
+      "rate_bps": "13"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "713899b2-ea89-493a-af51-c7d4cb228a34",
+   "error": null,
+   "input_tokens": 2624,
+   "output_tokens": 997,
+   "latency_ms": 2981,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "American Beacon TwentyFour Strategic Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "TwentyFour Asset Management (US) LP",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Fund assets under Adviser's management",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "American Beacon Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 24, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "January 24, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Nick Knight-Evans",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Gary Kirk                   ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Jeffrey K. Ringdahl",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "Gene L. Needles, Jr.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "First $1 billion",
+      "rate_text": "0.320 of 1%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "100"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "Over $1 billion",
+      "rate_text": "0.270 of 1%",
+      "up_to_minor": null,
+      "rate_bps": "100"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "726a4491-06a6-4f65-b5a4-03fdc8b7f2af",
+   "error": null,
+   "input_tokens": 9087,
+   "output_tokens": 1020,
+   "latency_ms": 3099,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "KFA Global Carbon Subsidiary, Ltd.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Krane Funds Advisors, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily value of the Funds' net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Cayman Islands exempted limited companies listed on Schedule A hereto (each, a 'Fund' and, collectively, the 'Funds')",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 23, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "June 23, 2026",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "KraneShares California Carbon Subsidiary, Ltd.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "KFA Global Carbon Subsidiary, Ltd.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "KFA MLM INDEX",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "Krane Funds Advisors, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.00%",
+      "rate_text": "0.00%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "73371b6c-3f4a-4c4b-ba10-e99813ce7f5b",
+   "error": null,
+   "input_tokens": 1435,
+   "output_tokens": 965,
+   "latency_ms": 2788,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "M International Equity Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "M Financial Investment Advisers, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "M Fund, Inc.",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 1, 2001",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "May 1, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Bob Olson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Bob Olson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on all assets",
+      "rate_text": "0.15%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "on the first $100 million",
+      "rate_text": "0.32%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "on all assets thereafter",
+      "rate_text": "0.27%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "7415a0c6-6c6b-4ba4-9e8c-e8b33f43a2c2",
+   "error": null,
+   "input_tokens": 967,
+   "output_tokens": 968,
+   "latency_ms": 6486,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Chartwell Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Chartwell Investment Partners, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "The Chartwell Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 22, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 22, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Neil Walker",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Michael Magee                  ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "the first $1.75 billion",
+      "rate_text": "0.50%",
+      "up_to_minor": 175000000000,
+      "rate_bps": "50"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "the next $1.75 billion",
+      "rate_text": "0.48%",
+      "up_to_minor": 350000000000,
+      "rate_bps": "48"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "such assets over $3.5 billion",
+      "rate_text": "0.46%",
+      "up_to_minor": null,
+      "rate_bps": "46"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "77425641-2d39-4b9a-b96b-d76d79cd98c9",
+   "error": null,
+   "input_tokens": 1399,
+   "output_tokens": 759,
+   "latency_ms": 5751,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Subversive Growth 100 Redacted ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "TIDAL INVESTMENTS LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "TIDAL TRUST I",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 17, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "Commencement of Operations",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Eric Falkeis                                         ",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jay Pestrichelli                           ",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Subversive Growth 100 Redacted ETF",
+      "rate_text": "0.55%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "7b014415-df23-4ad0-a0f3-a99311601ea9",
+   "error": null,
+   "input_tokens": 5078,
+   "output_tokens": 820,
+   "latency_ms": 2512,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Janus Henderson Short Duration Flexible Bond Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Janus Investors US LLC",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of Colorado",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "daily closing net asset value of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Janus Investment Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 2, 2026",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "January 2, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jesper Nergaard",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Michelle Rosenberg",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.25%",
+      "rate_text": "0.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "7b14f6c4-e152-4386-9bd3-47020b163136",
+   "error": null,
+   "input_tokens": 5781,
+   "output_tokens": 936,
+   "latency_ms": 2986,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Harbor Structured Premium Income ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Harbor Capital Advisors, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of Illinois",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Harbor ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 18, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 18, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Charles F. McCain",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Diana R. Podgorny Diana R. Podgorny Executive",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "at the annual rate of 0.69%",
+      "rate_text": "0.69%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "845c611e-cbb6-4f69-9316-a3a4923c44f9",
+   "error": null,
+   "input_tokens": 1293,
+   "output_tokens": 813,
+   "latency_ms": 2734,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Hennessy Stance ESG ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Hennessy Advisors, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Hennessy Funds Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "April 28, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Neil J. Hennessy Neil J. Hennessy",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Teresa M. Nilsen Teresa M. Nilsen",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Hennessy Stance ESG ETF",
+      "rate_text": "0.95%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "87b2c810-500b-4097-8549-3903e86a7f11",
+   "error": null,
+   "input_tokens": 1521,
+   "output_tokens": 883,
+   "latency_ms": 2765,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Grandeur Global Explorer Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "CCM Partners, LP a California limited partnership d/b/a Shelton Capital Management",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Shelton Funds, a Delaware statutory trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "February 14, 2013",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October 10, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Steve Rogers",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Steve Rogers",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "per annum rate",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "889e461e-dff6-431d-b990-220c3ea1ad10",
+   "error": null,
+   "input_tokens": 2208,
+   "output_tokens": 564,
+   "latency_ms": 2252,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "adviser",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Tom Florence",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jeffrey Kruske Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "88c14227-ec97-4570-86d6-541aaba9f6b0",
+   "error": null,
+   "input_tokens": 2117,
+   "output_tokens": 910,
+   "latency_ms": 2718,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Cavanal Hill U.S. Treasury Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Cavanal Hill Investment Management, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Cavanal Hill Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "May 12, 2001",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 28, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Bill King",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Matthew C. Stephani",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Cavanal Hill U.S. Treasury Fund",
+      "rate_text": "0.05%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "8a6f5977-cd0e-472a-8eef-ccf4e4ec50b5",
+   "error": null,
+   "input_tokens": 1716,
+   "output_tokens": 761,
+   "latency_ms": 2373,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Dan IVES Wedbush AI Revolution ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Wedbush Fund Advisers, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Wedbush Series Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "April 1, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Matthew Bromberg Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Cullen Rogers Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.75%",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "992691d8-1706-4d34-974c-a404be796025",
+   "error": null,
+   "input_tokens": 3965,
+   "output_tokens": 1167,
+   "latency_ms": 3030,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Nomura Tax-Free Colorado Fund (formerly, Macquarie Tax-Free Colorado Fund)",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "DELAWARE MANAGEMENT COMPANY, a series of Nomura Investment Management Business Trust",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "VOYAGEUR MUTUAL FUNDS II",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 1, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 1, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Shawn K. Lytle",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Richard Salus",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on the first $500 million",
+      "rate_text": "0.55%",
+      "up_to_minor": 50000000000,
+      "rate_bps": "55"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "on the next $500 million",
+      "rate_text": "0.50%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "50"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "on the next $1.5 billion",
+      "rate_text": "0.45%",
+      "up_to_minor": 250000000000,
+      "rate_bps": "45"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "on assets in excess of $2.5 billion",
+      "rate_text": "0.425%",
+      "up_to_minor": null,
+      "rate_bps": "42.5"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "9b90bce2-ac42-4094-a8dc-574d6640d6f8",
+   "error": null,
+   "input_tokens": 999,
+   "output_tokens": 800,
+   "latency_ms": 2541,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Man Active High Yield ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Man Solutions LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Man ETF Series Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 8, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 8, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Michael Barrer",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Lisa Mu\u00f1oz",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Man Active High Yield ETF",
+      "rate_text": "0.69%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "9baba166-3d6f-401f-9dc9-1d823bc65d91",
+   "error": null,
+   "input_tokens": 1707,
+   "output_tokens": 739,
+   "latency_ms": 2159,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Credit Suisse Commodity Return Strategy Portfolio",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "CREDIT SUISSE ASSET MANAGEMENT, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Credit Suisse Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "November 15, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "/s/John Popp Name: John Popp Title: Managing Director",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "/s/Karen Regan Name:Karen Regan Title: Vice President and Secretary",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "9c61fc22-8e59-494c-aa73-d997a09464c7",
+   "error": null,
+   "input_tokens": 7333,
+   "output_tokens": 916,
+   "latency_ms": 2754,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Virtus AllianzGI Emerging Markets Opportunities Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "VIRTUS INVESTMENT ADVISERS, INC.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "California",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "VIRTUS INVESTMENT TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "2/1/2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Name: W. Patrick Bradley Title: Executive Vice President, Chief Financial Officer and Treasurer",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Name: Francis G. Waltman Title: Executive Vice President",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Virtus AllianzGI Emerging Markets Opportunities Fund",
+      "rate_text": "0.85%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "9ef94ffc-8278-43ab-a27e-0efbf427d7f4",
+   "error": null,
+   "input_tokens": 4966,
+   "output_tokens": 922,
+   "latency_ms": 2638,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "LargeCap Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Thompson Investment Management, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Wisconsin",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Thompson IM Funds, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "20 th day of February, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jason L. Stephens Jason L. Stephens",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jason L. Stephens Jason L. Stephens",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "of the first $50 million",
+      "rate_text": "1.00%",
+      "up_to_minor": 5000000000,
+      "rate_bps": "100"
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "in excess of $50 million",
+      "rate_text": "0.90%",
+      "up_to_minor": null,
+      "rate_bps": "90"
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "9fa8d683-0239-4b21-af98-671952c7fd01",
+   "error": null,
+   "input_tokens": 899,
+   "output_tokens": 1392,
+   "latency_ms": 4311,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Calamos Emerging Market Equity Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Calamos Advisors LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Calamos Investment Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 19, 2013",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "J. Christopher Jackson J. Christopher Jackson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Nimish S. Bhatt",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "the first $500 million",
+      "rate_text": "1.10%",
+      "up_to_minor": 50000000000,
+      "rate_bps": "110"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "the next $500 million",
+      "rate_text": "1.05%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "105"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "the next $5 billion",
+      "rate_text": "1.00%",
+      "up_to_minor": 600000000000,
+      "rate_bps": "100"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "the next $5 billion",
+      "rate_text": "0.98%",
+      "up_to_minor": 1100000000000,
+      "rate_bps": "98"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "the next $5 billion",
+      "rate_text": "0.96%",
+      "up_to_minor": 1600000000000,
+      "rate_bps": "96"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[5]",
+     "value": {
+      "band_text": "the next $5 billion",
+      "rate_text": "0.94%",
+      "up_to_minor": 2100000000000,
+      "rate_bps": "94"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[6]",
+     "value": {
+      "band_text": "the next $5 billion",
+      "rate_text": "0.92%",
+      "up_to_minor": 2600000000000,
+      "rate_bps": "92"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[7]",
+     "value": {
+      "band_text": "in excess of $26 billion",
+      "rate_text": "0.90%",
+      "up_to_minor": null,
+      "rate_bps": "90"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "a1e475cf-53fb-475e-9731-82a2207a6790",
+   "error": null,
+   "input_tokens": 1600,
+   "output_tokens": 818,
+   "latency_ms": 3971,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Transparent Value Large-Cap Aggressive Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Guggenheim Partners Investment Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Transparent Value Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "May 9, 2016",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Kevin Robinson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Amy J. Lee",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Transparent Value Large-Cap Aggressive Fund",
+      "rate_text": "0.95%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "a1e7e096-d45f-4087-8b61-bd8fe1bafd63",
+   "error": null,
+   "input_tokens": 1625,
+   "output_tokens": 720,
+   "latency_ms": 4097,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Six Circles Ultra Short Duration Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "J.P. Morgan Private Investments Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Six Circles Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 18, 2024",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Mary Savino",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Glenn Hill",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Advisory Fee Rate",
+      "rate_text": "0.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "a7083e2f-2b97-4818-8d33-b9d39d76c600",
+   "error": null,
+   "input_tokens": 1242,
+   "output_tokens": 1095,
+   "latency_ms": 3434,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Alger Spectra Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Fred Alger Management, LLC",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "The Alger Funds II",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 17, 2019",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Tina Payne       ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Tina Payne       ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "for assets up to $2 billion",
+      "rate_text": ".90%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "for assets between $2 billion and $4 billion",
+      "rate_text": ".75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "for assets between $4 billion and $6 billion",
+      "rate_text": ".65%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "for assets between $6 billion and $8 billion",
+      "rate_text": ".55%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "for assets in excess of $8 billion",
+      "rate_text": ".45%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "acaf53f1-1575-4a37-b2b6-290d15c179e4",
+   "error": null,
+   "input_tokens": 1229,
+   "output_tokens": 947,
+   "latency_ms": 6352,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Virtus Aviva Multi-Strategy Target Return Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Virtus Alternative Investment Advisers, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Virtus Alternative Solutions Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "February 28, 2020",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "W. Patrick Bradley",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Francis G. Waltman",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "1 st $5 Billion",
+      "rate_text": "1.30%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "$5+ Billon",
+      "rate_text": "1.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "ae0de4a9-a113-42e0-aee7-8ea145efd4eb",
+   "error": null,
+   "input_tokens": 950,
+   "output_tokens": 911,
+   "latency_ms": 4287,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "State Street Defensive Emerging Markets Equity Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "SSGA FUNDS MANAGEMENT, INC.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "SSGA FUNDS",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 18, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Cara Reading",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Bruce Rosenberg Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Cara Reading",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "Ellen M. Needham",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "State Street Defensive Emerging Markets Equity Fund",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "b2212f2a-01a0-4153-be08-39868fa809e1",
+   "error": null,
+   "input_tokens": 1851,
+   "output_tokens": 1655,
+   "latency_ms": 4694,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "EATON VANCE ATLANTA CAPITAL SMID-CAP FUND",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Boston Management and Research",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets for the Month",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Eaton Vance Growth Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "May 1, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "May 1, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Deidre E. Walsh Deidre E. Walsh",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Maureen A. Gemma Maureen A. Gemma",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Up to $500 million",
+      "rate_text": "1.0000%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "$500 million but less than $1 billion",
+      "rate_text": "0.9375%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "$1 billion but less than $2.5 billion",
+      "rate_text": "0.8750%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "$2.5 billion but less than $5 billion",
+      "rate_text": "0.8125%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "$5 billion but less than $7.5 billion",
+      "rate_text": "0.7500%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[5]",
+     "value": {
+      "band_text": "$7.5 billion but less than $10 billion",
+      "rate_text": "0.7200%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[6]",
+     "value": {
+      "band_text": "$10 billion but less than $15 billion",
+      "rate_text": "0.7100%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[7]",
+     "value": {
+      "band_text": "$15 billion and over",
+      "rate_text": "0.6900%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "b8473f4c-2149-4581-9c1d-1252db4af72d",
+   "error": null,
+   "input_tokens": 1786,
+   "output_tokens": 666,
+   "latency_ms": 2737,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Credit Suisse Commodity Return Strategy Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Credit Suisse Asset Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Credit Suisse Commodity Strategy Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "November 15, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "CREDIT SUISSE ASSET MANAGEMENT, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "CREDIT SUISSE COMMODITY STRATEGY FUNDS, on behalf of Credit Suisse Commodity Return Strategy Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "b84f1f2c-596e-4677-8ec9-8a847dd4c2e7",
+   "error": null,
+   "input_tokens": 2566,
+   "output_tokens": 833,
+   "latency_ms": 2602,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "FAM DIVIDEND FOCUS FUND",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Fenimore Asset Management, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Fenimore Asset Management Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 30, 2019",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "June 30, 2019",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 30,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Michael Balboa Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Debra A. Pollard",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "average daily net assets of the Fund",
+      "rate_text": "0.90%",
+      "up_to_minor": null,
+      "rate_bps": "90"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "c4027352-9b46-4d57-811a-3f146a71e3e3",
+   "error": null,
+   "input_tokens": 2463,
+   "output_tokens": 725,
+   "latency_ms": 2582,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "North Capital Treasury Money Market Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "North Capital, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "NORTH CAPITAL FUNDS TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 13, 2023",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "June 13, 2023",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "James P. Dowd",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "James P. Dowd",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "c657d295-4498-448a-94ef-1e1e8b610dcb",
+   "error": null,
+   "input_tokens": 1808,
+   "output_tokens": 788,
+   "latency_ms": 2745,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Aberdeen Standard Bloomberg All Commodity Strategy K-1 Free ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Aberdeen Standard Investments ETFs Advisors LLC, formerly ETF Securities Advisors LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "the State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Aberdeen Standard Investments ETFs, formerly ETFS Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "August 27, 2018",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Lucia Sitar",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Lucia Sitar",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Aberdeen Standard Bloomberg All Commodity Strategy K-1 Free ETF",
+      "rate_text": "0.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "c768a116-2395-4fe2-9c93-1723769e764f",
+   "error": null,
+   "input_tokens": 5917,
+   "output_tokens": 914,
+   "latency_ms": 4584,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Harbor International Compounders Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Harbor Capital Advisors, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "laws of the State of Illinois",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Harbor Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "March 1, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "March 1, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "/s/ Charles F. McCain President",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "/s/ Kristof Gleich Kristof Gleich President",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "average daily net assets",
+      "rate_text": "0.50%",
+      "up_to_minor": null,
+      "rate_bps": "50"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "c8791dba-90ba-47d1-b214-8108fa49eb31",
+   "error": null,
+   "input_tokens": 1628,
+   "output_tokens": 798,
+   "latency_ms": 2349,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "The Opal International Dividend Income ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "TRUEMARK INVESTMENTS, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "ELEVATION SERIES TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 17, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 31, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Bradley Swenson",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Michael N. Loukas Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "The Opal International Dividend Income ETF",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "c8be170a-671b-4290-9f2e-9145aeb8597b",
+   "error": null,
+   "input_tokens": 2221,
+   "output_tokens": 545,
+   "latency_ms": 2124,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Leuthold Core Investment Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "The Leuthold Group, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "the State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Managed Portfolio Series",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "cc6209a7-ed94-4586-98c9-d930a41959c8",
+   "error": null,
+   "input_tokens": 1590,
+   "output_tokens": 873,
+   "latency_ms": 2742,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Milliman - Capital Group Hedged U.S. Growth Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Milliman Financial Risk Management LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Milliman Variable Insurance Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 17, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "April 29, 2024",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Maria Schiopu Maria Schiopu",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Adam Schenck",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Milliman - Capital Group Hedged U.S. Growth Fund",
+      "rate_text": "0.77%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "ce2b6258-7c05-40ec-872a-471905ec60a1",
+   "error": null,
+   "input_tokens": 949,
+   "output_tokens": 982,
+   "latency_ms": 6745,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Thornburg Ultrashort Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "THORNBURG INVESTMENT MANAGEMENT, INC.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Net Assets of Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "THORNBURG INVESTMENT TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 30, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Curtis Holloway",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Nimish S. Bhatt Exhibit",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "$0 up to $5 billion",
+      "rate_text": "0.250%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "$5 billion up to $10 billion",
+      "rate_text": "0.225%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "Over $10 billion",
+      "rate_text": "0.200%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "d1a86cfd-e587-4005-95b9-9e16e202d019",
+   "error": null,
+   "input_tokens": 2449,
+   "output_tokens": 912,
+   "latency_ms": 2751,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Kurv Technology Titans Select ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Kurv Investment Management LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Kurv ETF Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "June 14, 2024",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "March 31, 2025",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Howard Chan",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Howard Chan",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Howard Chan",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "Howard Chan",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "0.99% of the Fund's average daily net assets",
+      "rate_text": "0.99%",
+      "up_to_minor": null,
+      "rate_bps": "99"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "d2ab4134-2480-4991-b1c5-af7e849f51b0",
+   "error": null,
+   "input_tokens": 1890,
+   "output_tokens": 764,
+   "latency_ms": 2586,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "VELA Small Cap Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "VELA Investment Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "VELA Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "October 1, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "November 21, 2025",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Chief Executive Officer, VELA Investment Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "President, VELA Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "all assets",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": "75"
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "d4cdaaab-8e8f-4168-9287-1737c16b9632",
+   "error": null,
+   "input_tokens": 1783,
+   "output_tokens": 924,
+   "latency_ms": 2829,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "PIMCO Total Return Portfolio",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Pacific Investment Management Company LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Brighthouse Investment Advisers, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "March 1, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Kristi Slavin",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Robert O. Young Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "first $1 billion of such assets",
+      "rate_text": "0.25%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "25"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "next $2 billion of such assets",
+      "rate_text": "0.20%",
+      "up_to_minor": 300000000000,
+      "rate_bps": "20"
+     },
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "over $3 billion",
+      "rate_text": "0.175%",
+      "up_to_minor": null,
+      "rate_bps": "17.5"
+     },
+     "routing": "accepted"
+    }
+   ]
+  },
+  {
+   "version_id": "d5fd811d-d0a3-41c6-accb-d557d004ebe5",
+   "error": null,
+   "input_tokens": 1808,
+   "output_tokens": 1306,
+   "latency_ms": 5040,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Eaton Vance Tax-Managed Equity Asset Allocation Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Eaton Vance Management",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Eaton Vance Mutual Funds Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "July 1, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "July 1, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Jill R. Damon",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Deidre E. Walsh Deidre E. Walsh",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Up to $500 million",
+      "rate_text": "0.700%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "$500 million but less than $1 billion",
+      "rate_text": "0.600%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "$1 billion but less than $1.5 billion",
+      "rate_text": "0.575%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "$1.5 billion but less than $2.5 billion",
+      "rate_text": "0.550%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "$2.5 billion and over",
+      "rate_text": "0.525%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "d7dfbc31-8c24-468d-9bfd-a36566842d85",
+   "error": null,
+   "input_tokens": 1536,
+   "output_tokens": 773,
+   "latency_ms": 3176,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Leader Capital High Quality Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "LEADER CAPITAL CORP.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average net assets of the fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "LEADER FUNDS TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "July 15, 2019",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "April 10, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "John Lekas",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "John Lekas",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Leader Capital High Quality Income Fund",
+      "rate_text": "0.65%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "da856ce1-2e95-4ebf-8fdf-48675d56d3be",
+   "error": null,
+   "input_tokens": 1518,
+   "output_tokens": 797,
+   "latency_ms": 2938,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "JOHCM Credit Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "JOHCM (USA) INC.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "JOHCM FUNDS TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 8, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 24, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "David Lebisky Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Jonathan Weitz",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "JOHCM Credit Income Fund",
+      "rate_text": "0.55%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "dc437c76-7b40-45b9-aff1-d85a0b0e1f33",
+   "error": null,
+   "input_tokens": 1959,
+   "output_tokens": 1298,
+   "latency_ms": 3994,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Eaton Vance India Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Boston Management and Research",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets for the Month",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Eaton Vance Special Investment Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "March 1, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "April 13, 2026",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "James F. Kirchner Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Lisa Buhain Winslow",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Up to $500 million",
+      "rate_text": "0.750%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "$500 million but less than $1 billion",
+      "rate_text": "0.700%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "$1 billion but less than $2.5 billion",
+      "rate_text": "0.675%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "$2.5 billion but less than $5 billion",
+      "rate_text": "0.650%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "$5 billion and over",
+      "rate_text": "0.630%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "dd5aa5f7-c7db-4175-9959-b5fda27c1514",
+   "error": null,
+   "input_tokens": 1838,
+   "output_tokens": 639,
+   "latency_ms": 2150,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Fallen Angels Income Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "American Money Management, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "the State of New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "MSS SERIES TRUST",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Gregory B. Getts",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Michael Moore",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "e457ae4e-1cd0-4903-be32-c5d272834bc0",
+   "error": null,
+   "input_tokens": 1438,
+   "output_tokens": 655,
+   "latency_ms": 2457,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "FPA New Income, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "First Pacific Advisors, LP",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "California",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "FPA New Income, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 18, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 18, 2020",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "E. Lake Setzler",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "J. Richard Atwood",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers",
+     "value": null,
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "e5999fad-3895-4efa-8fd4-2560fbeef846",
+   "error": null,
+   "input_tokens": 1579,
+   "output_tokens": 769,
+   "latency_ms": 2560,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Hartford Multifactor Developed Markets (ex-US) ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Lattice Strategies LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Lattice Strategies Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "July 29, 2016",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "November 6, 2019",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Thomas R. Phillips",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Gregory A. Frost",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Hartford Multifactor Developed Markets (ex-US) ETF",
+      "rate_text": "0.29%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "e6114bc8-3277-4713-9655-930016d08113",
+   "error": null,
+   "input_tokens": 884,
+   "output_tokens": 586,
+   "latency_ms": 2047,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Heartland Value Plus Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "October 26, 1993",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on the average daily net assets of the Series",
+      "rate_text": "0.70 of 1%",
+      "up_to_minor": null,
+      "rate_bps": "100"
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "e65cc292-1e09-4575-964f-be8017415513",
+   "error": null,
+   "input_tokens": 946,
+   "output_tokens": 772,
+   "latency_ms": 2252,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Procure Disaster Recovery Strategy ETF",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "ProcureAM LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "Procure ETF Trust II",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "May 16, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "May 16, 2022",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Robert Tull Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Robert Tull Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Procure Disaster Recovery Strategy ETF",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "ea4b4d46-4847-46a4-adb7-7f4e4b4d6765",
+   "error": null,
+   "input_tokens": 1255,
+   "output_tokens": 1128,
+   "latency_ms": 2981,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Alger Capital Appreciation Institutional Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Fred Alger Management, LLC",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "The Alger Institutional Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "September 12, 2007",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "September 17, 2019",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Tina Payne       ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Tina Payne       ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "for assets up to $2 billion",
+      "rate_text": ".81%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "for assets between $2 billion and $3 billion",
+      "rate_text": ".65%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "for assets between $3 billion and $4 billion",
+      "rate_text": ".60%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[3]",
+     "value": {
+      "band_text": "for assets between $4 billion and $5 billion",
+      "rate_text": ".55%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[4]",
+     "value": {
+      "band_text": "for assets in excess of $5 billion",
+      "rate_text": "0.45%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "f2ea584e-fc51-42fd-ade2-e4110067eb9e",
+   "error": null,
+   "input_tokens": 5363,
+   "output_tokens": 1289,
+   "latency_ms": 3488,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "BMO Large-Cap Growth Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Columbia Management Investment Advisers, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "State of Wisconsin",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "BMO Funds, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 16, 2021",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 16, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "graduated",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "John M. Blaser     ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Michael G. Clarke Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[2]",
+     "value": "Michael G. Clarke     ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[3]",
+     "value": "Title",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[4]",
+     "value": "John M. Blaser     ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[5]",
+     "value": "Michael G. Clarke     ",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "on the first $1 billion",
+      "rate_text": "0.35%",
+      "up_to_minor": 100000000000,
+      "rate_bps": "35"
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[1]",
+     "value": {
+      "band_text": "on the next $1 billion",
+      "rate_text": "0.325%",
+      "up_to_minor": 200000000000,
+      "rate_bps": "32.5"
+     },
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_tiers[2]",
+     "value": {
+      "band_text": "in excess of $2 billion",
+      "rate_text": "0.30%",
+      "up_to_minor": null,
+      "rate_bps": "30"
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "f97ebf8f-4370-4f8d-9016-4bfa857849de",
+   "error": null,
+   "input_tokens": 8923,
+   "output_tokens": 836,
+   "latency_ms": 2445,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "BFS Equity Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Bradley, Foster & Sargent, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Valued Advisers Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "August 6, 2021",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "August 6, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": "arrears",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Valued Advisers Trust",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Bradley, Foster & Sargent, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "BFS Equity Fund",
+      "rate_text": "0.75%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "fbdb7811-db16-462c-9dde-ca30f1cba13c",
+   "error": null,
+   "input_tokens": 5627,
+   "output_tokens": 856,
+   "latency_ms": 2656,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Aspiration Redwood Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Aspiration Fund Adviser, LLC",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "Delaware",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average daily net assets of the Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Aspiration Funds",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "December 18, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "December 18, 2023",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": "USD",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 10,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Timothy Newell",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Timothy Newell",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "average daily net assets of the Fund",
+      "rate_text": "0.00%",
+      "up_to_minor": null,
+      "rate_bps": "0"
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "fe0659b9-e241-41e7-9919-53887eb9420c",
+   "error": null,
+   "input_tokens": 4416,
+   "output_tokens": 910,
+   "latency_ms": 2742,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Appreciation Portfolio",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "BNY Mellon Investment Adviser, Inc.",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": "New York",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "Average Daily Net Assets",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "client",
+     "value": "BNY MELLON VARIABLE INVESTMENT FUND",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "August 24, 1994",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": "monthly",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": 60,
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "James Bitetto Name",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "signatories[1]",
+     "value": "Renee LaRoche-Morris",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Appreciation Portfolio",
+      "rate_text": ".5325%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  },
+  {
+   "version_id": "ff1a8b94-591c-457f-aa8c-ed68442d0eb3",
+   "error": null,
+   "input_tokens": 847,
+   "output_tokens": 707,
+   "latency_ms": 2306,
+   "fields": [
+    {
+     "field_path": "fund_or_account",
+     "value": "Persimmon Long/Short Fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "adviser",
+     "value": "Persimmon Capital Management, LP",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "governing_law",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "fee_basis",
+     "value": "average net assets of the fund",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "client",
+     "value": "Northern Lights Fund Trust III",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "agreement_date",
+     "value": "January 1, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "effective_date",
+     "value": "January 1, 2021",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_method",
+     "value": "cliff",
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "currency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "billing_frequency",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "payment_timing",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "termination_notice_days",
+     "value": null,
+     "routing": "needs_review"
+    },
+    {
+     "field_path": "signatories[0]",
+     "value": "Richard Malinowski",
+     "routing": "accepted"
+    },
+    {
+     "field_path": "fee_tiers[0]",
+     "value": {
+      "band_text": "Persimmon Long/Short Fund",
+      "rate_text": "1.25%",
+      "up_to_minor": null,
+      "rate_bps": null
+     },
+     "routing": "needs_review"
+    }
+   ]
+  }
+ ]
+}

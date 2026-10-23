@@ -20,12 +20,14 @@ from app.retrieval.index import index_version  # noqa: E402
 from app.retrieval.vector_index import PineconeVectorIndex  # noqa: E402
 from langchain_openai import ChatOpenAI  # noqa: E402
 from app.contracts.extract import run_extraction  # noqa: E402
+from app.contracts.verify import VisionVerifier, run_verification  # noqa: E402
 from app.tracing import flush_tracing  # noqa: E402
 
 def build_runners() -> dict[str, StageRunner]:
+    detector = PiiDetector()
     return {
         "parse_redact": partial(
-            parse_and_redact, parser=parse_pdf, detector=PiiDetector(), store_root=config.DOCUMENT_STORE_DIR,
+            parse_and_redact, parser=parse_pdf, detector=detector, store_root=config.DOCUMENT_STORE_DIR,
             hmac_key=config.require("PII_HMAC_KEY"), vault_key=config.require("PII_VAULT_KEY"),
         ),
         "index": partial(
@@ -39,6 +41,16 @@ def build_runners() -> dict[str, StageRunner]:
             chat_model=ChatOpenAI(model=config.EXTRACTION_MODEL, temperature=0,
                                   timeout=config.EXTRACTION_TIMEOUT_SECONDS, max_retries=config.LLM_MAX_RETRIES),
             model_id=config.EXTRACTION_MODEL,
+        ),
+        "verify": partial(
+            run_verification, store_root=config.DOCUMENT_STORE_DIR, hmac_key=config.require("PII_HMAC_KEY"),
+            vault_key=config.require("PII_VAULT_KEY"),
+            vision=VisionVerifier(
+                ChatOpenAI(model=config.VERIFIER_MODEL, reasoning_effort="none",
+                           timeout=config.VERIFIER_TIMEOUT_SECONDS, max_retries=config.LLM_MAX_RETRIES),
+                config.VERIFIER_MODEL,
+            ),
+            detector=detector,
         ),
     }
 

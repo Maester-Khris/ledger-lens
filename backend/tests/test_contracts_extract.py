@@ -42,3 +42,22 @@ def test_two_schema_failures_raise(db_session, tenant_id):
 
     with pytest.raises(ExtractionFailed, match="currency"):
         run_extraction(db_session, version.id, chat_model=Failing(), model_id="scripted")
+
+
+def test_extracted_event_records_tokens_and_cost(db_session, tenant_id):
+    from langchain_core.messages import AIMessage
+    from langchain_core.runnables import RunnableLambda
+
+    version = parsed_version(db_session, tenant_id)
+    terms = _terms()
+
+    class Metered(ScriptedChatModel):
+        def with_structured_output(self, schema, include_raw=False, **kwargs):
+            usage = {"input_tokens": 5000, "output_tokens": 600, "total_tokens": 5600}
+            return RunnableLambda(lambda _m: {"raw": AIMessage(content="", usage_metadata=usage), "parsed": terms,
+                                              "parsing_error": None})
+
+    run_extraction(db_session, version.id, chat_model=Metered(), model_id="gpt-4.1-2025-04-14")
+    detail = documents_dao.version_events(db_session, version.id)[-1].detail
+    assert (detail["input_tokens"], detail["output_tokens"]) == (5000, 600)
+    assert detail["cost_usd"] == 0.0148  # 5000 x $2 + 600 x $8 per 1M (gpt-4.1 list price)

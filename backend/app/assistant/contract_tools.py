@@ -14,11 +14,11 @@ from app.retrieval import dao as retrieval_dao
 
 
 class FieldsArgs(BaseModel):
-    document_id: uuid.UUID = Field(description="From list_documents")
+    document_id: uuid.UUID = Field(description="From find_documents")
 
 
 class CompareArgs(BaseModel):
-    document_id: uuid.UUID = Field(description="From list_documents")
+    document_id: uuid.UUID = Field(description="From find_documents")
     as_of: date | None = Field(default=None, description="Valuation date; omit for the latest")
 
 

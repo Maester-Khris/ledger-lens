@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -90,9 +91,17 @@ PINECONE_INDEX = os.environ.get("PINECONE_INDEX", "contracts")
 # Exact snapshot, never an alias: tool_invocations and chat_turns record it for audit.
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-4.1-2025-04-14")
 EXTRACTION_MODEL = os.environ.get("EXTRACTION_MODEL", CHAT_MODEL)
+# gpt-4.1 list price per 1M tokens (in, out), OpenAI pricing page; update with EXTRACTION_MODEL
+EXTRACTION_PRICE_PER_MTOK = (Decimal("2.00"), Decimal("8.00"))
+VERIFIER_MODEL = os.environ.get("VERIFIER_MODEL", "gpt-6-luna")
+VERIFIER_TIMEOUT_SECONDS = _float("VERIFIER_TIMEOUT_SECONDS", 30)
+VERIFIER_CONCURRENCY = int(os.environ.get("VERIFIER_CONCURRENCY", 16))
+# List prices per 1M tokens (in, out), OpenAI model page, checked 2026-10-15. The X1 report states list prices.
+VERIFIER_PRICE_PER_MTOK = (Decimal("0.10"), Decimal("0.50"))
 # Changing either means recreating the Pinecone index and re-indexing every document.
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIMENSIONS = _int("EMBEDDING_DIMENSIONS", 1536)
+EMBEDDING_PRICE_PER_MTOK = Decimal("0.02")
 
 # LLM call limits
 CHAT_TIMEOUT_SECONDS = _float("CHAT_TIMEOUT_SECONDS", 30)
@@ -128,12 +137,24 @@ DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "ye
 CHAT_LIMIT_PER_GUEST = _int("CHAT_LIMIT_PER_GUEST", 10)
 CHAT_LIMIT_PER_IP = _int("CHAT_LIMIT_PER_IP", 30)
 CHAT_LIMIT_WINDOW_SECONDS = _int("CHAT_LIMIT_WINDOW_SECONDS", 600)
+CHAT_MAX_IN_FLIGHT = _int("CHAT_MAX_IN_FLIGHT", 0)  # X3: chat turns in flight per process; 0 = no limit
+CHAT_BUSY_RETRY_SECONDS = _int("CHAT_BUSY_RETRY_SECONDS", 3)  # Retry-After base; 0 to 2 s of jitter is added
+
+# Shared rate-limit windows (N5). Set = the limiter lives in Redis, correct across workers and replicas; unset = in
+# process memory (local development, single process). Short timeouts: a Redis outage must fail fast (and open).
+REDIS_URL = os.environ.get("REDIS_URL") or None
+TEST_REDIS_URL = os.environ.get("TEST_REDIS_URL", "redis://localhost:6379/15")
+REDIS_TIMEOUT_SECONDS = _float("REDIS_TIMEOUT_SECONDS", 0.5)
 
 # Retrieval tuning. MIN_DENSE_SIMILARITY: calibrated 2026-10-01 on the demo corpus with scripts/calibrate_relevance.py
 # (reports/relevance-bd36247ba3f7.json); chosen inside the empty band 0.452–0.484 between the highest gateable junk and
 # the lowest answerable.
 SEARCH_CANDIDATES = _int("SEARCH_CANDIDATES", 20)
+SEARCH_TOP_K = _int("SEARCH_TOP_K", 8)  # hits per search sent to the model; 5 kept every expected passage (T7) but is not adopted: untested on real turns
 MIN_DENSE_SIMILARITY = _float("MIN_DENSE_SIMILARITY", 0.46)
+
+# Load tests only: serve retrieval from the stub index instead of Pinecone (scripts/load/README.md). Off unless 1.
+LOADTEST_STUB_VECTORS = os.environ.get("LOADTEST_STUB_VECTORS", "") == "1"
 
 # Ingestion
 MAX_UPLOAD_BYTES = _int("MAX_UPLOAD_BYTES", 20 * 1024 * 1024)

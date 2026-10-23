@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 # Personal data only. Organisations, locations and dates stay readable: contracts need
@@ -63,15 +63,26 @@ class Redaction:
     tokens: dict[str, tuple[str, str]] = field(default_factory=dict)  # token -> (entity_type, original value)
 
 
-def _normalise(value: str) -> str:
+def normalise_value(value: str) -> str:
     return " ".join(value.split()).casefold()
+
+
+def token_maker(tenant_id: uuid.UUID, key: str) -> Callable[[str, str], str]:
+    """make_token for many values of one tenant: the HMAC is keyed once and copied per value (spec C3b).
+    The returned function takes (entity_type, normalise_value(value))."""
+    keyed = hmac.new(key.encode(), f"{tenant_id}|".encode(), hashlib.sha256)
+
+    def make(entity_type: str, normalised: str) -> str:
+        digest = keyed.copy()
+        digest.update(f"{entity_type}|{normalised}".encode())
+        return f"<{entity_type}_{digest.hexdigest()[:TOKEN_DIGEST_CHARS]}>"
+
+    return make
 
 
 def make_token(tenant_id: uuid.UUID, entity_type: str, value: str, key: str) -> str:
     """Deterministic per tenant: the same person gets the same token in every document and in queries."""
-    message = f"{tenant_id}|{entity_type}|{_normalise(value)}".encode()
-    digest = hmac.new(key.encode(), message, hashlib.sha256).hexdigest()[:TOKEN_DIGEST_CHARS]
-    return f"<{entity_type}_{digest}>"
+    return token_maker(tenant_id, key)(entity_type, normalise_value(value))
 
 
 def _non_overlapping(spans: Sequence[PiiSpan]) -> list[PiiSpan]:

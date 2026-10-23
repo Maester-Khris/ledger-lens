@@ -55,3 +55,18 @@ def test_a_guest_returning_after_24_hours_starts_from_the_shared_data(client, db
     assert response.status_code == 201 and response.json()["id"] == str(returning)  # same guest, kept
     assert db_session.scalars(select(GuestFieldReview).where(GuestFieldReview.guest_id == returning)).first() is None
     assert db_session.scalars(select(GuestToolDecision).where(GuestToolDecision.guest_id == returning)).first() is None
+
+
+def test_the_purge_cost_does_not_grow_with_the_number_of_stale_guests(db_session, tenant_id):
+    # Found 2026-10-16: 11,211 stale guests made every new guest run two DELETEs with 11,211 bind parameters each.
+    from app.assistant.overlays import purge_stale_overlays
+    from tests.support import record_statements
+    stale_before = datetime.now(timezone.utc) - timedelta(hours=25)
+    for _ in range(300):
+        guest = assistant_dao.register_guest(db_session, tenant_id, None)
+        db_session.execute(update(Guest).where(Guest.id == guest).values(last_seen_at=stale_before))
+    db_session.commit()
+    _, statements = record_statements(db_session, lambda: purge_stale_overlays(db_session, tenant_id, datetime.now(timezone.utc)))
+    deletes = [(s, p) for s, p in statements if s.lstrip().upper().startswith("DELETE")]
+    assert len(deletes) == 2 and all(len(p) <= 3 for _, p in deletes)  # the stale guests are a subquery, not a list
+    assert not [s for s, _ in statements if s.lstrip().upper().startswith("SELECT")]  # no separate read of their ids

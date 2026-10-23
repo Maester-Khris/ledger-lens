@@ -1,0 +1,1136 @@
+{
+  "label": "frozen",
+  "summary": {
+    "turns": 50,
+    "per_turn": {
+      "median": 4936.5,
+      "p95": 10011
+    },
+    "median_by_call": {
+      "agent 1": 832.0,
+      "agent 2": 1671.0,
+      "agent 3+": 948.0,
+      "answer": 2133.0
+    },
+    "calls_by_kind": {
+      "agent 1": 50,
+      "agent 2": 50,
+      "agent 3+": 2,
+      "answer": 50
+    },
+    "shared_prefix_share": 0.19084059080058957
+  },
+  "limits": "the mock's path (forced tools, one search, stop) stands in for the real model's choices; the count is of the serialised request, an approximation of OpenAI's billed count.",
+  "turns": [
+    {
+      "case": "fee-schedule",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 830,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1680,
+          "shared_prefix": 830
+        },
+        {
+          "kind": "answer",
+          "tokens": 4387,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 6897
+    },
+    {
+      "case": "termination",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 833,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2453,
+          "shared_prefix": 833
+        },
+        {
+          "kind": "answer",
+          "tokens": 4731,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 8017
+    },
+    {
+      "case": "governing-law",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 835,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1154,
+          "shared_prefix": 835
+        },
+        {
+          "kind": "answer",
+          "tokens": 1173,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 3162
+    },
+    {
+      "case": "calamos-top-tier",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 836,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2195,
+          "shared_prefix": 836
+        },
+        {
+          "kind": "answer",
+          "tokens": 3220,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 6251
+    },
+    {
+      "case": "aim-first-tier",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 834,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2269,
+          "shared_prefix": 834
+        },
+        {
+          "kind": "answer",
+          "tokens": 4440,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7543
+    },
+    {
+      "case": "management-fee-unscoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 824,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2415,
+          "shared_prefix": 824
+        },
+        {
+          "kind": "answer",
+          "tokens": 5242,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 8481
+    },
+    {
+      "case": "repeat-in-session",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 830,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1681,
+          "shared_prefix": 830
+        },
+        {
+          "kind": "answer",
+          "tokens": 4388,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 6899
+    },
+    {
+      "case": "repeat-in-session",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 857,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1707,
+          "shared_prefix": 857
+        },
+        {
+          "kind": "answer",
+          "tokens": 4449,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7013
+    },
+    {
+      "case": "leakage",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 836,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 9081,
+          "shared_prefix": 836
+        },
+        {
+          "kind": "agent 3+",
+          "tokens": 953,
+          "shared_prefix": 878
+        },
+        {
+          "kind": "answer",
+          "tokens": 820,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 11690
+    },
+    {
+      "case": "fund-not-comparable",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 827,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 9073,
+          "shared_prefix": 827
+        },
+        {
+          "kind": "agent 3+",
+          "tokens": 943,
+          "shared_prefix": 870
+        },
+        {
+          "kind": "answer",
+          "tokens": 810,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 11653
+    },
+    {
+      "case": "not-in-corpus",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 830,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 987,
+          "shared_prefix": 830
+        },
+        {
+          "kind": "answer",
+          "tokens": 1211,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 3028
+    },
+    {
+      "case": "ooc-performance-fee",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 829,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2924,
+          "shared_prefix": 829
+        },
+        {
+          "kind": "answer",
+          "tokens": 6086,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 9839
+    },
+    {
+      "case": "ooc-hurdle-rate",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 832,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2193,
+          "shared_prefix": 832
+        },
+        {
+          "kind": "answer",
+          "tokens": 4540,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7565
+    },
+    {
+      "case": "ooc-arbitration",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 829,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2017,
+          "shared_prefix": 829
+        },
+        {
+          "kind": "answer",
+          "tokens": 2736,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 5582
+    },
+    {
+      "case": "ooc-minimum-account",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 832,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1071,
+          "shared_prefix": 832
+        },
+        {
+          "kind": "answer",
+          "tokens": 2220,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4123
+    },
+    {
+      "case": "fp-calamos-increase",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 833,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2392,
+          "shared_prefix": 833
+        },
+        {
+          "kind": "answer",
+          "tokens": 4243,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7468
+    },
+    {
+      "case": "fp-crypto-surcharge",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 831,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1261,
+          "shared_prefix": 831
+        },
+        {
+          "kind": "answer",
+          "tokens": 3054,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 5146
+    },
+    {
+      "case": "fp-soft-dollar-rebate",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 832,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 899,
+          "shared_prefix": 832
+        },
+        {
+          "kind": "answer",
+          "tokens": 770,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2501
+    },
+    {
+      "case": "fp-maryland-office",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 829,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1656,
+          "shared_prefix": 829
+        },
+        {
+          "kind": "answer",
+          "tokens": 4292,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 6777
+    },
+    {
+      "case": "under-allowed",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 822,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 880,
+          "shared_prefix": 822
+        },
+        {
+          "kind": "answer",
+          "tokens": 751,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2453
+    },
+    {
+      "case": "under-how-much",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 823,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 883,
+          "shared_prefix": 823
+        },
+        {
+          "kind": "answer",
+          "tokens": 754,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2460
+    },
+    {
+      "case": "under-change-it",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 823,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 879,
+          "shared_prefix": 823
+        },
+        {
+          "kind": "answer",
+          "tokens": 750,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2452
+    },
+    {
+      "case": "under-other-one",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 825,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 883,
+          "shared_prefix": 825
+        },
+        {
+          "kind": "answer",
+          "tokens": 754,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2462
+    },
+    {
+      "case": "nonsense-keys",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 822,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 877,
+          "shared_prefix": 822
+        },
+        {
+          "kind": "answer",
+          "tokens": 748,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2447
+    },
+    {
+      "case": "nonsense-purple",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 826,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 885,
+          "shared_prefix": 826
+        },
+        {
+          "kind": "answer",
+          "tokens": 756,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2467
+    },
+    {
+      "case": "nonsense-keywords",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 825,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 883,
+          "shared_prefix": 825
+        },
+        {
+          "kind": "answer",
+          "tokens": 754,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2462
+    },
+    {
+      "case": "nonsense-marks",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 820,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 947,
+          "shared_prefix": 820
+        },
+        {
+          "kind": "answer",
+          "tokens": 1732,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 3499
+    },
+    {
+      "case": "off-weather",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 825,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 885,
+          "shared_prefix": 825
+        },
+        {
+          "kind": "answer",
+          "tokens": 756,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2466
+    },
+    {
+      "case": "off-poem",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 826,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 885,
+          "shared_prefix": 826
+        },
+        {
+          "kind": "answer",
+          "tokens": 756,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2467
+    },
+    {
+      "case": "off-world-cup",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 827,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 888,
+          "shared_prefix": 827
+        },
+        {
+          "kind": "answer",
+          "tokens": 759,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2474
+    },
+    {
+      "case": "off-capital",
+      "outcome": "refused",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 825,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 883,
+          "shared_prefix": 825
+        },
+        {
+          "kind": "answer",
+          "tokens": 754,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2462
+    },
+    {
+      "case": "calamos-first-tier",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 838,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2299,
+          "shared_prefix": 838
+        },
+        {
+          "kind": "answer",
+          "tokens": 4340,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7477
+    },
+    {
+      "case": "calamos-fee-basis",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 832,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2450,
+          "shared_prefix": 832
+        },
+        {
+          "kind": "answer",
+          "tokens": 4063,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7345
+    },
+    {
+      "case": "aim-termination",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 834,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2575,
+          "shared_prefix": 834
+        },
+        {
+          "kind": "answer",
+          "tokens": 8658,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 12067
+    },
+    {
+      "case": "aim-fee-schedule",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 830,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2521,
+          "shared_prefix": 830
+        },
+        {
+          "kind": "answer",
+          "tokens": 5004,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 8355
+    },
+    {
+      "case": "nomura-fee-schedule",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 832,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2587,
+          "shared_prefix": 832
+        },
+        {
+          "kind": "answer",
+          "tokens": 4030,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7449
+    },
+    {
+      "case": "nomura-top-tier",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 840,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 3393,
+          "shared_prefix": 840
+        },
+        {
+          "kind": "answer",
+          "tokens": 5778,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 10011
+    },
+    {
+      "case": "nomura-billing-frequency",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 834,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 2260,
+          "shared_prefix": 834
+        },
+        {
+          "kind": "answer",
+          "tokens": 4008,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 7102
+    },
+    {
+      "case": "fee-schedule@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 880,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1069,
+          "shared_prefix": 880
+        },
+        {
+          "kind": "answer",
+          "tokens": 1012,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2961
+    },
+    {
+      "case": "termination@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 883,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1048,
+          "shared_prefix": 883
+        },
+        {
+          "kind": "answer",
+          "tokens": 961,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 2892
+    },
+    {
+      "case": "governing-law@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 885,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1201,
+          "shared_prefix": 885
+        },
+        {
+          "kind": "answer",
+          "tokens": 1220,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 3306
+    },
+    {
+      "case": "calamos-top-tier@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 884,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1797,
+          "shared_prefix": 884
+        },
+        {
+          "kind": "answer",
+          "tokens": 2046,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4727
+    },
+    {
+      "case": "aim-first-tier@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 879,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1760,
+          "shared_prefix": 879
+        },
+        {
+          "kind": "answer",
+          "tokens": 2975,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 5614
+    },
+    {
+      "case": "calamos-first-tier@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 886,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1728,
+          "shared_prefix": 886
+        },
+        {
+          "kind": "answer",
+          "tokens": 1997,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4611
+    },
+    {
+      "case": "calamos-fee-basis@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 880,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1718,
+          "shared_prefix": 880
+        },
+        {
+          "kind": "answer",
+          "tokens": 1987,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4585
+    },
+    {
+      "case": "aim-termination@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 879,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1904,
+          "shared_prefix": 879
+        },
+        {
+          "kind": "answer",
+          "tokens": 3121,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 5904
+    },
+    {
+      "case": "aim-fee-schedule@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 875,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1662,
+          "shared_prefix": 875
+        },
+        {
+          "kind": "answer",
+          "tokens": 2895,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 5432
+    },
+    {
+      "case": "nomura-fee-schedule@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 885,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1140,
+          "shared_prefix": 885
+        },
+        {
+          "kind": "answer",
+          "tokens": 1249,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 3274
+    },
+    {
+      "case": "nomura-top-tier@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 893,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1475,
+          "shared_prefix": 893
+        },
+        {
+          "kind": "answer",
+          "tokens": 1810,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4178
+    },
+    {
+      "case": "nomura-billing-frequency@scoped",
+      "outcome": "answer",
+      "calls": [
+        {
+          "kind": "agent 1",
+          "tokens": 887,
+          "shared_prefix": 0
+        },
+        {
+          "kind": "agent 2",
+          "tokens": 1457,
+          "shared_prefix": 887
+        },
+        {
+          "kind": "answer",
+          "tokens": 2297,
+          "shared_prefix": 0
+        }
+      ],
+      "tokens": 4641
+    }
+  ]
+}

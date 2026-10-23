@@ -1,10 +1,15 @@
 import hashlib
 import os
 from pathlib import Path
+import uuid
 
 
 def original_path(root: Path, sha256: str) -> Path:
     return root / "originals" / sha256[:2] / sha256
+
+
+def crop_path(root: Path, run_id: uuid.UUID, field_path: str) -> Path:
+    return root / "crops" / str(run_id) / f"{field_path}.png"
 
 
 def save_original(root: Path, data: bytes) -> str:

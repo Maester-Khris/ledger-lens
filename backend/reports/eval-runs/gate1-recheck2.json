@@ -1,0 +1,32 @@
+[
+  {
+    "attempt": 1,
+    "id": "management-fee-unscoped",
+    "event": "refused",
+    "behaviour_ok": false,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 6.95,
+    "answer": "I can't find that in the indexed contracts, so I won't guess."
+  },
+  {
+    "attempt": 2,
+    "id": "management-fee-unscoped",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 8.85,
+    "answer": "**Tremblay household \u2014 Investment Management Agreement (synthetic)**\n\nThe management fee is 1.00% on the first $1,000,000 of the combined household market value"
+  },
+  {
+    "attempt": 3,
+    "id": "management-fee-unscoped",
+    "event": "refused",
+    "behaviour_ok": false,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 6.1,
+    "answer": "I can't find that in the indexed contracts, so I won't guess."
+  }
+]

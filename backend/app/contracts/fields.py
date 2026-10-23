@@ -12,7 +12,7 @@ GRADE_ORDER = {"POOR": 0, "FAIR": 1, "GOOD": 2, "EXCELLENT": 3}
 MIN_ACCEPTED_GRADE = "GOOD"
 MAX_ANNUAL_RATE_BPS = 300
 MAX_NOTICE_DAYS = 365
-DATE_FORMATS = ("%B %d, %Y", "%Y-%m-%d", "%d %B %Y", "%B %d %Y")
+DATE_FORMATS = ("%B %d, %Y", "%Y-%m-%d", "%d %B %Y", "%B %d %Y", "%m/%d/%Y")  # the corpus is US: 12/30/2024
 REQUIRED = ("adviser", "client", "fee_method", "currency")
 # Enum values are chosen, not copied, so grounding looks for wording that supports the choice.
 ENUM_EVIDENCE = {

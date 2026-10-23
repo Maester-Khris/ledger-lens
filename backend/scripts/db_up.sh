@@ -82,4 +82,15 @@ for db in ledger_dev ledger_test; do
   (cd "$SCRIPT_DIR" && ALEMBIC_DATABASE_URL="${OWNER_URL}/${db}" "$ALEMBIC" upgrade head)
 done
 
+# Redis for the shared chat rate limiter (N5) and its tests.
+REDIS_CONTAINER="$(env_or REDIS_CONTAINER_NAME fintech-ledger-redis)"
+REDIS_PORT="$(env_or REDIS_PORT 6379)"
+if docker inspect "$REDIS_CONTAINER" > /dev/null 2>&1; then
+  [ "$(docker inspect -f '{{.State.Running}}' "$REDIS_CONTAINER")" = "true" ] || docker start "$REDIS_CONTAINER" > /dev/null
+else
+  echo "Creating container $REDIS_CONTAINER (redis:7-alpine)..."
+  docker run -d --name "$REDIS_CONTAINER" -p "127.0.0.1:$REDIS_PORT:6379" redis:7-alpine > /dev/null
+fi
+echo "Redis on localhost:$REDIS_PORT ($REDIS_CONTAINER)."
+
 echo "Done. ledger_dev and ledger_test are up to date (ledger_migration_test is managed by the test suite)."

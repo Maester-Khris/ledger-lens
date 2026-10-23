@@ -1,0 +1,17 @@
+{
+  "mode": "redis",
+  "requests": 30,
+  "limit_per_guest": 10,
+  "admitted": 10,
+  "refused": 20,
+  "other": 0,
+  "replicas_seen": [
+    "172.19.0.4:8000",
+    "172.19.0.5:8000"
+  ],
+  "admitted_by_replica": {
+    "172.19.0.4:8000": 5,
+    "172.19.0.5:8000": 5
+  },
+  "passed": true
+}

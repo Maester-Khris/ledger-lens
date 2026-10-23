@@ -5,7 +5,8 @@ from sqlalchemy import select
 
 from app.contracts import dao as contracts_dao
 from app.contracts.models import ExtractionRun
-from app.contracts.terms import field_label, field_sort_key, field_status
+from app.contracts.terms import (field_class, field_label, field_reason, field_sort_key, field_status, required_layers,
+                                 verification_path)
 from app.contracts.types import FieldRouting, ReviewDecision
 from tests.support import build_fee_scenario
 from tests.test_contracts_compare import _contract
@@ -14,11 +15,53 @@ ON = date(2026, 9, 30)
 
 
 def test_field_status_covers_every_case():
-    assert field_status(FieldRouting.accepted, None) == "accepted"
-    assert field_status(FieldRouting.needs_review, None) == "needs_review"
-    assert field_status(FieldRouting.needs_review, ReviewDecision.confirmed) == "confirmed"
-    assert field_status(FieldRouting.needs_review, ReviewDecision.corrected) == "corrected"
-    assert field_status(FieldRouting.accepted, ReviewDecision.rejected) == "rejected"
+    assert field_status(FieldRouting.accepted, None, {}, "adviser") == "accepted"
+    assert field_status(FieldRouting.needs_review, None, {}, "adviser") == "needs_review"
+    assert field_status(FieldRouting.needs_review, ReviewDecision.confirmed, {}, "adviser") == "confirmed"
+    assert field_status(FieldRouting.needs_review, ReviewDecision.corrected, {}, "adviser") == "corrected"
+    assert field_status(FieldRouting.accepted, ReviewDecision.rejected, {}, "adviser") == "rejected"
+
+
+def test_field_classes_and_required_layers():
+    assert [field_class(p) for p in ("fee_tiers[3]", "fee_basis", "client", "effective_date", "governing_law",
+                                     "signatories[0]")] == ["A", "A", "B", "B", "C", "C"]
+    assert required_layers("fee_tiers[0]") == required_layers("fee_basis") == {"ocr_local", "vision"}
+    assert required_layers("currency") == {"vision"}  # inferred: no text to re-read
+    assert required_layers("client") == required_layers("agreement_date") == frozenset()
+    assert verification_path("fee_tiers[2]") == "fee_tiers" and verification_path("signatories[1]") == "signatories[1]"
+
+
+def test_class_a_without_verification_is_not_served():
+    assert field_status(FieldRouting.accepted, None, {}, "fee_tiers[0]") == "needs_review"
+    assert field_status(FieldRouting.accepted, None, {"ocr_local": "agree"}, "fee_tiers[0]") == "needs_review"
+
+
+def test_class_a_served_when_all_required_layers_agree():
+    assert field_status(FieldRouting.accepted, None, {"ocr_local": "agree", "vision": "agree"}, "fee_tiers[1]") == "accepted"
+    assert field_status(FieldRouting.accepted, None, {"vision": "agree"}, "fee_method") == "accepted"
+
+
+def test_error_or_unreadable_never_counts_as_agree():
+    for bad in ("error", "unreadable", "disagree"):
+        assert field_status(FieldRouting.accepted, None, {"ocr_local": "agree", "vision": bad}, "fee_basis") == "needs_review"
+        assert field_status(FieldRouting.accepted, None, {"ocr_local": bad}, "adviser") == "needs_review"
+
+
+def test_class_b_and_c_served_as_today_unless_a_check_disagrees():
+    assert field_status(FieldRouting.accepted, None, {}, "client") == "accepted"
+    assert field_status(FieldRouting.accepted, None, {}, "governing_law") == "accepted"
+    assert field_status(FieldRouting.accepted, None, {"ocr_local": "disagree"}, "client") == "needs_review"
+
+
+def test_human_decision_outranks_verifier():
+    assert field_status(FieldRouting.accepted, ReviewDecision.confirmed, {"vision": "disagree"}, "currency") == "confirmed"
+
+
+def test_reason_names_the_verification_problem_after_the_extraction_reasons():
+    assert field_reason("needs_review", True, [], "EXCELLENT", None, "verifier disagreed") == "verifier disagreed"
+    assert field_reason("needs_review", True, [], "GOOD", None, "awaiting verification") == "awaiting verification"
+    assert field_reason("needs_review", False, [], "GOOD", None, "verifier disagreed") == "not grounded in the cited text"
+    assert field_reason("needs_review", True, [], "GOOD", None) == "awaiting review"
 
 
 def test_bands_sort_numerically_and_have_labels():

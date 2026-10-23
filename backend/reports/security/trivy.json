@@ -1,0 +1,1064 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.76.0"
+  },
+  "ReportID": "01a14726-c767-7c79-a261-064e85d8afc3",
+  "CreatedAt": "2026-10-16T23:58:06.183819266Z",
+  "ArtifactID": "sha256:d4900eba09c6ebe2149813eeb915da0ac68e083c7197524d76164d181d8c6568",
+  "ArtifactName": "/src",
+  "ArtifactType": "repository",
+  "Metadata": {
+    "RepoURL": "git@github.com:Maester-Khris/ledger-lens.git",
+    "Branch": "feat/measured-evidence",
+    "Commit": "4c072bba3a98517d247f89fe53714f5ddc6e8f81",
+    "CommitMsg": "docs(changelog): record gate 2, the regroup and the frozen configuration",
+    "Author": "Maester-khris \u003cndevjoel@gmail.com\u003e",
+    "Committer": "Maester-khris \u003cndevjoel@gmail.com\u003e"
+  },
+  "Results": [
+    {
+      "Target": "backend/requirements.txt",
+      "Class": "lang-pkgs",
+      "Type": "pip",
+      "Packages": [
+        {
+          "Name": "cryptography",
+          "Identifier": {
+            "PURL": "pkg:pypi/cryptography@50.0.1",
+            "UID": "4520fcbc195eff0b"
+          },
+          "Version": "50.0.1",
+          "Locations": [
+            {
+              "StartLine": 12,
+              "EndLine": 12
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "langchain",
+          "Identifier": {
+            "PURL": "pkg:pypi/langchain@1.3.18",
+            "UID": "62a42c172c1ec50c"
+          },
+          "Version": "1.3.18",
+          "Locations": [
+            {
+              "StartLine": 13,
+              "EndLine": 13
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "langchain-core",
+          "Identifier": {
+            "PURL": "pkg:pypi/langchain-core@1.6.4",
+            "UID": "a0214fbf401f580b"
+          },
+          "Version": "1.6.4",
+          "Locations": [
+            {
+              "StartLine": 14,
+              "EndLine": 14
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "langchain-openai",
+          "Identifier": {
+            "PURL": "pkg:pypi/langchain-openai@1.6.5",
+            "UID": "d3960ccf5d02366"
+          },
+          "Version": "1.6.5",
+          "Locations": [
+            {
+              "StartLine": 15,
+              "EndLine": 15
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "langfuse",
+          "Identifier": {
+            "PURL": "pkg:pypi/langfuse@3.15.0",
+            "UID": "3b27c0ff7a1eeb79"
+          },
+          "Version": "3.15.0",
+          "Locations": [
+            {
+              "StartLine": 18,
+              "EndLine": 18
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "langgraph",
+          "Identifier": {
+            "PURL": "pkg:pypi/langgraph@1.2.12",
+            "UID": "fe258038b7b9b833"
+          },
+          "Version": "1.2.12",
+          "Locations": [
+            {
+              "StartLine": 16,
+              "EndLine": 16
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "pinecone",
+          "Identifier": {
+            "PURL": "pkg:pypi/pinecone@10.0.0",
+            "UID": "29a2cbbaec58924b"
+          },
+          "Version": "10.0.0",
+          "Locations": [
+            {
+              "StartLine": 17,
+              "EndLine": 17
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "pypdf",
+          "Identifier": {
+            "PURL": "pkg:pypi/pypdf@6.19.0",
+            "UID": "a8913f90436ede7f"
+          },
+          "Version": "6.19.0",
+          "Locations": [
+            {
+              "StartLine": 11,
+              "EndLine": 11
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "python-multipart",
+          "Identifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.32",
+            "UID": "d13c60cc6b9b8d7b"
+          },
+          "Version": "0.0.32",
+          "Locations": [
+            {
+              "StartLine": 10,
+              "EndLine": 10
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "redis",
+          "Identifier": {
+            "PURL": "pkg:pypi/redis@5.3.1",
+            "UID": "24531ff8ffc5a8a3"
+          },
+          "Version": "5.3.1",
+          "Locations": [
+            {
+              "StartLine": 20,
+              "EndLine": 20
+            }
+          ],
+          "AnalyzedBy": "pip"
+        },
+        {
+          "Name": "sentry-sdk",
+          "Identifier": {
+            "PURL": "pkg:pypi/sentry-sdk@2.60.0",
+            "UID": "1b9c113223563b48"
+          },
+          "Version": "2.60.0",
+          "Locations": [
+            {
+              "StartLine": 19,
+              "EndLine": 19
+            }
+          ],
+          "AnalyzedBy": "pip"
+        }
+      ]
+    },
+    {
+      "Target": "frontend/package-lock.json",
+      "Class": "lang-pkgs",
+      "Type": "npm",
+      "Packages": [
+        {
+          "ID": "@sentry/react@11.4.0",
+          "Name": "@sentry/react",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/react@11.4.0",
+            "UID": "97848910c470ac9"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@sentry/browser@11.4.0",
+            "@sentry/conventions@0.25.0",
+            "@sentry/core@11.4.0",
+            "react-router@8.4.0",
+            "react@19.2.8"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1045,
+              "EndLine": 1067
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "pdfjs-dist@6.3.289",
+          "Name": "pdfjs-dist",
+          "Identifier": {
+            "PURL": "pkg:npm/pdfjs-dist@6.3.289",
+            "UID": "a8a69ecd991460d5"
+          },
+          "Version": "6.3.289",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@napi-rs/canvas@1.0.9"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1685,
+              "EndLine": 1696
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react@19.2.8",
+          "Name": "react",
+          "Identifier": {
+            "PURL": "pkg:npm/react@19.2.8",
+            "UID": "b466b891f2e54917"
+          },
+          "Version": "19.2.8",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "Locations": [
+            {
+              "StartLine": 1775,
+              "EndLine": 1783
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-dom@19.2.8",
+          "Name": "react-dom",
+          "Identifier": {
+            "PURL": "pkg:npm/react-dom@19.2.8",
+            "UID": "cbb2ce29e4951151"
+          },
+          "Version": "19.2.8",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "react@19.2.8",
+            "scheduler@0.27.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1784,
+              "EndLine": 1795
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "react-router@8.4.0",
+          "Name": "react-router",
+          "Identifier": {
+            "PURL": "pkg:npm/react-router@8.4.0",
+            "UID": "f341b9a74c7071d1"
+          },
+          "Version": "8.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Relationship": "direct",
+          "DependsOn": [
+            "@remix-run/route-pattern@0.22.1",
+            "cookie-es@3.1.1",
+            "react-dom@19.2.8",
+            "react@19.2.8"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1796,
+              "EndLine": 1817
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas@1.0.9",
+          "Name": "@napi-rs/canvas",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas@1.0.9",
+            "UID": "7a1b82bfce37593b"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@napi-rs/canvas-android-arm64@1.0.9",
+            "@napi-rs/canvas-darwin-arm64@1.0.9",
+            "@napi-rs/canvas-darwin-x64@1.0.9",
+            "@napi-rs/canvas-linux-arm-gnueabihf@1.0.9",
+            "@napi-rs/canvas-linux-arm64-gnu@1.0.9",
+            "@napi-rs/canvas-linux-arm64-musl@1.0.9",
+            "@napi-rs/canvas-linux-riscv64-gnu@1.0.9",
+            "@napi-rs/canvas-linux-x64-gnu@1.0.9",
+            "@napi-rs/canvas-linux-x64-musl@1.0.9",
+            "@napi-rs/canvas-win32-arm64-msvc@1.0.9",
+            "@napi-rs/canvas-win32-x64-msvc@1.0.9"
+          ],
+          "Locations": [
+            {
+              "StartLine": 57,
+              "EndLine": 86
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-android-arm64@1.0.9",
+          "Name": "@napi-rs/canvas-android-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-android-arm64@1.0.9",
+            "UID": "a914c198e306a2b6"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 87,
+              "EndLine": 106
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-darwin-arm64@1.0.9",
+          "Name": "@napi-rs/canvas-darwin-arm64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-darwin-arm64@1.0.9",
+            "UID": "96bacabe1c0571a8"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 107,
+              "EndLine": 126
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-darwin-x64@1.0.9",
+          "Name": "@napi-rs/canvas-darwin-x64",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-darwin-x64@1.0.9",
+            "UID": "89e79d944f4bd0cb"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 127,
+              "EndLine": 146
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-arm-gnueabihf@1.0.9",
+          "Name": "@napi-rs/canvas-linux-arm-gnueabihf",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-arm-gnueabihf@1.0.9",
+            "UID": "a375f74a65e13529"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 147,
+              "EndLine": 166
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-arm64-gnu@1.0.9",
+          "Name": "@napi-rs/canvas-linux-arm64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-arm64-gnu@1.0.9",
+            "UID": "4c114d18c06a5542"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 167,
+              "EndLine": 189
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-arm64-musl@1.0.9",
+          "Name": "@napi-rs/canvas-linux-arm64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-arm64-musl@1.0.9",
+            "UID": "bdf52ee4de61aedd"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 190,
+              "EndLine": 212
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-riscv64-gnu@1.0.9",
+          "Name": "@napi-rs/canvas-linux-riscv64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-riscv64-gnu@1.0.9",
+            "UID": "fc7a2042d46afd5e"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 213,
+              "EndLine": 235
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-x64-gnu@1.0.9",
+          "Name": "@napi-rs/canvas-linux-x64-gnu",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-x64-gnu@1.0.9",
+            "UID": "6d08efab1859cfd4"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 236,
+              "EndLine": 258
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-linux-x64-musl@1.0.9",
+          "Name": "@napi-rs/canvas-linux-x64-musl",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-linux-x64-musl@1.0.9",
+            "UID": "244b2988836a4138"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 259,
+              "EndLine": 281
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-win32-arm64-msvc@1.0.9",
+          "Name": "@napi-rs/canvas-win32-arm64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-win32-arm64-msvc@1.0.9",
+            "UID": "c4f325f5c8beea54"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 282,
+              "EndLine": 301
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@napi-rs/canvas-win32-x64-msvc@1.0.9",
+          "Name": "@napi-rs/canvas-win32-x64-msvc",
+          "Identifier": {
+            "PURL": "pkg:npm/%40napi-rs/canvas-win32-x64-msvc@1.0.9",
+            "UID": "bd11b0b29e0b504e"
+          },
+          "Version": "1.0.9",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 302,
+              "EndLine": 321
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@remix-run/route-pattern@0.22.1",
+          "Name": "@remix-run/route-pattern",
+          "Identifier": {
+            "PURL": "pkg:npm/%40remix-run/route-pattern@0.22.1",
+            "UID": "5d5b326d029cc376"
+          },
+          "Version": "0.22.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 695,
+              "EndLine": 700
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/browser@11.4.0",
+          "Name": "@sentry/browser",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/browser@11.4.0",
+            "UID": "9843717591cacbd2"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/browser-utils@11.4.0",
+            "@sentry/conventions@0.25.0",
+            "@sentry/core@11.4.0",
+            "@sentry/feedback@11.4.0",
+            "@sentry/replay-canvas@11.4.0",
+            "@sentry/replay@11.4.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 981,
+              "EndLine": 997
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/browser-utils@11.4.0",
+          "Name": "@sentry/browser-utils",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/browser-utils@11.4.0",
+            "UID": "6c1aee315661eba3"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/conventions@0.25.0",
+            "@sentry/core@11.4.0",
+            "web-vitals@6.2.2"
+          ],
+          "Locations": [
+            {
+              "StartLine": 998,
+              "EndLine": 1011
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/conventions@0.25.0",
+          "Name": "@sentry/conventions",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/conventions@0.25.0",
+            "UID": "dcd90079cb9028b6"
+          },
+          "Version": "0.25.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1012,
+              "EndLine": 1020
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/core@11.4.0",
+          "Name": "@sentry/core",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/core@11.4.0",
+            "UID": "42dea359a256443e"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/conventions@0.25.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1021,
+              "EndLine": 1032
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/feedback@11.4.0",
+          "Name": "@sentry/feedback",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/feedback@11.4.0",
+            "UID": "338d82ba3a8c19b4"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/core@11.4.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1033,
+              "EndLine": 1044
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/replay@11.4.0",
+          "Name": "@sentry/replay",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/replay@11.4.0",
+            "UID": "2976d02a86a59037"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/browser-utils@11.4.0",
+            "@sentry/core@11.4.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1068,
+              "EndLine": 1080
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "@sentry/replay-canvas@11.4.0",
+          "Name": "@sentry/replay-canvas",
+          "Identifier": {
+            "PURL": "pkg:npm/%40sentry/replay-canvas@11.4.0",
+            "UID": "375908799ad8c669"
+          },
+          "Version": "11.4.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "DependsOn": [
+            "@sentry/core@11.4.0",
+            "@sentry/replay@11.4.0"
+          ],
+          "Locations": [
+            {
+              "StartLine": 1081,
+              "EndLine": 1093
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "cookie-es@3.1.1",
+          "Name": "cookie-es",
+          "Identifier": {
+            "PURL": "pkg:npm/cookie-es@3.1.1",
+            "UID": "3c0427b91b9ad57a"
+          },
+          "Version": "3.1.1",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1237,
+              "EndLine": 1242
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "scheduler@0.27.0",
+          "Name": "scheduler",
+          "Identifier": {
+            "PURL": "pkg:npm/scheduler@0.27.0",
+            "UID": "95bed0da6d8718e6"
+          },
+          "Version": "0.27.0",
+          "Licenses": [
+            "MIT"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 1852,
+              "EndLine": 1857
+            }
+          ],
+          "AnalyzedBy": "npm"
+        },
+        {
+          "ID": "web-vitals@6.2.2",
+          "Name": "web-vitals",
+          "Identifier": {
+            "PURL": "pkg:npm/web-vitals@6.2.2",
+            "UID": "7cf8f0cf9e6e0abe"
+          },
+          "Version": "6.2.2",
+          "Licenses": [
+            "Apache-2.0"
+          ],
+          "Indirect": true,
+          "Relationship": "indirect",
+          "Locations": [
+            {
+              "StartLine": 2094,
+              "EndLine": 2099
+            }
+          ],
+          "AnalyzedBy": "npm"
+        }
+      ]
+    },
+    {
+      "Target": "backend/scripts/load/compose/load.Dockerfile",
+      "Class": "config",
+      "Type": "dockerfile",
+      "MisconfSummary": {
+        "Successes": 25,
+        "Failures": 2
+      },
+      "Misconfigurations": [
+        {
+          "Type": "Dockerfile Security Check",
+          "ID": "DS-0002",
+          "Title": "Image user should not be 'root'",
+          "Description": "Running containers with 'root' user can lead to a container escape situation. It is a best practice to run containers as non-root users, which can be done by adding a 'USER' statement to the Dockerfile.",
+          "Message": "Specify at least 1 USER command in Dockerfile with non-root user as argument",
+          "Namespace": "builtin.dockerfile.DS002",
+          "Query": "data.builtin.dockerfile.DS002.deny",
+          "Resolution": "Add 'USER \u003cnon root user name\u003e' line to the Dockerfile",
+          "Severity": "HIGH",
+          "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0002",
+          "References": [
+            "https://docs.docker.com/develop/develop-images/dockerfile_best-practices/",
+            "https://avd.aquasec.com/misconfig/ds-0002"
+          ],
+          "Status": "FAIL",
+          "CauseMetadata": {
+            "Provider": "Dockerfile",
+            "Service": "general"
+          }
+        },
+        {
+          "Type": "Dockerfile Security Check",
+          "ID": "DS-0026",
+          "Title": "No HEALTHCHECK defined",
+          "Description": "You should add HEALTHCHECK instruction in your docker container images to perform the health check on running containers.",
+          "Message": "Add HEALTHCHECK instruction in your Dockerfile",
+          "Namespace": "builtin.dockerfile.DS026",
+          "Query": "data.builtin.dockerfile.DS026.deny",
+          "Resolution": "Add HEALTHCHECK instruction in Dockerfile",
+          "Severity": "LOW",
+          "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0026",
+          "References": [
+            "https://blog.aquasec.com/docker-security-best-practices",
+            "https://avd.aquasec.com/misconfig/ds-0026"
+          ],
+          "Status": "FAIL",
+          "CauseMetadata": {
+            "Provider": "Dockerfile",
+            "Service": "general"
+          }
+        }
+      ]
+    },
+    {
+      "Target": "backend/.env",
+      "Class": "secret",
+      "Secrets": [
+        {
+          "RuleID": "openai-project-api-key",
+          "Category": "OpenAI",
+          "Severity": "CRITICAL",
+          "Title": "OpenAI Project API Key",
+          "StartLine": 21,
+          "EndLine": 21,
+          "Code": {
+            "Lines": [
+              {
+                "Number": 19,
+                "Content": "MAX_UPLOAD_BYTES=20971520",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "MAX_UPLOAD_BYTES=20971520",
+                "FirstCause": false,
+                "LastCause": false
+              },
+              {
+                "Number": 20,
+                "Content": "WORKER_POLL_SECONDS=2.0",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "WORKER_POLL_SECONDS=2.0",
+                "FirstCause": false,
+                "LastCause": false
+              },
+              {
+                "Number": 21,
+                "Content": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+                "IsCause": true,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+                "FirstCause": true,
+                "LastCause": true
+              },
+              {
+                "Number": 22,
+                "Content": "CHAT_MODEL=gpt-4.1-2025-04-14",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "CHAT_MODEL=gpt-4.1-2025-04-14",
+                "FirstCause": false,
+                "LastCause": false
+              }
+            ]
+          },
+          "Match": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+          "Offset": 1103
+        }
+      ]
+    },
+    {
+      "Target": "backend/.env.demo",
+      "Class": "secret",
+      "Secrets": [
+        {
+          "RuleID": "openai-project-api-key",
+          "Category": "OpenAI",
+          "Severity": "CRITICAL",
+          "Title": "OpenAI Project API Key",
+          "StartLine": 25,
+          "EndLine": 25,
+          "Code": {
+            "Lines": [
+              {
+                "Number": 23,
+                "Content": "",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "FirstCause": false,
+                "LastCause": false
+              },
+              {
+                "Number": 24,
+                "Content": "# --- LLM ---",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "# --- LLM ---",
+                "FirstCause": false,
+                "LastCause": false
+              },
+              {
+                "Number": 25,
+                "Content": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+                "IsCause": true,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+                "FirstCause": true,
+                "LastCause": true
+              },
+              {
+                "Number": 26,
+                "Content": "CHAT_MODEL=gpt-4.1-2025-04-14",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "CHAT_MODEL=gpt-4.1-2025-04-14",
+                "FirstCause": false,
+                "LastCause": false
+              }
+            ]
+          },
+          "Match": "OPENAI_API_KEY=********************************************************************************************************************************************************************",
+          "Offset": 1757
+        }
+      ]
+    },
+    {
+      "Target": "frontend/.env.local",
+      "Class": "secret",
+      "Secrets": [
+        {
+          "RuleID": "jwt-token",
+          "Category": "JWT",
+          "Severity": "MEDIUM",
+          "Title": "JWT token",
+          "StartLine": 2,
+          "EndLine": 2,
+          "Code": {
+            "Lines": [
+              {
+                "Number": 1,
+                "Content": "# Created by Vercel CLI",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "# Created by Vercel CLI",
+                "FirstCause": false,
+                "LastCause": false
+              },
+              {
+                "Number": 2,
+                "Content": "VERCEL_OIDC_TOKEN=\"************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\"",
+                "IsCause": true,
+                "Annotation": "",
+                "Truncated": false,
+                "Highlighted": "VERCEL_OIDC_TOKEN=\"************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\"",
+                "FirstCause": true,
+                "LastCause": true
+              },
+              {
+                "Number": 3,
+                "Content": "",
+                "IsCause": false,
+                "Annotation": "",
+                "Truncated": false,
+                "FirstCause": false,
+                "LastCause": false
+              }
+            ]
+          },
+          "Match": "VERCEL_OIDC_TOKEN=\"************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\"",
+          "Offset": 43
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, ForeignKey, Numeric, Text, TIMESTAMP, func
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Identity, Integer, Numeric, Text, TIMESTAMP, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -68,3 +68,40 @@ class GuestFieldReview(Base):
     @property
     def decided_by(self) -> str:
         return GUEST_DECIDED_BY
+
+
+class FieldVerification(Base):
+    """One independent check of one field (X1): a local OCR re-read or a vision reading of the cited crop.
+    It never changes the extracted value; a non-agree outcome only routes the field to review."""
+
+    __tablename__ = "field_verifications"
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("extraction_runs.id"), nullable=False)
+    field_path: Mapped[str] = mapped_column(Text, nullable=False)
+    layer: Mapped[str] = mapped_column(SAEnum("ocr_local", "vision", name="verification_layer", native_enum=True), nullable=False)
+    verifier: Mapped[str] = mapped_column(Text, nullable=False)
+    crop_kind: Mapped[str] = mapped_column(SAEnum("element", "table", "page", name="crop_kind", native_enum=True), nullable=False)
+    read_value: Mapped[object | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    outcome: Mapped[str] = mapped_column(
+        SAEnum("agree", "disagree", "unreadable", "error", name="verification_outcome", native_enum=True), nullable=False)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 6), nullable=False, default=Decimal(0))
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.clock_timestamp())
+
+
+class FieldLabel(Base):
+    """A ground-truth label for measuring accuracy (X1 section 10). Separate from field_reviews: measurement, not
+    an operational decision."""
+
+    __tablename__ = "field_labels"
+    __mapper_args__ = {"eager_defaults": True}
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("extraction_runs.id"), primary_key=True)
+    field_path: Mapped[str] = mapped_column(Text, primary_key=True)
+    labeller: Mapped[str] = mapped_column(Text, primary_key=True)
+    label_value: Mapped[object] = mapped_column(JSONB(none_as_null=False), nullable=False)
+    blind: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())

@@ -1,0 +1,118 @@
+{
+  "summary": {
+    "cases": 27,
+    "found_in_top_5": 20,
+    "found_in_top_8": 20
+  },
+  "lost_at_5": [],
+  "rows": [
+    {
+      "id": "fee-schedule",
+      "rank": null
+    },
+    {
+      "id": "termination",
+      "rank": 1
+    },
+    {
+      "id": "governing-law",
+      "rank": 1
+    },
+    {
+      "id": "calamos-top-tier",
+      "rank": 1
+    },
+    {
+      "id": "aim-first-tier",
+      "rank": 1
+    },
+    {
+      "id": "management-fee-unscoped",
+      "rank": null
+    },
+    {
+      "id": "repeat-in-session",
+      "rank": null
+    },
+    {
+      "id": "leakage",
+      "rank": null
+    },
+    {
+      "id": "calamos-first-tier",
+      "rank": 1
+    },
+    {
+      "id": "calamos-fee-basis",
+      "rank": 1
+    },
+    {
+      "id": "aim-termination",
+      "rank": null
+    },
+    {
+      "id": "aim-fee-schedule",
+      "rank": 1
+    },
+    {
+      "id": "nomura-fee-schedule",
+      "rank": 1
+    },
+    {
+      "id": "nomura-top-tier",
+      "rank": 1
+    },
+    {
+      "id": "nomura-billing-frequency",
+      "rank": null
+    },
+    {
+      "id": "fee-schedule@scoped",
+      "rank": null
+    },
+    {
+      "id": "termination@scoped",
+      "rank": 1
+    },
+    {
+      "id": "governing-law@scoped",
+      "rank": 1
+    },
+    {
+      "id": "calamos-top-tier@scoped",
+      "rank": 1
+    },
+    {
+      "id": "aim-first-tier@scoped",
+      "rank": 1
+    },
+    {
+      "id": "calamos-first-tier@scoped",
+      "rank": 1
+    },
+    {
+      "id": "calamos-fee-basis@scoped",
+      "rank": 1
+    },
+    {
+      "id": "aim-termination@scoped",
+      "rank": 1
+    },
+    {
+      "id": "aim-fee-schedule@scoped",
+      "rank": 1
+    },
+    {
+      "id": "nomura-fee-schedule@scoped",
+      "rank": 1
+    },
+    {
+      "id": "nomura-top-tier@scoped",
+      "rank": 1
+    },
+    {
+      "id": "nomura-billing-frequency@scoped",
+      "rank": 2
+    }
+  ]
+}

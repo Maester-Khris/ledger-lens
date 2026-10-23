@@ -44,9 +44,14 @@ fintech-prod/
 Document Intelligence MVP on contracts (verified live 2026-09-24): ingestion pipeline (Docling, Presidio
 tokens, versioning), cited extraction with per-field routing, hybrid retrieval (Postgres full-text + Pinecone),
 LangGraph chat agent with verified citations, contract-vs-billing leakage tool with human approval, React screens wired.
+The Review screen holds the extraction anomaly queue (fields routed to review or flagged by an independent re-reading,
+with the source PDF). The corpus is 102 SEC advisory agreements. Corpus-wide chat eval X4 (2026-10-23, method in the
+README, protocol notes local): 277-case key, 79.4% correct at relevance threshold 0.50; the golden gate
+(`pytest -m eval tests/eval`) passes at `MIN_DENSE_SIMILARITY=0.43`, the value to deploy, and fails at 0.44 and 0.50.
 
-**Not yet built:** Aurora deployment (Epic 1.5), tracing/observability, CI eval gate, `needs_review` review UI,
-the UI/parsing issues deferred from the live run (backlog), Week 2 iteration.
+**Not yet built:** Aurora deployment (Epic 1.5), tracing/observability, CI eval gate (the golden gate is run by hand),
+the UI/parsing issues deferred from the live run (backlog), Week 2 iteration. Open eval follow-ups (over-refusal with
+passages retrieved, `SEARCH_CANDIDATES`, false premises at 55%) are under Deferred in `CHANGELOG.md`.
 **In progress (demo-ready sprint):** fintech reframing + document-centred features — backlog section
 "Demo-ready sprint — fintech reframing" (items N1–N18 now, D1–D16 deferred).
 

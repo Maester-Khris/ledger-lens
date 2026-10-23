@@ -220,3 +220,143 @@
     border-top: 1px solid var(--color-border);
   }
 }
+
+.diff-card__chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.diff-card__reason {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  color: var(--color-warning);
+}
+
+.diff-card__comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin: 12px 0;
+}
+
+@media (max-width: 600px) {
+  .diff-card__comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diff-card__column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.diff-card__column-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.diff-card__value {
+  padding: 8px 10px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.diff-card mark {
+  background: var(--color-warning-tint);
+  color: inherit;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.diff-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.diff-card__table th,
+.diff-card__table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.diff-card__table th {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.diff-card__row--changed {
+  background: var(--color-warning-tint);
+}
+
+.diff-card__evidence {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diff-card__evidence-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diff-card__evidence-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.diff-card__open-contract {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.diff-card__open-contract:hover {
+  text-decoration: underline;
+}
+
+.diff-card__crop {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.diff-card__note {
+  width: 100%;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.diff-card__text {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.diff-card__text--empty {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}

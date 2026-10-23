@@ -1,15 +1,20 @@
+import dataclasses
 import hashlib
+import json
 import operator
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import Annotated, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app import config
 from app.assistant.citations import compose_sections, verify_answer, verify_sections
@@ -18,15 +23,20 @@ from app.assistant.tools import ToolContext, ToolSpec, execute
 PROMPTS = Path(__file__).parent / "prompts"
 AGENT_PROMPT = (PROMPTS / "agent_v1.md").read_text()
 ANSWER_PROMPT = (PROMPTS / "answer_v1.md").read_text()
-GRAPH_VERSION = "v3"
+GRAPH_VERSION = "v5"
 # route + up to 4 tool rounds (a per-contract lookup, P4 D12) + 2 answer attempts + the refuse node, with headroom
 RECURSION_LIMIT = 16
 MAX_ANSWER_ATTEMPTS = 2
 FORCED_TOOL = "compare_contract_to_billing"
-LOOKUP_TOOL = "list_documents"  # forced first: the forced tool takes a document_id the model must look up
+SEARCH_TOOL = "search_contracts"
+LOOKUP_TOOL = "find_documents"  # forced first: the forced tool takes a document_id the model looks up by name
+LIST_TOOL = "list_documents"
 CALCULATION_PATTERN = re.compile(r"\b(how much would|fee for|compare|leakage|difference|under this contract)\b", re.I)
 NO_EVIDENCE_MESSAGE = "I can't find that in the indexed contracts, so I won't guess."
 FAILED_VERIFICATION_MESSAGE = "I couldn't produce an answer I can fully back with the contracts' text."
+LIST_CLEARED = "[document list shown earlier; call list_documents again if you need it]"
+SCOPE_LINE = "This chat is limited to one contract: {title} (document_id {document_id})."
+RETRY_INSTRUCTION = "Your previous answer failed verification. Fix it using only these passages, or refuse."
 
 
 class ContractSection(BaseModel):
@@ -60,6 +70,14 @@ class TurnState(TypedDict, total=False):
     unvalidated: Annotated[list[str], operator.add]  # document ids with fields the agent may not use
     system_notices: Annotated[list[str], operator.add]
     partial: Answer | None  # the sections of a per-contract answer that passed, kept in case the retry ends in a refusal
+    confidence: float | None  # mean token logprob of the last answer call (chat eval; nothing acts on it yet)
+
+
+def mean_logprob(raw: AIMessage) -> float | None:
+    """Mean token logprob of one model reply: how sure the model was of its wording, not whether it is true, so the
+    eval reads it against judged correctness, never as a probability. None when the provider sent no logprobs."""
+    tokens = (raw.response_metadata.get("logprobs") or {}).get("content") or []
+    return sum(token["logprob"] for token in tokens) / len(tokens) if tokens else None
 
 
 def prompt_version() -> str:
@@ -68,7 +86,7 @@ def prompt_version() -> str:
 
 def eval_config_hash() -> str:
     """Identifies the chat configuration a golden-set report was produced with (see tests/eval/test_golden.py)."""
-    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}|{config.MIN_DENSE_SIMILARITY}".encode()).hexdigest()[:12]
+    return hashlib.sha256(f"{config.CHAT_MODEL}|{prompt_version()}|{config.EMBEDDING_MODEL}|{config.MIN_DENSE_SIMILARITY}|{config.SEARCH_TOP_K}".encode()).hexdigest()[:12]
 
 
 def route_tool_choice(question: str, registered: set[str]) -> str | None:
@@ -76,21 +94,103 @@ def route_tool_choice(question: str, registered: set[str]) -> str | None:
     return FORCED_TOOL if FORCED_TOOL in registered and CALCULATION_PATTERN.search(question) else None
 
 
-def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolContext):
+def _turn_inputs(config: RunnableConfig) -> tuple[ToolContext, Callable[[], AbstractContextManager[Session]]]:
+    """Per-turn inputs come through the run config, so one compiled graph serves every turn."""
+    ctx = config["configurable"]["ctx"]
+    open_session = config["configurable"].get("open_session")
+    if open_session is None:
+        open_session = lambda: nullcontext(ctx.session)
+    return ctx, open_session
+
+
+def _hits_only(content: str) -> str:
+    """A search result as an agent call sees it: each hit with its document and section names, no section text.
+    The full text goes to the answer call only (spec T2). Anything else (an error) passes unchanged."""
+    try:
+        payload = json.loads(content)
+    except ValueError:
+        return content
+    if not isinstance(payload, dict) or "hits" not in payload:
+        return content
+    sections = payload.get("sections", {})
+    return json.dumps({"hits": [
+        {**{k: v for k, v in hit.items() if k != "section"},
+         "document": sections.get(hit.get("section"), {}).get("document"),
+         "section": sections.get(hit.get("section"), {}).get("section")}
+        for hit in payload["hits"]
+    ]})
+
+
+def model_view(messages: Sequence[AnyMessage], call: Literal["agent", "answer"]) -> list[AnyMessage]:
+    """What one model call is sent; the turn's state keeps every message as it was. A document list that a later
+    model reply has already used becomes a placeholder (spec T3; find_documents is small and never cleared), and
+    agent calls see search hits without their section text (spec T2). Every tool message stays in place, so its
+    tool call keeps a result, as OpenAI requires."""
+    names = {c["id"]: c["name"] for m in messages if isinstance(m, AIMessage) for c in m.tool_calls}
+    last_reply = max((i for i, m in enumerate(messages) if isinstance(m, AIMessage)), default=-1)
+    view = []
+    for position, message in enumerate(messages):
+        name = names.get(message.tool_call_id) if isinstance(message, ToolMessage) else None
+        if name == LIST_TOOL and position < last_reply:
+            message = message.model_copy(update={"content": LIST_CLEARED})
+        elif name == SEARCH_TOOL and call == "agent":
+            message = message.model_copy(update={"content": _hits_only(message.content)})
+        view.append(message)
+    return view
+
+
+def retry_request(state: TurnState) -> tuple[HumanMessage, HumanMessage]:
+    """What a retry is sent instead of the whole turn (spec T5): the question, and a note with the failed answer,
+    what failed and the passages it cited, or every passage of the turn when none of its citations is valid."""
+    question = next(m for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
+    failed, sources = state["answer"], state.get("sources", {})
+    cited = [*failed.citations, *(c for section in failed.sections for c in section.citations)]
+    passages = {i: sources[i] for i in cited if i in sources} or sources
+    note = json.dumps({"failed_answer": failed.model_dump(), "violations": state["violations"],
+                       "passages": [{"id": i, "text": t} for i, t in passages.items()]})
+    return question, HumanMessage(f"{RETRY_INSTRUCTION}\n{note}")
+
+
+def scope_line(ctx: ToolContext) -> list[SystemMessage]:
+    if ctx.document_id is None:
+        return []
+    return [SystemMessage(SCOPE_LINE.format(title=ctx.document_title or "this contract", document_id=ctx.document_id))]
+
+
+def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec]) -> Runnable:
+    """The graph is compiled once per runtime; each run passes
+    config={"configurable": {"ctx": ToolContext, "open_session": callable | None}};
+    open_session opens a short DB session per tool call so no connection is held
+    while waiting on the model, and without it tools use ctx.session.
+    """
     by_name = {spec.name: spec for spec in tools}
     schemas = [spec.schema() for spec in tools]
+    structured = chat_model.with_structured_output(Answer, method="json_schema", include_raw=True)
+    tool_models: dict[str, Runnable] = {}
 
-    def route(state: TurnState) -> dict:
+    # ponytail: unsynchronised cache; two turns racing on a new choice bind it twice, harmlessly
+    def with_tools(choice: str) -> Runnable:
+        if choice not in tool_models:
+            tool_models[choice] = chat_model.bind_tools(schemas, tool_choice=choice)
+        return tool_models[choice]
+
+    def route(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
         question = next(m.content for m in reversed(state["messages"]) if isinstance(m, HumanMessage))
         forced = route_tool_choice(question, set(by_name))
-        return {"forced_tools": [LOOKUP_TOOL, forced] if forced else [], "answer_attempts": 0, "violations": []}
+        lookup = [] if ctx.document_id is not None else [LOOKUP_TOOL]  # scoped, the scope line gives the id
+        return {"forced_tools": [*lookup, forced] if forced else [], "answer_attempts": 0, "violations": []}
 
-    def agent(state: TurnState) -> dict:
+    async def agent(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
         [choice, *rest] = state.get("forced_tools") or ["auto"]
-        reply = chat_model.bind_tools(schemas, tool_choice=choice).invoke([SystemMessage(AGENT_PROMPT), *state["messages"]])
+        reply = await with_tools(choice).ainvoke(
+            [SystemMessage(AGENT_PROMPT), *scope_line(ctx), *model_view(state["messages"], "agent")]
+        )
         return {"messages": [reply], "forced_tools": rest}
 
-    def run_tools(state: TurnState) -> dict:
+    def run_tools(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, open_session = _turn_inputs(config)
         last = state["messages"][-1]
         messages, sources, citations, retrieved = [], {}, {}, []
         unvalidated, notices = [], []
@@ -99,7 +199,8 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
             if spec is None:
                 messages.append(ToolMessage(f"Unknown tool {call['name']}", tool_call_id=call["id"]))
                 continue
-            outcome = execute(spec, ctx, call["args"])
+            with open_session() as session:
+                outcome = execute(spec, dataclasses.replace(ctx, session=session), call["args"])
             messages.append(ToolMessage(outcome.content, tool_call_id=call["id"]))
             sources |= outcome.sources
             citations |= outcome.citations
@@ -108,15 +209,16 @@ def build_graph(chat_model: BaseChatModel, tools: Sequence[ToolSpec], ctx: ToolC
             notices += [outcome.system_notice] if outcome.system_notice else []
         return {"messages": messages, "sources": sources, "citations": citations, "retrieved": retrieved, "unvalidated": unvalidated, "system_notices": notices}
 
-    def answer(state: TurnState) -> dict:
-        feedback = []
+    async def answer(state: TurnState, config: RunnableConfig) -> dict:
+        ctx, _ = _turn_inputs(config)
+        head = [SystemMessage(ANSWER_PROMPT), *scope_line(ctx)]
         if state.get("violations"):
-            feedback = [HumanMessage("Your previous answer failed verification: " + "; ".join(state["violations"])
-                                     + ". Fix it using only cited sources, or refuse.")]
-        result = chat_model.with_structured_output(Answer, method="json_schema", include_raw=True).invoke(
-            [SystemMessage(ANSWER_PROMPT), *state["messages"], *feedback]
-        )
-        return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1}
+            messages = [*head, *retry_request(state)]
+        else:
+            messages = [*head, *model_view(state["messages"], "answer")]
+        result = await structured.ainvoke(messages)
+        return {"answer": result["parsed"], "answer_attempts": state.get("answer_attempts", 0) + 1,
+                "confidence": mean_logprob(result["raw"])}
 
     def verify(state: TurnState) -> dict:
         reply = state["answer"]

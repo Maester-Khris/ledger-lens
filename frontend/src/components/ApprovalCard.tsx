@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { type ToolDecisionDto, type ToolInvocationDto, decideToolInvocation } from '../api';
+import { type ToolDecisionDto, type ToolInvocationDto, decideToolInvocation, documentPageUrl } from '../api';
 import { toolLabel } from '../lib/toolLabels';
 import { formatMinor } from '../lib/money';
 import { formatUtc } from '../lib/time';
@@ -23,6 +23,9 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
     invocation.result_amount_minor !== null && invocation.result_currency
       ? formatMinor(invocation.result_amount_minor, invocation.result_currency)
       : '-';
+
+  const documentId = typeof invocation.input.document_id === 'string' ? invocation.input.document_id : null;
+  const asOf = typeof invocation.input.as_of === 'string' ? invocation.input.as_of : 'latest billing';
 
   const decide = async (choice: 'approved' | 'rejected') => {
     setSubmitting(true);
@@ -69,6 +72,29 @@ export function ApprovalCard({ invocation, onDecided }: ApprovalCardProps) {
           <dd className="mono">{formatUtc(invocation.created_at)}</dd>
         </div>
       </dl>
+      {invocation.sources.length > 0 && (
+        <div className="tool-card__section">
+          <div className="tool-card__section-head">Why this amount</div>
+          <p className="tool-card__basis">
+            {invocation.document_title} · as of <span className="mono">{asOf}</span>
+          </p>
+          <ul className="tool-card__sources">
+            {invocation.sources.map((source) => (
+              <li key={source.element_id}>
+                <blockquote>{source.quote}</blockquote>
+                {documentId !== null && invocation.document_version !== null ? (
+                  <a className="tool-card__page mono" target="_blank" rel="noreferrer"
+                    href={documentPageUrl(documentId, invocation.document_version, source.page)}>
+                    p. {source.page}{source.section && ` · ${source.section}`}
+                  </a>
+                ) : (
+                  <span className="tool-card__page mono">p. {source.page}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="tool-card__section">
         <div className="tool-card__section-head">Proposed journal entry</div>
         <table className="tool-card__table">

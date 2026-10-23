@@ -5,15 +5,16 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import Text, any_, bindparam, func, select
+from sqlalchemy.dialects.postgresql import ARRAY, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.documents import store, vault
 from app.documents.errors import DocumentNotFound, VersionNotFound
-from app.documents.models import Document, DocumentDescription, DocumentElement, DocumentVersion, PiiToken, VersionEvent
-from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, make_token, REGEX_RECOGNIZERS
+from app.documents.models import (Document, DocumentDescription, DocumentElement, DocumentVersion, ElementBox, PiiToken,
+                                  VersionEvent)
+from app.documents.redact import PII_ENTITIES, TOKEN_PATTERN, PiiSpan, apply_redaction, normalise_value, token_maker, REGEX_RECOGNIZERS
 from app.documents.sniff import PdfFacts
 from app.documents.types import DocumentType, VersionStage
 
@@ -187,6 +188,51 @@ def list_documents(session: Session, tenant_id: uuid.UUID) -> list[DocumentRow]:
     return [_row(session, document) for document in documents]
 
 
+@dataclass(frozen=True)
+class DocumentTitle:
+    id: uuid.UUID
+    document_key: str
+    title: str
+
+
+def document_titles(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID | None = None) -> list[DocumentTitle]:
+    """Id, key and title only, in one query: what the chat needs (list_documents loads versions, events and counts)."""
+    query = select(Document.id, Document.document_key, Document.title).where(Document.tenant_id == tenant_id)
+    if document_id is not None:
+        query = query.where(Document.id == document_id)
+    return [DocumentTitle(*row) for row in session.execute(query.order_by(Document.created_at.desc()))]
+
+
+def find_documents(
+    session: Session,
+    tenant_id: uuid.UUID,
+    name: str,
+    document_id: uuid.UUID | None = None,
+    limit: int = 5,
+) -> list[DocumentTitle]:
+    """Name lookup over title and key, one query.
+
+    ponytail: the tsvector is computed per query, with no index; add a stored tsvector and a GIN index past a few
+    thousand documents.
+    """
+    words = re.findall(r"[^\W_]+", name)  # letters and digits only (accents kept): no tsquery operator gets through
+    if not words:
+        return []
+    tsquery = func.to_tsquery("english", bindparam("query", " | ".join(w.lower() for w in words)))
+    vector = func.to_tsvector(
+        "english",
+        Document.title.concat(" ").concat(func.replace(Document.document_key, "-", " ")),
+    )
+    query = (
+        select(Document.id, Document.document_key, Document.title)
+        .where(Document.tenant_id == tenant_id, vector.op("@@")(tsquery))
+    )
+    if document_id is not None:
+        query = query.where(Document.id == document_id)
+    query = query.order_by(func.ts_rank(vector, tsquery).desc(), Document.created_at.desc()).limit(limit)
+    return [DocumentTitle(*row) for row in session.execute(query)]
+
+
 def get_document_row(session: Session, tenant_id: uuid.UUID, document_id: uuid.UUID) -> DocumentRow:
     document = session.get(Document, document_id)
     if document is None or document.tenant_id != tenant_id:
@@ -218,6 +264,7 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
     the ones the vault already knows. Only values seen in an ingested document can match (by design).
     Then, apply regex recognizers to tokenise standard PII even if it wasn't seen before."""
     words = list(_WORD.finditer(text))
+    make = token_maker(tenant_id, hmac_key)
     candidates: dict[str, PiiSpan] = {}
     for i in range(len(words)):
         for n in range(1, MAX_WINDOW_WORDS + 1):
@@ -226,9 +273,14 @@ def tokenize_known_values(session: Session, tenant_id: uuid.UUID, text: str, hma
             start, end = words[i].start(), words[i + n - 1].end()
             while end > start and text[end - 1] in _TRAILING_PUNCTUATION:
                 end -= 1
+            value = normalise_value(text[start:end])
             for entity_type in PII_ENTITIES:
-                candidates[make_token(tenant_id, entity_type, text[start:end], hmac_key)] = PiiSpan(start, end, entity_type, 1.0)
-    known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id, PiiToken.token.in_(candidates))))
+                candidates[make(entity_type, value)] = PiiSpan(start, end, entity_type, 1.0)
+    # One array parameter, not an IN list of hundreds of binds (621 for a 17-word question): SQLAlchemy's and psycopg's
+    # cost grows with the bind count (spec C3a).
+    candidate_tokens = bindparam("candidate_tokens", list(candidates), type_=ARRAY(Text))
+    known = set(session.scalars(select(PiiToken.token).where(PiiToken.tenant_id == tenant_id,
+                                                             PiiToken.token == any_(candidate_tokens))))
     
     # First apply known values
     redacted_text = apply_redaction(text, [candidates[t] for t in known], tenant_id, hmac_key).text
@@ -269,3 +321,15 @@ def last_event_at(session: Session, tenant_id: uuid.UUID) -> datetime | None:
 
 def version_number(session: Session, version_id: uuid.UUID) -> int:
     return session.get(DocumentVersion, version_id).version
+
+
+def save_boxes(session: Session, element_id: uuid.UUID, boxes: list[dict]) -> None:
+    """Insert once; a second call for the same element is a no-op (the backfill and parse_redact may both reach it)."""
+    session.execute(insert(ElementBox).values(element_id=element_id, boxes=boxes).on_conflict_do_nothing())
+
+
+def element_boxes(session: Session, element_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, list[dict]]:
+    if not element_ids:
+        return {}
+    rows = session.scalars(select(ElementBox).where(ElementBox.element_id.in_(element_ids)))
+    return {row.element_id: row.boxes for row in rows}

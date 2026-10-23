@@ -8,6 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
+from app import config
 from app.documents import dao as documents_dao
 from app.governance.dao import InvocationRecord, ModelConfig, record_invocation
 from app.retrieval.search import Evidence, search
@@ -19,7 +20,7 @@ RESULT_KEY = "@result"  # placeholder a tool uses for its own result; execute() 
 
 @dataclass
 class ToolContext:
-    session: Session
+    session: Session | None  # set per tool call by the graph (graph.run_tools); a test may pass one shared session
     tenant_id: uuid.UUID
     session_id: str
     turn_id: uuid.UUID
@@ -29,6 +30,7 @@ class ToolContext:
     hmac_key: str
     vault_key: str
     document_id: uuid.UUID | None = None  # set = the chat is scoped to this document
+    document_title: str | None = None  # the scoped document's title, named to the model in a scoped chat (spec T3)
     overlay_guest: uuid.UUID | None = None  # public demo: this guest's own decisions apply (spec P2+P9)
     question: str | None = None  # the guest's tokenised question for this turn; search scores passages against it too
 
@@ -72,29 +74,60 @@ class NoArgs(BaseModel):
     pass
 
 
+class FindArgs(BaseModel):
+    name: str = Field(min_length=1, max_length=200, description="The contract's name as the user wrote it (fund, client or adviser name)")
+
+
 class SearchArgs(BaseModel):
     query: str = Field(min_length=1, max_length=500, description="What to look for in the contracts")
     document_ids: list[uuid.UUID] | None = Field(default=None, description="Limit to these documents")
 
 
 def _list_documents(ctx: ToolContext, _args: BaseModel) -> ToolOutcome:
-    rows = [r for r in documents_dao.list_documents(ctx.session, ctx.tenant_id) if ctx.document_id is None or r.document.id == ctx.document_id]
+    rows = documents_dao.document_titles(ctx.session, ctx.tenant_id, ctx.document_id)
     return ToolOutcome(json.dumps([
-        {"document_id": str(r.document.id), "document_key": r.document.document_key, "title": r.document.title}
-        for r in rows
+        # The key stays: some contracts are named only there, not in their title (gate 1, batch-a-r1).
+        {"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in rows
     ]))
+
+
+def _find_documents(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
+    assert isinstance(args, FindArgs)
+    matches = documents_dao.find_documents(ctx.session, ctx.tenant_id, args.name, ctx.document_id)
+    payload: dict[str, object] = {
+        "matches": [{"document_id": str(r.id), "document_key": r.document_key, "title": r.title} for r in matches]
+    }
+    if not matches:
+        payload["hint"] = "No contract matched that name. Try other words from its name, or search the topic with search_contracts."
+    return ToolOutcome(json.dumps(payload))
 
 
 def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
     assert isinstance(args, SearchArgs)
     hits = search(ctx.session, tenant_id=ctx.tenant_id, query=args.query, embeddings=ctx.embeddings,
                   vector_index=ctx.vector_index, document_ids=[ctx.document_id] if ctx.document_id is not None else args.document_ids,
-                  question=ctx.question)
-    payload = [
-        {"id": str(h.element_id), "document": h.document_title, "page": h.page_start,
-         "section": " › ".join(h.section_path), "text": h.text, "context": h.context}
-        for h in hits
-    ]
+                  question=ctx.question, k=config.SEARCH_TOP_K)
+    sections: dict[str, dict[str, str]] = {}
+    sec_refs: dict[tuple[uuid.UUID, tuple[str, ...]], str] = {}
+    formatted_hits: list[dict[str, object]] = []
+    # each section's text once; hits point to it (spec T1)
+    for h in hits:
+        key = (h.version_id, h.section_path)
+        if key not in sec_refs:
+            ref = f"S{len(sections) + 1}"
+            sec_refs[key] = ref
+            sections[ref] = {
+                "document": h.document_title,
+                "section": " › ".join(h.section_path),
+                "text": h.context,
+            }
+        formatted_hits.append({
+            "id": str(h.element_id),
+            "section": sec_refs[key],
+            "page": h.page_start,
+            "text": h.text,
+        })
+    payload = {"sections": sections, "hits": formatted_hits}
     return ToolOutcome(
         json.dumps(payload),
         sources={str(h.element_id): h.text for h in hits},
@@ -104,7 +137,8 @@ def _search_contracts(ctx: ToolContext, args: BaseModel) -> ToolOutcome:
 
 def default_tools() -> list[ToolSpec]:
     return [
-        ToolSpec("list_documents", "List the indexed contracts with their document_id.", NoArgs, _list_documents),
+        ToolSpec("list_documents", "List every indexed contract with its document_id. Use only to show what contracts exist; to find one by name, use find_documents.", NoArgs, _list_documents),
+        ToolSpec("find_documents", "Find indexed contracts by name (title or document key). Returns up to 5 matches with their document_id.", FindArgs, _find_documents),
         ToolSpec("search_contracts", "Search contract text. Returns clauses with ids you can cite.", SearchArgs, _search_contracts),
     ]
 

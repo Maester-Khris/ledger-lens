@@ -1,0 +1,49 @@
+{
+  "window": [
+    "2026-10-17T01:58:50Z",
+    "2026-10-17T02:14:03Z"
+  ],
+  "tag": "chat",
+  "models": [
+    "gpt-4.1-2025-04-14"
+  ],
+  "turns": 50,
+  "sessions": 49,
+  "llm_calls": 170,
+  "calls_without_price": 0,
+  "total_usd": 0.463887999987,
+  "prompt_tokens": 222432,
+  "cached_prompt_tokens": 32256,
+  "cache_hit_rate": 0.14501510574018128,
+  "usd_per_turn": {
+    "n": 50,
+    "median": 0.009275,
+    "p95": 0.017167999999,
+    "max": 0.027219999998999996
+  },
+  "usd_per_session": {
+    "n": 49,
+    "median": 0.0093,
+    "p95": 0.021032,
+    "max": 0.027219999998999996
+  },
+  "llm_calls_per_turn": {
+    "n": 50,
+    "median": 3.0,
+    "p95": 5.0,
+    "max": 6.0
+  },
+  "usd_by_step": {
+    "agent": {
+      "calls": 117,
+      "total": 0.290097999991,
+      "median": 0.002012
+    },
+    "RunnableParallel<raw>": {
+      "calls": 53,
+      "total": 0.173789999996,
+      "median": 0.002002
+    }
+  },
+  "limit": "golden-set questions (curated, not user traffic); list prices from the Langfuse model table; local run"
+}

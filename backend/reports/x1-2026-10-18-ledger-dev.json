@@ -1,0 +1,216 @@
+{
+  "label": "2026-10-18-ledger-dev",
+  "since": null,
+  "documents": 102,
+  "stages": {
+    "parse_redact": {
+      "time_seconds": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "cpu_seconds": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "confidence": {
+        "parse_success_rate": 1.0,
+        "page_grades": {
+          "GOOD": 128,
+          "EXCELLENT": 210,
+          "FAIR": 9,
+          "POOR": 9
+        }
+      }
+    },
+    "extract": {
+      "time_seconds": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "usd_per_doc": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "tokens": {
+        "input": null,
+        "output": null
+      },
+      "confidence": {
+        "grounded_pct": 0.6394557823129252,
+        "validator_failures": 324,
+        "routing_by_class": {
+          "A": {
+            "accepted": 178,
+            "needs_review": 503
+          },
+          "B": {
+            "accepted": 356,
+            "needs_review": 52
+          },
+          "C": {
+            "accepted": 325,
+            "needs_review": 203
+          }
+        }
+      }
+    },
+    "verify": {
+      "time_seconds": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "work_seconds": {
+        "n": 102,
+        "median": 12.919,
+        "p95": 18.380950000000002
+      },
+      "usd_per_doc": {
+        "n": 102,
+        "median": 0.000357,
+        "p95": 0.0011023500000000002
+      },
+      "usd_per_field_by_layer": {
+        "ocr_local": 0.0,
+        "vision": 6.683898305084746e-05
+      },
+      "latency_ms_by_layer": {
+        "ocr_local": {
+          "n": 1134,
+          "median": 1361.5,
+          "p95": 2789.9499999999985
+        },
+        "vision": {
+          "n": 708,
+          "median": 1148.0,
+          "p95": 2228.95
+        }
+      },
+      "confidence": {
+        "agreement": {
+          "A": {
+            "ocr_local": {
+              "agree": 274,
+              "disagree": 58,
+              "unreadable": 26
+            },
+            "vision": {
+              "agree": 305,
+              "disagree": 235,
+              "unreadable": 2
+            }
+          },
+          "B": {
+            "ocr_local": {
+              "agree": 658,
+              "unreadable": 102,
+              "disagree": 16
+            },
+            "vision": {
+              "unreadable": 11,
+              "disagree": 87,
+              "agree": 68
+            }
+          },
+          "C": {}
+        },
+        "review_rate": 0.5510204081632653,
+        "labelled": {
+          "A": {
+            "n": 59,
+            "errors": 0,
+            "upper_bound": 0.049507609888226944,
+            "target": 0.05,
+            "passes": true,
+            "ground_truth": "adjudicated"
+          },
+          "B": {
+            "n": 48,
+            "errors": 1,
+            "upper_bound": 0.09505862462413556,
+            "target": 0.05,
+            "passes": false,
+            "ground_truth": "adjudicated"
+          },
+          "C": {
+            "n": 21,
+            "errors": 0,
+            "upper_bound": 0.13294591102652337,
+            "target": 0.1,
+            "passes": false,
+            "ground_truth": "adjudicated"
+          }
+        },
+        "verifier_vs_human": 0
+      }
+    },
+    "index": {
+      "time_seconds": {
+        "n": 0,
+        "median": null,
+        "p95": null
+      },
+      "usd_per_doc": {
+        "n": 102,
+        "median": 0.0,
+        "p95": 0.0
+      },
+      "confidence": "n/a (retrieval quality is the golden gate's job)"
+    }
+  },
+  "end_to_end": {
+    "review_ready_seconds": {
+      "n": 0,
+      "median": null,
+      "p95": null
+    },
+    "searchable_seconds": {
+      "n": 0,
+      "median": null,
+      "p95": null
+    }
+  },
+  "projection_100k": {
+    "documents": {
+      "usd": null,
+      "missing": [
+        "extract",
+        "index"
+      ],
+      "prices": {
+        "gpt-4.1-2025-04-14": [
+          2.0,
+          8.0
+        ],
+        "gpt-6-luna": [
+          0.1,
+          0.5
+        ],
+        "text-embedding-3-small": [
+          0.02,
+          0.0
+        ]
+      },
+      "assumptions": [
+        "list prices",
+        "medians of 102 documents",
+        "local parse CPU not priced"
+      ]
+    },
+    "daily_active_users": {
+      "turns_per_user_per_day": 3,
+      "usd_per_answer": 0.009275,
+      "usd_per_day": 2782.5,
+      "assumptions": [
+        "100,000 daily active users",
+        "3 turns per user per day",
+        "chat cost of $0.0093 per answer",
+        "list prices"
+      ]
+    }
+  }
+}

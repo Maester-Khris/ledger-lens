@@ -1,0 +1,3 @@
+{"type": "object", "properties": {"verdicts": {"type": "array", "items": {"type": "object",
+ "properties": {"case_id": {"type": "string"}, "agrees": {"type": "boolean"}, "reason": {"type": "string"}},
+ "required": ["case_id", "agrees", "reason"]}}}, "required": ["verdicts"]}

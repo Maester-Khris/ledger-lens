@@ -51,3 +51,16 @@ def test_docling_keeps_structure_and_pages():
     assert set(parsed.page_grades) == {1, 2}
     assert all(grade in {"POOR", "FAIR", "GOOD", "EXCELLENT"} for grade in parsed.page_grades.values())
     assert parsed.parser_version.startswith("docling ")
+
+
+def test_docling_elements_carry_their_boxes():
+    # X1: every element knows where it sits, so verification can crop its evidence instead of sending a page.
+    parsed = parse_pdf(FIXTURE)
+    for element in parsed.elements:
+        assert element.boxes, element.text[:40]
+        for box in element.boxes:
+            assert element.page_start <= box.page_no <= element.page_end
+            assert box.coord_origin in {"BOTTOMLEFT", "TOPLEFT"}
+            assert 0 <= box.l < box.r <= 612
+    fee_table = next(e for e in parsed.elements if e.kind is ElementKind.table)
+    assert {b.page_no for b in fee_table.boxes} == {2}

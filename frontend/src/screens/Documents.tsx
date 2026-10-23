@@ -67,7 +67,7 @@ function Pipeline({ steps }: PipelineProps) {
             {step.state === 'done' && <CheckIcon size={10} />}
           </span>
           <span className="documents__step-label">{step.label}</span>
-          <span className="mono documents__step-time">
+          <span className="mono documents__step-time" title="Time since the previous step">
             {step.state === 'active' ? 'running' : step.state === 'failed' ? 'failed' : step.duration ?? ''}
           </span>
         </li>

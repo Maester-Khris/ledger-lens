@@ -1,0 +1,1046 @@
+{
+  "summary": {
+    "documents": 102,
+    "by_state": {
+      "extracted": 102
+    },
+    "by_relationship": {
+      "sub-advisory": 8,
+      "advisory": 89,
+      "null": 4,
+      "client": 1
+    },
+    "by_origin": {
+      "edgar": 101,
+      "synthetic": 1
+    },
+    "fields_accepted": 859,
+    "fields_needs_review": 758,
+    "documents_all_fields_accepted": 1,
+    "queue_to_extracted_seconds_median": 1925.5192315,
+    "queue_to_extracted_seconds_max": 2182.72191,
+    "limit": "queue_to_extracted includes waiting behind the rest of the batch (one local worker, one stage at a time); throughput is in var/samples/corpus-build.log; cost is in Langfuse, tag extraction"
+  },
+  "documents": [
+    {
+      "document_key": "aim-global-trends-advisory",
+      "title": "AIM Global Trends Fund \u2014 Master Investment Advisory Agreement",
+      "last_stage": "extracted",
+      "seconds": 85.152942,
+      "accepted": 11,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "calamos-emerging-market-equity",
+      "title": "Calamos Emerging Market Equity Fund \u2014 Management Agreement notice",
+      "last_stage": "extracted",
+      "seconds": 90.833192,
+      "accepted": 17,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-2nd-vote-funds-ex-99-d-1-ii",
+      "title": "2nd Vote Funds \u2014 EX-99.(D)(1)(II) (2022-06-15)",
+      "last_stage": "extracted",
+      "seconds": 2170.299429,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-abacus-fcf-etf-trust-ex-99-d-ii",
+      "title": "Abacus FCF ETF Trust \u2014 EX-99.(D)(II) (2025-02-18)",
+      "last_stage": "extracted",
+      "seconds": 2091.248315,
+      "accepted": 6,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-aberdeen-standard-investments-etfs-ex-99-d-4",
+      "title": "Aberdeen Standard Investments ETFs \u2014 EX-99.(D)(4) (2021-08-03)",
+      "last_stage": "extracted",
+      "seconds": 1987.45136,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-advisors-preferred-trust-ex-99-d-advsr-contr",
+      "title": "Advisors Preferred Trust \u2014 EX-99.D ADVSR CONTR (2020-10-14)",
+      "last_stage": "extracted",
+      "seconds": 1789.118295,
+      "accepted": 10,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-advisors-series-trust-ex-99-d-ii",
+      "title": "ADVISORS SERIES TRUST \u2014 EX-99.D.II (2022-04-28)",
+      "last_stage": "extracted",
+      "seconds": 2139.165503,
+      "accepted": 11,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-agf-investments-trust-ex-99-d-vi",
+      "title": "AGF Investments Trust \u2014 EX-99.D(VI) (2021-10-28)",
+      "last_stage": "extracted",
+      "seconds": 1856.293286,
+      "accepted": 5,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-alger-funds-ii-ex-99-28-d-2",
+      "title": "ALGER FUNDS II \u2014 EX-99.28(D-2) (2020-02-28)",
+      "last_stage": "extracted",
+      "seconds": 1932.072727,
+      "accepted": 9,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-alger-institutional-funds-ex-99-28-d-2",
+      "title": "ALGER INSTITUTIONAL FUNDS \u2014 EX-99.28(D-2) (2020-02-28)",
+      "last_stage": "extracted",
+      "seconds": 1938.110579,
+      "accepted": 10,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-allianz-funds-ex-99-d-5",
+      "title": "ALLIANZ FUNDS \u2014 EX-99.(D)(5) (2021-02-01)",
+      "last_stage": "extracted",
+      "seconds": 1888.017813,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-american-beacon-funds-ex-99-d-2-aa-iii",
+      "title": "AMERICAN BEACON FUNDS \u2014 EX-99.(D)(2)(AA)(III (2020-02-14)",
+      "last_stage": "extracted",
+      "seconds": 1777.042985,
+      "accepted": 13,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-amg-funds-iv-ex-99-d-9",
+      "title": "AMG Funds IV \u2014 EX-99.(D)(9) (2025-12-05)",
+      "last_stage": "extracted",
+      "seconds": 1897.971866,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-aspiration-funds-ex-99-d-advsr-contr",
+      "title": "Aspiration Funds \u2014 EX-99.D ADVSR CONTR (2024-01-29)",
+      "last_stage": "extracted",
+      "seconds": 1907.546734,
+      "accepted": 11,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-asymmetric-etfs-trust-ex-99-d-1-b",
+      "title": "ASYMmetric ETFs Trust \u2014 EX-99.(D)(1)(B) (2023-01-25)",
+      "last_stage": "extracted",
+      "seconds": 2165.692589,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-blackrock-funds-v-ex-99-d-3",
+      "title": "BlackRock Funds V \u2014 EX-99.(D)(3) (2021-10-15)",
+      "last_stage": "extracted",
+      "seconds": 1840.417054,
+      "accepted": 6,
+      "needs_review": 13,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-bmo-funds-inc-ex-99-d-3",
+      "title": "BMO FUNDS, INC. \u2014 EX-99.(D)(3) (2021-12-22)",
+      "last_stage": "extracted",
+      "seconds": 1984.065775,
+      "accepted": 14,
+      "needs_review": 4,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-bny-mellon-investment-funds-i-ex-99-d-advsr-contr",
+      "title": "BNY Mellon Investment Funds I \u2014 EX-99.D ADVSR CONTR (2022-01-27)",
+      "last_stage": "extracted",
+      "seconds": 2182.72191,
+      "accepted": 10,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-bny-mellon-variable-investment-fund-ex-99-d-advsr-contr",
+      "title": "BNY MELLON VARIABLE INVESTMENT FUND \u2014 EX-99.D ADVSR CONTR (2020-04-09)",
+      "last_stage": "extracted",
+      "seconds": 2032.505781,
+      "accepted": 10,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-bridge-builder-trust-ex-99-d-i-d",
+      "title": "Bridge Builder Trust \u2014 EX-99.D.I.D (2022-05-11)",
+      "last_stage": "extracted",
+      "seconds": 2071.531519,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-brighthouse-funds-trust-i-ex-99-d-32-ii",
+      "title": "Brighthouse Funds Trust I \u2014 EX-99.(D)(32)(II) (2026-04-24)",
+      "last_stage": "extracted",
+      "seconds": 1812.558399,
+      "accepted": 13,
+      "needs_review": 4,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-calamos-etf-trust-ex-99-d-v",
+      "title": "Calamos ETF Trust \u2014 EX-99.(D)(V) (2024-01-10)",
+      "last_stage": "extracted",
+      "seconds": 1912.987761,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-causeway-capital-management-trust-ex-99-d7",
+      "title": "CAUSEWAY CAPITAL MANAGEMENT TRUST \u2014 EX-99.D7 (2020-10-30)",
+      "last_stage": "extracted",
+      "seconds": 1772.966793,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-cavanal-hill-funds-ex-99-d-2",
+      "title": "Cavanal Hill Funds \u2014 EX-99.(D)(2) (2020-12-23)",
+      "last_stage": "extracted",
+      "seconds": 2087.176318,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-chartwell-funds-ex-99-d-advsr-contr",
+      "title": "Chartwell Funds \u2014 EX-99.D ADVSR CONTR (2022-04-28)",
+      "last_stage": "extracted",
+      "seconds": 2136.158788,
+      "accepted": 11,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-cohen-steers-etf-trust-ex-99-d-i-1",
+      "title": "Cohen & Steers ETF Trust \u2014 EX-99.(D)(I)(1) (2026-05-04)",
+      "last_stage": "extracted",
+      "seconds": 1895.117514,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-credit-suisse-commodity-strategy-funds-ex-99-d-4",
+      "title": "Credit Suisse Commodity Strategy Funds \u2014 EX-99.D(4) (2023-02-28)",
+      "last_stage": "extracted",
+      "seconds": 2068.095813,
+      "accepted": 9,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-credit-suisse-opportunity-funds-ex-99-d-2",
+      "title": "CREDIT SUISSE OPPORTUNITY FUNDS \u2014 EX-99.D(2) (2021-02-26)",
+      "last_stage": "extracted",
+      "seconds": 2077.719715,
+      "accepted": 8,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-credit-suisse-trust-ex-99-d-3",
+      "title": "CREDIT SUISSE TRUST \u2014 EX-99.D(3) (2023-04-17)",
+      "last_stage": "extracted",
+      "seconds": 2063.067041,
+      "accepted": 8,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-ea-series-trust-ex-99-d-2-i",
+      "title": "EA Series Trust \u2014 EX-99.(D)(2)(I) (2023-01-30)",
+      "last_stage": "extracted",
+      "seconds": 1974.133371,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-eaton-vance-growth-trust-ex-99-d-5-b",
+      "title": "EATON VANCE GROWTH TRUST \u2014 EX-99.(D)(5)(B) (2021-06-24)",
+      "last_stage": "extracted",
+      "seconds": 2016.725199,
+      "accepted": 10,
+      "needs_review": 12,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-eaton-vance-mutual-funds-trust-ex-99-d-28-b",
+      "title": "EATON VANCE MUTUAL FUNDS TRUST \u2014 EX-99.(D)(28)(B) (2022-06-27)",
+      "last_stage": "extracted",
+      "seconds": 1865.2465,
+      "accepted": 10,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-eaton-vance-special-investment-trust-ex-99-d-4-b",
+      "title": "Eaton Vance Special Investment Trust \u2014 EX-99.(D)(4)(B) (2026-04-28)",
+      "last_stage": "extracted",
+      "seconds": 2003.912251,
+      "accepted": 9,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-elevation-series-trust-ex-99-d-25",
+      "title": "Elevation Series Trust \u2014 EX-99.(D)(25) (2026-07-07)",
+      "last_stage": "extracted",
+      "seconds": 1944.438168,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-etf-series-solutions-ex-99-d-i-b",
+      "title": "ETF Series Solutions \u2014 EX-99.(D)(I)(B) (2020-12-22)",
+      "last_stage": "extracted",
+      "seconds": 1873.448064,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-fenimore-asset-management-trust-ex-99-d-advsr-contr",
+      "title": "FENIMORE ASSET MANAGEMENT TRUST \u2014 EX-99.D ADVSR CONTR (2022-04-29)",
+      "last_stage": "extracted",
+      "seconds": 1764.823609,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-forethought-variable-insurance-trust-ex-99-28-d-v",
+      "title": "Forethought Variable Insurance Trust \u2014 EX-99.28(D)(V) (2022-04-29)",
+      "last_stage": "extracted",
+      "seconds": 2106.629934,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-fpa-new-income-inc-ex-99-d-1",
+      "title": "FPA NEW INCOME INC \u2014 EX-99.(D)(1) (2021-01-28)",
+      "last_stage": "extracted",
+      "seconds": 2148.347364,
+      "accepted": 11,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-fpa-paramount-fund-inc-ex-99-d-1",
+      "title": "FPA PARAMOUNT FUND INC \u2014 EX-99.(D)(1) (2020-01-28)",
+      "last_stage": "extracted",
+      "seconds": 2178.859857,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-gabelli-787-fund-inc-ex-99-28-d-ii",
+      "title": "Gabelli 787 Fund, Inc. \u2014 EX-99.28(D)(II) (2021-02-26)",
+      "last_stage": "extracted",
+      "seconds": 1783.807014,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-gabelli-equity-series-funds-inc-ex-99-28-d-11",
+      "title": "GABELLI EQUITY SERIES FUNDS INC \u2014 EX-99.28(D)(11) (2021-01-28)",
+      "last_stage": "extracted",
+      "seconds": 2082.566971,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-gabelli-etfs-trust-ex-99-d-14",
+      "title": "Gabelli ETFs Trust \u2014 EX-99.(D)(14) (2024-04-29)",
+      "last_stage": "extracted",
+      "seconds": 1881.254427,
+      "accepted": 9,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-harbor-etf-trust-ex-99-d-76",
+      "title": "Harbor ETF Trust \u2014 EX-99.(D)(76) (2026-10-05)",
+      "last_stage": "extracted",
+      "seconds": 219.812737,
+      "accepted": 10,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": null
+    },
+    {
+      "document_key": "edgar-harbor-funds-ex-99-d-35",
+      "title": "HARBOR FUNDS \u2014 EX-99.D(35) (2024-02-29)",
+      "last_stage": "extracted",
+      "seconds": 1885.166092,
+      "accepted": 12,
+      "needs_review": 3,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-heartland-group-inc-ex-99-d-3",
+      "title": "HEARTLAND GROUP INC \u2014 EX-99.(D.3) (2021-04-27)",
+      "last_stage": "extracted",
+      "seconds": 1842.721143,
+      "accepted": 4,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-hennessy-funds-trust-ex-99-d8",
+      "title": "HENNESSY FUNDS TRUST \u2014 EX-99.D8 (2023-12-26)",
+      "last_stage": "extracted",
+      "seconds": 1916.807879,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-highland-funds-i-ex-99-d-3-i",
+      "title": "Highland Funds I \u2014 EX-99.(D)(3)(I) (2021-10-28)",
+      "last_stage": "extracted",
+      "seconds": 1869.500307,
+      "accepted": 6,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-investment-managers-series-trust-iii-ex-99-28-d-2",
+      "title": "Investment Managers Series Trust III \u2014 EX-99.28(D)(2) (2026-05-22)",
+      "last_stage": "extracted",
+      "seconds": 1755.564393,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-ishares-u-s-etf-trust-ex-99-d4",
+      "title": "iShares U.S. ETF Trust \u2014 EX-99.(D4) (2023-09-19)",
+      "last_stage": "extracted",
+      "seconds": 2054.018501,
+      "accepted": 4,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-janus-investment-fund-ex-99-d-35",
+      "title": "JANUS INVESTMENT FUND \u2014 EX-99.(D)(35) (2026-01-28)",
+      "last_stage": "extracted",
+      "seconds": 1947.50675,
+      "accepted": 10,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-johcm-funds-trust-ex-99-d-ii",
+      "title": "JOHCM Funds Trust \u2014 EX-99.D.II (2021-10-25)",
+      "last_stage": "extracted",
+      "seconds": 1927.626926,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-j-p-morgan-exchange-traded-fund-trust-ex-99-d-5-b",
+      "title": "J.P. Morgan Exchange-Traded Fund Trust \u2014 EX-99.(D)(5)(B) (2024-10-25)",
+      "last_stage": "extracted",
+      "seconds": 2052.2491,
+      "accepted": 6,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-krane-shares-trust-ex-99-d-17",
+      "title": "Krane Shares Trust \u2014 EX-99.(D)(17) (2026-07-02)",
+      "last_stage": "extracted",
+      "seconds": 2050.044839,
+      "accepted": 10,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-kurv-etf-trust-ex-99-d-3",
+      "title": "Kurv ETF Trust \u2014 EX-99.(D)(3) (2025-03-28)",
+      "last_stage": "extracted",
+      "seconds": 1902.017966,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-lattice-strategies-trust-ex-99-28-d-i-e",
+      "title": "Lattice Strategies Trust \u2014 EX-99.28(D)(I)(E) (2021-01-28)",
+      "last_stage": "extracted",
+      "seconds": 1767.562277,
+      "accepted": 6,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-leader-funds-trust-ex-99-d-2",
+      "title": "Leader Funds Trust \u2014 EX-99.(D)(2) (2023-05-16)",
+      "last_stage": "extracted",
+      "seconds": 1920.246958,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-managed-portfolio-series-ex-99-d-2",
+      "title": "Managed Portfolio Series \u2014 EX-99.(D)(2) (2024-09-27)",
+      "last_stage": "extracted",
+      "seconds": 1804.451416,
+      "accepted": 8,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-manager-directed-portfolios-ex-99-d-1-i",
+      "title": "Manager Directed Portfolios \u2014 EX-99.D.1.I (2020-10-28)",
+      "last_stage": "extracted",
+      "seconds": 2174.632051,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-man-etf-series-trust-ex-99-d-3",
+      "title": "Man ETF Series Trust \u2014 EX-99.(D)(3) (2026-09-17)",
+      "last_stage": "extracted",
+      "seconds": 1808.21244,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-m-fund-inc-ex-99-d-1-iii",
+      "title": "M FUND INC \u2014 EX-99.(D)(1)(III) (2025-04-28)",
+      "last_stage": "extracted",
+      "seconds": 2123.532541,
+      "accepted": 9,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "sub-advisory"
+    },
+    {
+      "document_key": "edgar-milliman-variable-insurance-trust-ex-99-d-ii",
+      "title": "Milliman Variable Insurance Trust \u2014 EX-99.(D)(II) (2024-04-19)",
+      "last_stage": "extracted",
+      "seconds": 2159.739408,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-morningstar-funds-trust-ex-99-d-ii",
+      "title": "Morningstar Funds Trust \u2014 EX-99.(D)(II) (2026-08-28)",
+      "last_stage": "extracted",
+      "seconds": 2155.343384,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-mss-series-trust-ex-99-d-advsr-contr",
+      "title": "MSS Series Trust \u2014 EX-99.D ADVSR CONTR (2020-09-28)",
+      "last_stage": "extracted",
+      "seconds": 1796.594153,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-nationwide-mutual-funds-ex-99-28-d-2-a",
+      "title": "NATIONWIDE MUTUAL FUNDS \u2014 EX-99.28(D)(2)(A) (2025-01-16)",
+      "last_stage": "extracted",
+      "seconds": 2097.142537,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-new-york-life-investments-etf-trust-ex-99-d-1-a",
+      "title": "New York Life Investments ETF Trust \u2014 EX-99.(D)(1)(A) (2026-08-26)",
+      "last_stage": "extracted",
+      "seconds": 1860.063263,
+      "accepted": 4,
+      "needs_review": 11,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-north-capital-funds-trust-ex-99-d-2",
+      "title": "North Capital Funds Trust \u2014 EX-99.(D)(2) (2021-08-27)",
+      "last_stage": "extracted",
+      "seconds": 1800.842403,
+      "accepted": 9,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-northern-lights-fund-trust-iii-ex-99-d-advsr-contr",
+      "title": "NORTHERN LIGHTS FUND TRUST III \u2014 EX-99.D ADVSR CONTR (2021-01-20)",
+      "last_stage": "extracted",
+      "seconds": 2110.0448,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-nylim-active-etf-trust-ex-99-d-1-a",
+      "title": "NYLIM Active ETF Trust \u2014 EX-99.(D)(1)(A) (2026-09-21)",
+      "last_stage": "extracted",
+      "seconds": 227.523468,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": null
+    },
+    {
+      "document_key": "edgar-penn-series-funds-inc-ex-99-d-2",
+      "title": "PENN SERIES FUNDS INC \u2014 EX-99.(D)(2) (2023-04-26)",
+      "last_stage": "extracted",
+      "seconds": 1923.411537,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-procure-etf-trust-ii-ex-99-d-i-b",
+      "title": "Procure ETF Trust II \u2014 EX-99.(D)(I)(B) (2022-05-20)",
+      "last_stage": "extracted",
+      "seconds": 2101.218035,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-proshares-trust-ex-99-d-advsr-contr",
+      "title": "PROSHARES TRUST \u2014 EX-99.D ADVSR CONTR (2026-10-13)",
+      "last_stage": "extracted",
+      "seconds": 216.808734,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-rbc-funds-trust-ex-99-d4iii",
+      "title": "RBC FUNDS TRUST \u2014 EX-99.D4III (2022-12-14)",
+      "last_stage": "extracted",
+      "seconds": 1834.56218,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-shelton-funds-ex-99-d-3",
+      "title": "SHELTON FUNDS \u2014 EX-99.(D)(3) (2022-10-07)",
+      "last_stage": "extracted",
+      "seconds": 2010.841253,
+      "accepted": 10,
+      "needs_review": 5,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-six-circles-trust-ex-99-d-5",
+      "title": "Six Circles Trust \u2014 EX-99.(D)(5) (2024-09-17)",
+      "last_stage": "extracted",
+      "seconds": 1853.943943,
+      "accepted": 6,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-spdr-series-trust-ex-99-d-ii-2",
+      "title": "SPDR SERIES TRUST \u2014 EX-99.(D)(II)(2) (2023-10-26)",
+      "last_stage": "extracted",
+      "seconds": 2132.731955,
+      "accepted": 9,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-sprott-funds-trust-ex-99-d-1",
+      "title": "SPROTT FUNDS TRUST \u2014 EX-99.(D)(1) (2025-02-12)",
+      "last_stage": "extracted",
+      "seconds": 1957.846591,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-ssga-active-trust-ex-99-d-v",
+      "title": "SSGA Active Trust \u2014 EX-99.(D)(V) (2020-10-28)",
+      "last_stage": "extracted",
+      "seconds": 2027.671424,
+      "accepted": 9,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-ssga-funds-ex-99-d-2",
+      "title": "SSGA FUNDS \u2014 EX-99.(D)(2) (2021-12-20)",
+      "last_stage": "extracted",
+      "seconds": 2143.878669,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-state-street-institutional-investment-trust-ex-99-d-5",
+      "title": "STATE STREET INSTITUTIONAL INVESTMENT TRUST \u2014 EX-99.(D)(5) (2024-04-25)",
+      "last_stage": "extracted",
+      "seconds": 1827.037807,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-syntax-etf-trust-ex-99-d-1-a",
+      "title": "SYNTAX ETF TRUST \u2014 EX-99.(D)(1)(A) (2020-01-14)",
+      "last_stage": "extracted",
+      "seconds": 1941.474169,
+      "accepted": 10,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-thompson-im-funds-inc-ex-99-d",
+      "title": "THOMPSON IM FUNDS INC \u2014 EX-99.(D) (2020-03-30)",
+      "last_stage": "extracted",
+      "seconds": 2115.145829,
+      "accepted": 16,
+      "needs_review": 2,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-thornburg-etf-trust-ex-99-d-2",
+      "title": "Thornburg ETF Trust \u2014 EX-99.(D)(2) (2026-05-22)",
+      "last_stage": "extracted",
+      "seconds": 2118.810015,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-thornburg-investment-trust-ex-99-d-3",
+      "title": "THORNBURG INVESTMENT TRUST \u2014 EX-99.(D)(3) (2020-09-29)",
+      "last_stage": "extracted",
+      "seconds": 1792.155305,
+      "accepted": 7,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-thrivent-etf-trust-ex-99-d-4",
+      "title": "Thrivent ETF Trust \u2014 EX-99.(D)(4) (2026-05-01)",
+      "last_stage": "extracted",
+      "seconds": 1759.599485,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-tidal-trust-i-ex-99-d-xvii-1",
+      "title": "Tidal Trust I \u2014 EX-99.(D)(XVII)(1) (2026-09-30)",
+      "last_stage": "extracted",
+      "seconds": 224.956939,
+      "accepted": 4,
+      "needs_review": 13,
+      "origin": "edgar",
+      "relationship": null
+    },
+    {
+      "document_key": "edgar-tidal-trust-i-ex-99-d-xxiii-1",
+      "title": "Tidal Trust I \u2014 EX-99.(D)(XXIII)(1) (2026-05-05)",
+      "last_stage": "extracted",
+      "seconds": 1891.709577,
+      "accepted": 5,
+      "needs_review": 14,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-tidal-trust-ii-ex-99-d-x-vi",
+      "title": "Tidal Trust II \u2014 EX-99.(D)(X)(VI) (2025-11-10)",
+      "last_stage": "extracted",
+      "seconds": 1851.522663,
+      "accepted": 4,
+      "needs_review": 11,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-tidal-trust-iii-ex-99-d-xxii-i",
+      "title": "Tidal Trust III \u2014 EX-99.(D)(XXII)(I) (2026-07-29)",
+      "last_stage": "extracted",
+      "seconds": 1848.703868,
+      "accepted": 4,
+      "needs_review": 11,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-tidal-trust-iv-ex-99-d-v-ii",
+      "title": "Tidal Trust IV \u2014 EX-99.(D)(V)(II) (2026-09-01)",
+      "last_stage": "extracted",
+      "seconds": 1846.637205,
+      "accepted": 6,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-tidal-trust-v-ex-99-d-ii-3",
+      "title": "Tidal Trust V \u2014 EX-99.(D)(II)(3) (2026-09-30)",
+      "last_stage": "extracted",
+      "seconds": 222.237906,
+      "accepted": 6,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": null
+    },
+    {
+      "document_key": "edgar-tortoise-capital-series-trust-ex-99-d-2",
+      "title": "Tortoise Capital Series Trust \u2014 EX-99.(D)(2) (2025-05-09)",
+      "last_stage": "extracted",
+      "seconds": 1821.920185,
+      "accepted": 5,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-transparent-value-trust-ex-99-d1b",
+      "title": "Transparent Value Trust \u2014 EX-99.D1B (2023-01-27)",
+      "last_stage": "extracted",
+      "seconds": 1830.845751,
+      "accepted": 8,
+      "needs_review": 7,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-two-roads-shared-trust-ex-99-d-advsr-contr",
+      "title": "Two Roads Shared Trust \u2014 EX-99.D ADVSR CONTR (2025-02-28)",
+      "last_stage": "extracted",
+      "seconds": 2128.382355,
+      "accepted": 9,
+      "needs_review": 6,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-valued-advisers-trust-ex-99-d-advsr-contr",
+      "title": "VALUED ADVISERS TRUST \u2014 EX-99.D ADVSR CONTR (2024-09-27)",
+      "last_stage": "extracted",
+      "seconds": 1780.739674,
+      "accepted": 11,
+      "needs_review": 4,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-vanguard-quantitative-funds-ex-99-d-advsr-contr",
+      "title": "VANGUARD QUANTITATIVE FUNDS \u2014 EX-99.D ADVSR CONTR (2023-08-28)",
+      "last_stage": "extracted",
+      "seconds": 1971.75154,
+      "accepted": 3,
+      "needs_review": 12,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-vanguard-whitehall-funds-ex-99-d-advsr-contr",
+      "title": "VANGUARD WHITEHALL FUNDS \u2014 EX-99.D ADVSR CONTR (2025-11-14)",
+      "last_stage": "extracted",
+      "seconds": 1953.689128,
+      "accepted": 3,
+      "needs_review": 12,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-vela-funds-ex-99-d-contracts",
+      "title": "VELA Funds \u2014 EX-99.D CONTRACTS (2025-12-12)",
+      "last_stage": "extracted",
+      "seconds": 1950.698415,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-virtus-alternative-solutions-trust-ex-99-d-1-g",
+      "title": "VIRTUS ALTERNATIVE SOLUTIONS TRUST \u2014 EX-99.D.1.G (2020-02-26)",
+      "last_stage": "extracted",
+      "seconds": 2152.222096,
+      "accepted": 7,
+      "needs_review": 9,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-volumetric-fund-inc-ex-99-d-advsr-contr",
+      "title": "VOLUMETRIC FUND INC \u2014 EX-99.D ADVSR CONTR (2021-04-30)",
+      "last_stage": "extracted",
+      "seconds": 1998.636339,
+      "accepted": 9,
+      "needs_review": 10,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "edgar-wedbush-series-trust-ex-99-d-2",
+      "title": "Wedbush Series Trust \u2014 EX-99.(D)(2) (2026-04-01)",
+      "last_stage": "extracted",
+      "seconds": 2006.834401,
+      "accepted": 7,
+      "needs_review": 8,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "nomura-tax-free-colorado-ima",
+      "title": "Voyageur Mutual Funds II / Delaware Management \u2014 IMA (2025)",
+      "last_stage": "extracted",
+      "seconds": 80.858859,
+      "accepted": 14,
+      "needs_review": 4,
+      "origin": "edgar",
+      "relationship": "advisory"
+    },
+    {
+      "document_key": "tremblay-ima",
+      "title": "Tremblay household \u2014 Investment Management Agreement (synthetic)",
+      "last_stage": "extracted",
+      "seconds": 94.80487,
+      "accepted": 18,
+      "needs_review": 0,
+      "origin": "synthetic",
+      "relationship": "client"
+    }
+  ]
+}
