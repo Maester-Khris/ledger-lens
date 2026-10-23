@@ -1,11 +1,13 @@
 """Isolated Gemini checker (via agy CLI in temporary folders) and deterministic data checks for evaluation keys."""
 import argparse
 from collections.abc import Callable, Mapping, Sequence
+import concurrent.futures
 from dataclasses import asdict
 import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 
 from app import config
@@ -21,6 +23,7 @@ from scripts.evalkit.checkpoint import Checkpoint, summary_line
 from scripts.evalkit.write_key import document_text
 
 CHECKER_MODEL: str = "gemini-4-argon-high"
+MEDIUM_MODEL: str = "gemini-4-argon-medium"
 PROMPTS: Path = Path(__file__).parent / "prompts"
 HIDDEN_FIELDS: tuple[str, ...] = ("writer", "anchor_value")
 
@@ -61,7 +64,7 @@ def run_agy(
     model: str = CHECKER_MODEL,
     timeout: int = 900,
 ) -> dict:
-    """Invoke the agy CLI sandboxed inside the batch folder and return its structured JSON output."""
+    """Invoke the agy CLI sandboxed inside the batch folder, logging unusable calls to stderr so empty results are never silent."""
     inst_path = folder / "instructions.md"
     prompt = (
         inst_path.read_text(encoding="utf-8")
@@ -90,13 +93,32 @@ def run_agy(
             text=True,
             timeout=timeout + 60,
         )
+    except subprocess.TimeoutExpired:
+        print(f"agy call timed out after {timeout}s ({folder.name})", file=sys.stderr)
+        return {}
+    except subprocess.SubprocessError as exc:
+        detail = str(exc).replace("\r", " ").replace("\n", " ").strip()
+        print(f"agy call failed ({folder.name}): {detail}", file=sys.stderr)
+        return {}
+
+    try:
         envelope = json.loads(proc.stdout)
-    except (subprocess.SubprocessError, json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError):
+        tail = (proc.stderr or "")[-300:].replace("\r", " ").replace("\n", " ").strip()
+        print(f"agy output was not JSON (rc={proc.returncode}, {folder.name}): {tail}", file=sys.stderr)
         return {}
-    if not isinstance(envelope, dict):
+
+    structured = envelope.get("structured_output") if isinstance(envelope, dict) else None
+    if not isinstance(structured, dict):
+        parts = (
+            [str(envelope[k]) for k in ("status", "error") if envelope.get(k) is not None]
+            if isinstance(envelope, dict)
+            else [f"got {type(envelope).__name__}"]
+        )
+        detail = ": ".join(parts).replace("\r", " ").replace("\n", " ").strip() or "missing"
+        print(f"agy envelope had no structured_output ({folder.name}): {detail}", file=sys.stderr)
         return {}
-    structured = envelope.get("structured_output")
-    return structured if isinstance(structured, dict) else {}
+    return structured
 
 
 def accept_verdicts(cases: Sequence[Case], reply: dict) -> list[dict] | None:
@@ -130,8 +152,11 @@ def check_batches(
     verdicts: Checkpoint,
     failed: Checkpoint,
     batch_size: int,
+    *,
+    workers: int = 1,
+    checker: str = CHECKER_MODEL,
 ) -> dict[str, int]:
-    """Run unchecked cases in fixed-size batches with one retry per rejected batch and checkpoint every accepted verdict."""
+    """Run unchecked cases in fixed-size batches (with one retry each), keeping checkpoint writes on the calling thread because the checkpoint file is not safe for concurrent writers."""
     done_ids = verdicts.done()
     pending: list[Case] = []
     skipped = 0
@@ -141,23 +166,27 @@ def check_batches(
         else:
             pending.append(case)
 
+    batches = [pending[start:start + batch_size] for start in range(0, len(pending), batch_size)]
+
+    def _run_batch(batch: list[Case]) -> tuple[list[Case], list[dict] | None]:
+        for _ in range(2):
+            accepted = accept_verdicts(batch, runner(batch))
+            if accepted is not None:
+                return batch, accepted
+        return batch, None
+
     checked = 0
     failed_batches = 0
-    for start in range(0, len(pending), batch_size):
-        batch = pending[start:start + batch_size]
-        accepted: list[dict] | None = None
-        for _ in range(2):
-            reply = runner(batch)
-            accepted = accept_verdicts(batch, reply)
-            if accepted is not None:
-                break
+
+    def _record(batch: list[Case], accepted: list[dict] | None) -> None:
+        nonlocal checked, failed_batches
         if accepted is not None:
             for v in accepted:
                 verdicts.append({
                     "case_id": v["case_id"],
                     "agrees": v["agrees"],
                     "reason": v["reason"],
-                    "checker": CHECKER_MODEL,
+                    "checker": checker,
                 })
                 checked += 1
         else:
@@ -166,6 +195,17 @@ def check_batches(
                 "case_ids": [c.id for c in batch],
             })
             failed_batches += 1
+
+    if workers > 1:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(_run_batch, batch) for batch in batches]
+            for future in concurrent.futures.as_completed(futures):
+                batch, accepted = future.result()
+                _record(batch, accepted)
+    else:
+        for batch in batches:
+            _, accepted = _run_batch(batch)
+            _record(batch, accepted)
 
     return {
         "checked": checked,
@@ -221,12 +261,25 @@ def _load_candidate_cases(candidates_path: Path) -> list[Case]:
     return cases
 
 
-def main(argv: Sequence[str] | None = None) -> None:
-    """CLI entry point to verify candidate evaluation cases with data checks and isolated Gemini agy batches."""
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI flags separately from main so defaults and mutually exclusive model options can be tested in isolation."""
     parser = argparse.ArgumentParser(description="Check evaluation key candidates in isolated agy batches.")
     parser.add_argument("--key", type=Path, required=True, help="Directory holding candidates.jsonl.")
-    parser.add_argument("--batch-size", type=int, default=40, help="Number of cases per agy batch.")
+    parser.add_argument("--batch-size", type=int, default=10, help="Number of cases per agy batch.")
+    parser.add_argument("--workers", type=int, default=3, help="Number of concurrent agy batch workers.")
+    parser.add_argument("--timeout", type=int, default=1500, help="Seconds allowed for one agy call.")
+    model_group = parser.add_mutually_exclusive_group()
+    model_group.add_argument("--model", default=CHECKER_MODEL, help="Checker model name.")
+    model_group.add_argument("--medium", action="store_true", help="Select the cheaper medium checker model.")
     args = parser.parse_args(argv)
+    if args.medium:
+        args.model = MEDIUM_MODEL
+    return args
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    """CLI entry point to verify candidate evaluation cases with data checks and isolated Gemini agy batches."""
+    args = parse_args(argv)
     key_dir: Path = args.key
 
     cases = _load_candidate_cases(key_dir / "candidates.jsonl")
@@ -286,11 +339,19 @@ def main(argv: Sequence[str] | None = None) -> None:
         folder = Path(tempfile.mkdtemp(prefix="evalkit-check-"))
         try:
             prepare_batch(batch, folder, texts, corpus_passages, instructions)
-            return run_agy(folder, schema)
+            return run_agy(folder, schema, model=args.model, timeout=args.timeout)
         finally:
             shutil.rmtree(folder, ignore_errors=True)
 
-    summary = check_batches(other_cases, _runner, verdicts, failed, args.batch_size)
+    summary = check_batches(
+        other_cases,
+        _runner,
+        verdicts,
+        failed,
+        args.batch_size,
+        workers=args.workers,
+        checker=args.model,
+    )
     summary["checked"] += data_checked
     summary["skipped"] += data_skipped
 

@@ -1,12 +1,16 @@
 """Chat eval (plan 2026-10-21, Task 5): the Gemini checker in isolated agy batches, and the data checks. No agy run."""
 import json
 import subprocess
+import threading
+from collections import Counter
 from pathlib import Path
+
+import pytest
 
 from scripts.evalkit import check_key
 from scripts.evalkit.cases import Case, read_cases
-from scripts.evalkit.check_key import (CHECKER_MODEL, accept_verdicts, check_batches, data_verdicts, passage_cases,
-                                       prepare_batch, run_agy, underspecified_ok)
+from scripts.evalkit.check_key import (CHECKER_MODEL, MEDIUM_MODEL, accept_verdicts, check_batches, data_verdicts,
+                                       parse_args, passage_cases, prepare_batch, run_agy, underspecified_ok)
 from scripts.evalkit.checkpoint import Checkpoint
 
 
@@ -66,6 +70,43 @@ def test_run_agy_unreadable_output_is_empty(tmp_path, monkeypatch):
     assert run_agy(tmp_path, tmp_path / "s.json") == {}
 
 
+def test_run_agy_says_why_a_call_failed(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(check_key.subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a, 1, stdout="oops", stderr="boom"))
+    assert run_agy(tmp_path, tmp_path / "s.json") == {}
+    assert "boom" in capsys.readouterr().err
+
+
+def test_run_agy_says_when_a_call_timed_out(tmp_path, monkeypatch, capsys):
+    def slow(command, **kwargs):
+        raise subprocess.TimeoutExpired(command, 1)
+    monkeypatch.setattr(check_key.subprocess, "run", slow)
+    assert run_agy(tmp_path, tmp_path / "s.json") == {}
+    assert "timed out" in capsys.readouterr().err
+
+
+def test_run_agy_keeps_complete_verdicts_from_an_error_envelope(tmp_path, monkeypatch):
+    # agy reported "stream was interrupted" yet still delivered every verdict (seen live on a slow high-effort batch)
+    envelope = {"status": "ERROR", "error": "The stream was interrupted.", "structured_output": {"verdicts": [1]}}
+    monkeypatch.setattr(check_key.subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=json.dumps(envelope), stderr=""))
+    assert run_agy(tmp_path, tmp_path / "s.json") == {"verdicts": [1]}
+
+
+def test_run_agy_uses_the_given_model_and_timeout(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake_run(command, **kwargs):
+        seen.update(command=command, timeout=kwargs["timeout"])
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps({"structured_output": {}}), stderr="")
+    monkeypatch.setattr(check_key.subprocess, "run", fake_run)
+    run_agy(tmp_path, tmp_path / "s.json", model=MEDIUM_MODEL, timeout=77)
+    command = seen["command"]
+    assert command[command.index("--model") + 1] == MEDIUM_MODEL
+    assert command[command.index("--print-timeout") + 1] == "77s"
+    assert seen["timeout"] > 77
+
+
 def test_accept_verdicts_matches_every_case():
     cases = [_case("a"), _case("b")]
     assert [v["case_id"] for v in accept_verdicts(cases, _ok(cases))] == ["a", "b"]
@@ -88,9 +129,52 @@ def test_malformed_verdict_rejects_the_batch():
     assert accept_verdicts([_case("a")], {}) is None
 
 
-def _check(tmp_path, cases, runner, batch_size=2):
+def _check(tmp_path, cases, runner, batch_size=2, **options):
     verdicts, failed = Checkpoint(tmp_path / "verdicts.jsonl", key="case_id"), Checkpoint(tmp_path / "check_failed.jsonl")
-    return check_batches(cases, runner, verdicts, failed, batch_size), verdicts, failed
+    return check_batches(cases, runner, verdicts, failed, batch_size, **options), verdicts, failed
+
+
+def test_models_and_defaults():
+    assert MEDIUM_MODEL == "gemini-4-argon-medium"
+    args = parse_args(["--key", "k"])
+    assert (args.model, args.batch_size, args.workers, args.timeout) == (CHECKER_MODEL, 10, 3, 1500)
+    assert parse_args(["--key", "k", "--medium"]).model == MEDIUM_MODEL
+    assert parse_args(["--key", "k", "--model", "x"]).model == "x"
+    with pytest.raises(SystemExit):
+        parse_args(["--key", "k", "--medium", "--model", "x"])
+
+
+def test_verdict_rows_name_the_model_used(tmp_path):
+    _, verdicts, _ = _check(tmp_path, [_case("a")], _ok, checker=MEDIUM_MODEL)
+    assert [row["checker"] for row in verdicts.rows()] == [MEDIUM_MODEL]
+
+
+def test_batches_run_side_by_side_when_workers_are_given(tmp_path):
+    barrier = threading.Barrier(2, timeout=5)  # both batches must be inside the runner at once
+
+    def runner(batch):
+        try:
+            barrier.wait()
+        except threading.BrokenBarrierError:
+            return {}
+        return _ok(batch)
+    summary, verdicts, _ = _check(tmp_path, [_case("a"), _case("b")], runner, batch_size=1, workers=2)
+    assert verdicts.done() == {"a", "b"} and summary["failed_batches"] == 0
+
+
+def test_parallel_batches_keep_one_retry_and_the_record_of_failures(tmp_path):
+    calls, lock = Counter(), threading.Lock()
+
+    def runner(batch):
+        with lock:
+            calls[batch[0].id] += 1
+        return {} if batch[0].id == "bad" else _ok(batch)
+    cases = [_case("a"), _case("bad"), _case("b"), _case("c")]
+    summary, verdicts, failed = _check(tmp_path, cases, runner, batch_size=1, workers=3)
+    assert verdicts.done() == {"a", "b", "c"} and calls["bad"] == 2
+    assert summary == {"checked": 3, "failed_batches": 1, "skipped": 0}
+    assert [row["case_ids"] for row in failed.rows()] == [["bad"]]
+    assert len(verdicts.rows()) == 3  # each verdict written once
 
 
 def test_verdict_rows_name_the_checker(tmp_path):
