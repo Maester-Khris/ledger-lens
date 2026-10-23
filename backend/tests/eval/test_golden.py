@@ -1,5 +1,7 @@
 """Manual golden-set run against real OpenAI + Pinecone on the live demo configuration (P4 spec §9).
-Run (from backend/): ENV_FILE=.env.demo $PYDEV/bin/pytest -m eval tests/eval -s"""
+Run (from backend/): ENV_FILE=.env.demo $PYDEV/bin/pytest -m eval tests/eval -s
+Local corpus, several runs, resumable: scripts/gate_runs.sh <runs>. EVAL_RUN_ID names a run; each case's result is
+appended to reports/eval-runs/<run>.jsonl as it finishes, and a re-run with the same id skips the cases already there."""
 import asyncio
 import json
 import os
@@ -18,11 +20,15 @@ from app.assistant.service import run_turn
 from app.documents import dao as documents_dao
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
+from app.tracing import flush_tracing
 
 CASES = json.loads((Path(__file__).parent / "golden.json").read_text())
 REPORTS = Path(__file__).resolve().parents[2] / "reports"
 # The service feeds a session's last turns back as history, so session ids must not be reused across runs.
-RUN_ID = uuid.uuid4().hex[:8]
+RUN_ID = os.environ.get("EVAL_RUN_ID") or uuid.uuid4().hex[:8]
+# Fresh sessions on every invocation, so a case cut short before a resume brings no history into its retry.
+SESSION_RUN = f"{RUN_ID}-{uuid.uuid4().hex[:4]}"
+RUN_LOGS = Path(__file__).resolve().parents[2] / "reports" / "eval-runs"
 # The provider's tokens-per-minute limit, not the code, was behind the 56–59 s turns: pace the cases.
 PAUSE_SECONDS = float(os.environ.get("EVAL_PAUSE_SECONDS", "5"))
 
@@ -108,10 +114,10 @@ def _run(case: dict, document_ids: dict[str, uuid.UUID]) -> dict:
     # by a real ingestion run, so it needs the real keys from the environment, not the patched ones.
     async def go(question: str):
         return [e async for e in run_turn(session_factory=SessionLocal, runtime=get_runtime(), tenant_id=DEMO_TENANT_ID,
-                                          session_id=session_id(RUN_ID, case), message=question,
+                                          session_id=session_id(SESSION_RUN, case), message=question,
                                           hmac_key=os.environ["PII_HMAC_KEY"], vault_key=os.environ["PII_VAULT_KEY"],
                                           document_id=document_ids[case["document_key"]] if "document_key" in case else None)]
-    retried = False
+    retried, started = False, time.perf_counter()
     for question in questions(case):  # only the last one (the case's own question) is scored
         final = asyncio.run(go(question))[-1]
         if final.type == "error":  # a provider error (rate limit) says nothing about behaviour: wait out the
@@ -120,26 +126,39 @@ def _run(case: dict, document_ids: dict[str, uuid.UUID]) -> dict:
             final = asyncio.run(go(question))[-1]
     return score_case(case, final.type, final.data) | {
         "answer": final.data.get("text"), "citations": final.data.get("citations", []),
+        "seconds": round(time.perf_counter() - started, 2),
     } | ({"retried": True} if retried else {})
 
 
 @pytest.mark.eval
+@pytest.mark.enable_tracing
 def test_golden_set():
     print(f"eval target: db={str(config.DATABASE_URL).rsplit('/', 1)[-1]} index={config.PINECONE_INDEX} "
           f"threshold={config.MIN_DENSE_SIMILARITY} hash={eval_config_hash()} run={RUN_ID}")
-    results = []
     document_ids = _document_ids()
-    for position, case in enumerate(expand(CASES)):
+    RUN_LOGS.mkdir(parents=True, exist_ok=True)
+    log = RUN_LOGS / f"{RUN_ID}.jsonl"
+    done = {r["id"]: r for r in map(json.loads, log.read_text().splitlines())} if log.exists() else {}
+    cases = expand(CASES)
+    todo = [case for case in cases if case["id"] not in done]
+    print(f"corpus: {len(document_ids)} documents; {len(done)} cases already done, {len(todo)} to run")
+    for position, case in enumerate(todo):
         if position:
             time.sleep(PAUSE_SECONDS)
-        results.append(_run(case, document_ids))
+        result = _run(case, document_ids)
+        with log.open("a") as out:
+            out.write(json.dumps(result) + "\n")
+        done[case["id"]] = result
+    flush_tracing()  # traces are sent in the background: send them before the process ends
+    results = [done[case["id"]] for case in cases]
     config_hash = eval_config_hash()
     summary = summarise(results)
     REPORTS.mkdir(exist_ok=True)
     relevance = sorted(REPORTS.glob("relevance-*.json"), key=lambda p: p.stat().st_mtime)
-    report = REPORTS / f"eval-{config_hash}.json"
+    report = REPORTS / f"eval-{config_hash}-{RUN_ID}.json"
     report.write_text(json.dumps({
         "config_hash": config_hash, "run_id": RUN_ID, "chat_model": config.CHAT_MODEL,
+        "corpus_documents": len(document_ids), "pinecone_index": config.PINECONE_INDEX,
         "min_dense_similarity": config.MIN_DENSE_SIMILARITY,
         "relevance_report": relevance[-1].name if relevance else None, "summary": summary, "results": results,
     }, indent=2))

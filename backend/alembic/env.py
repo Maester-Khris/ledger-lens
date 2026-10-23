@@ -17,7 +17,8 @@ import app.documents.models  # noqa: E402,F401
 alembic_config = context.config
 
 if alembic_config.config_file_name is not None:
-    fileConfig(alembic_config.config_file_name)
+    # keep the app's loggers enabled: the test suite runs migrations in its own process, then asserts app logs
+    fileConfig(alembic_config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

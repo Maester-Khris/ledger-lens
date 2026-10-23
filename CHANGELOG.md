@@ -10,6 +10,135 @@ Fintech Ledger + Document Intelligence product.
 
 ---
 
+## [Sprint — feat/measured-evidence] · Measured evidence: corpus, cost, scale, abuse — In Progress
+
+**Started — 2026-10-15 · branch: `feat/measured-evidence`.** Goal: publish the current state of performance, cost and
+quality, every number with its method, where it ran, its sample and its limit. Headline results are in the README
+section "Measured numbers"; full results in `backend/reports/`.
+**Stays open after `/end-sprint`:** the two items under "After the merge" need the merged code deployed.
+
+### Scope — Now
+
+- [x] `documents` — **N0** corpus volume: about 100 SEC EDGAR fund-level advisory agreements through the ingestion
+      pipeline → **Not epic-tracked**
+      **Done 2026-10-15 (local):** 102 documents, 0 failed, 53% of fields accepted; `backend/scripts/corpus_build.sh`,
+      report `backend/reports/corpus-2026-10-15.json`.
+- [x] `assistant` — **N0.1** golden gate on the expanded corpus → **Not epic-tracked**
+      **Done 2026-10-15:** 3 of 3 runs passed (28/28 answerable, 21/21 junk) at threshold 0.43;
+      `backend/reports/eval-8e192f7302ee-20261015-r*.json`.
+- [x] `ops` — **N1** cost per answer from Langfuse traces → **Epic 2.3**
+      **Done 2026-10-17:** the larger corpus had raised cost per answer 5.3x; after N7, $0.0093 per turn median, 3
+      model calls; `backend/reports/cost-gate5.json`.
+- [x] `ops` — **N2** a provider mock reproducing real turn times, for load tests → **Not epic-tracked**
+      **Done 2026-10-15:** `backend/scripts/load/mock_openai.py`, within 5% of 147 real turns at median and p95.
+- [x] `ops` — **N3** load baseline on one 1 vCPU / 1 GB instance → **Not epic-tracked**
+      **Done 2026-10-15:** bends at 2.98 turns/s; thread pool then DB pool saturate first;
+      `backend/reports/load/2026-10-15-baseline-1cpu-1g.steps.md`.
+- [x] `api` — **N4** fix the bottlenecks N3 found → **Not epic-tracked**
+      **Done 2026-10-15:** async model calls and short DB sessions: 2.98 to 7.75 turns/s at flat latency, 0 failed;
+      `backend/reports/load/2026-10-15-n4-*.steps.md`.
+- [x] `security` — **N8** security review, application and AI → **Not epic-tracked**
+      **Done 2026-10-17:** 0 High or Medium open; report `docs/security/2026-10-18-security-review.md`.
+- [x] `docs` — **N6** design for bot and agent defense → **Not epic-tracked**
+      **Done 2026-10-17:** `docs/superpowers/specs/2026-10-17-bot-and-agent-defense-design.md` (design only).
+- [x] `docs` — write-up: README "Measured numbers" → **Not epic-tracked**
+      **Done 2026-10-21:** CPU, tokens and cost, overload and replica loss, extraction verification.
+      **Updated 2026-10-23:** answer quality, refusals and retrieval with margins from X4; the section is now two parts,
+      system performance and RAG pipeline evaluation, with the evaluation protocol in brief.
+
+### Scope — Next
+
+- [x] `api` — **N5** chat rate limiter shared in Redis → **Not epic-tracked**
+      **Done 2026-10-15:** counts exact across 2 replicas (10 admitted of 30, against 20 in memory).
+- [x] `api` — **N7** CPU and tokens per chat turn → **Not epic-tracked**
+      **Done 2026-10-17:** CPU per turn 61 to 41 ms, peak 10.07 to 15.22 turns/s, prompt tokens per turn about 24k to
+      4.4k, golden gate unchanged; a guest-purge slowdown found and fixed (`9203dfa`). Steps in
+      `backend/reports/load/` and `backend/reports/tokens/`.
+- [ ] `ops` — **X0** the expanded corpus on the public demo → **Epic 1.5**
+      **Partial 2026-10-21:** 102 documents built with the demo keys into a new database `railway_x0` and index
+      `contract-demo-v2`, beside the untouched live demo; $1.37. Remaining steps under "After the merge".
+- [x] `documents` — **X1** an independent vision verifier for extracted fields → **Not epic-tracked**
+      **Done 2026-10-18:** class A 0 errors in 59 (passes ≤ 5%), class B fails, class C sample too small; gpt-4.1 kept
+      for extraction; `backend/reports/x1-model-comparison-2026-10-18.md`.
+- [x] `api` — **X3** admission control and a replica-loss run → **Not epic-tracked**
+      **Done 2026-10-21 (local):** past 64 turns in flight a fast 503; at 4x the knee p95 7.0 s instead of 32.8 s; one of
+      4 replicas killed: 0 hung turns, back in 11.9 s. A thread-pool race in the slot fixed at review (`fd9516b`);
+      `backend/reports/load/2026-10-21-x3-*.steps.md`.
+- [x] `assistant` — **X4** corpus-wide chat eval: answer key, threshold sweep and one judged run → **Not epic-tracked**
+      **Done 2026-10-23 (local):** a 277-case key over all 102 documents (190 answerable, 87 junk and explained),
+      checked by Claude Opus 5.5 at medium effort (30 verdicts by Gemini High before its quota ended); `gpt-4.1`, one
+      run, judged by Claude Sonnet 5.5 (28 of 29 agree with the API judge). 79.4% correct (72.8–84.8%, n=175), citation
+      recall 94.8% and precision 93.3%, junk refused 80.3% (false premise 55.0%, n=20), over-refusal 17.4%, context
+      recall 83.4%; 26 of 36 wrong answers were retrieval failures. Measured at `MIN_DENSE_SIMILARITY` 0.50 (sweep
+      0.38–0.50); the golden gate then failed at 0.50 (4 of 27 over-refused) and at 0.44 (2 of 27) and passed at 0.43
+      (config hash `820a555c46c3`, the same as N7's gate 5), so 0.43 is the deployed value. 27 of the 33 over-refusals had
+      passages retrieved, so the threshold explains few of them. OpenAI about $2.70 for the run plus about $1.4 for three
+      golden gates (list prices), Anthropic about $0.41. Limits: LLM-written and LLM-checked key, checker and judge
+      the same family, 36% of anchors differ from the human label under strict matching (upper bound 44.2%, mostly
+      form). Report `backend/reports/eval-final/2026-10-23-chat-eval/report.md`, key summary and sweep in
+      `backend/reports/eval-key/2026-10-22/`; method in the README.
+- [x] `frontend` — X4 follow-up: the pages show the new evidence → **Not epic-tracked**
+      **Done 2026-10-23:** landing proof table now lists the golden gate at 0.43 and the corpus-wide run with intervals;
+      the dashboard's golden-set card reads the passing gate (`backend/reports/eval-820a555c46c3.json`, the plain name the
+      dashboard looks up); the Documents pipeline shows a gap of 10 minutes or more as time waited (`+2.9 d`) instead of
+      a stage duration; the dashboard review text names the verifier reason. The review queue of 828 is the 758 fields
+      routed to review plus fields extraction accepted but an independent re-reading flagged.
+
+### Scope — After the merge (keeps the sprint open after `/end-sprint`)
+
+- [ ] `ops` — **X0, last steps:** copy the originals into the Railway volume (`script.demo.sh copy-originals`, blocked
+      on 2026-10-21 by Railway's outage), then, once this branch is deployed, point the API at `railway_x0` and
+      `contract-demo-v2` (runbook `backend/script.demo.md`, local) → **Epic 1.5**
+- [ ] `ops` — set `MIN_DENSE_SIMILARITY=0.43` on the demo when this branch is deployed (the golden gate passes at 0.43;
+      the code default and the demo are 0.46, the local `.env` is 0.43) → **Not epic-tracked**
+- [ ] `ops` — **R1** the load numbers re-measured remotely, MediCoord's method: a separate Railway staging service on
+      the merged code with the provider mock beside it, k6 from the laptop; ladder, admission at 64 and a one-hour soak
+      → **Not epic-tracked**
+
+### Deferred
+
+- `documents` — **X2** synthetic Canadian household agreements (the corpus is US only) → **Not epic-tracked**
+- `retrieval` — raise `SEARCH_CANDIDATES` from 20 to 50 and re-run the eval (12 of the 32 gold passages missing from
+  the dense top 20 rank 21–50; 100 would reach 18), try document-scoped dense search, and index `heading` elements
+  (3 key cases have a heading as their gold passage) → **Not epic-tracked**
+- `assistant` — false-premise refusals are 55.0% (34.2–74.2%, n=20): the chat goes along with a wrong premise in 9 of
+  20 cases → **Not epic-tracked**
+- `assistant` — over-refusal: 27 of the 33 refused answerable cases had passages retrieved (8 of them the gold
+  passage), so the answer step or the citation check refuses, not the relevance gate; find out why; the golden gate's
+  0% over-refusal rule fails on a single refusal of a high-scoring scoped question → **Not epic-tracked**
+- `assistant` — an escalation path on retrieval and generation, and a runtime context-sufficiency check, designed
+  from X4's numbers (the logprob confidence did not separate right from wrong answers) → **Not epic-tracked**
+- `scripts` — key quality: hand-adjudicate the 40 anchor mismatches and about 30 checker verdicts (including the 4
+  contested cases); fix the 3 heading-gold cases; refill underspecified, off_topic and nonsense (12, 11 and 8 of 20)
+  with a corrected junk writer prompt; record in the spec that the checker is now Claude Opus, the judge's family →
+  **Not epic-tracked**
+- `scripts` — eval tooling: a paired comparison of two runs by case id; an error row after two failures is not retried
+  on resume; a finished checkpoint cannot be resumed with a larger sample; the CLI judge (`run_cli_batch`) still drops
+  failed batches without saying why → **Not epic-tracked**
+- `assistant` — "What is the management fee?" with no contract named was borderline until L2; prefer contracts with
+  a validated rate → **Not epic-tracked**
+- `contracts` — fee schedules fail validation on most new filings (flat fees with empty band text, "up to $X"
+  tiers) → **Not epic-tracked**
+- `contracts` — X1 redaction blacks out whole OCR lines and some false-positive name tokens, hiding values from the
+  verifier → **Not epic-tracked**
+- `contracts` — `fund_or_account` should be a list for multi-fund agreements → **Not epic-tracked**
+- `contracts` — X1 vision prompt v3 for single-rate fees; a `fee_basis` containment rule → **Not epic-tracked**
+- `api` — `POST /guests` is outside admission control → **Not epic-tracked**
+- `api` — pin `fastapi` in `requirements.txt` (0.115 locally, 0.158 on Railway) → **Not epic-tracked**
+- `ops` — set `CHAT_MAX_IN_FLIGHT` on Railway once R1 confirms 64 → **Not epic-tracked**
+- `tests` — `test_a_blank_message_is_rejected` needs live keys; override the runtime dependency → **Not epic-tracked**
+- `scripts` — `corpus_report.py` predates X1's stage order and misreports finished documents → **Not epic-tracked**
+- `ops` — a data-only restore list must keep `SEQUENCE SET` entries, not only `TABLE DATA` → **Not epic-tracked**
+
+### Reference
+
+- Load-test method, provider mock, Compose stack: MediCoord Sprint 21–22.
+- Decision records: X1 → `artifacts/2026-10-15-ingestion-quality-verification-decisions.md`; N8 and N6 →
+  `artifacts/2026-10-16-security-review-decisions.md`.
+- Specs and plans: `docs/superpowers/specs/2026-10-1*`, `docs/superpowers/plans/2026-10-1*` and `2026-10-21-x3-*`.
+
+---
+
 ## [Sprint — feat/pre-launch-demo] · Pre-launch demo: safe to publish, and evidence of real use — Closed
 
 **Closed — 2026-10-15.** Merged into `preview` via `/end-sprint`, then promoted to `main`. P6 (Sentry), the

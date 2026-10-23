@@ -53,6 +53,11 @@ def test_excess_threshold_must_match_the_bands():
         tiers_from_bands(bands)
 
 
+def test_flat_fee_is_one_open_ended_tier():
+    assert tiers_from_bands([FeeBand("at an annualized rate of 0.75% based on its average daily net assets", "0.75%")]) \
+        == (Tier(None, Decimal("75")),)
+
+
 @pytest.mark.parametrize(("bands", "message"), [
     ([FeeBand("first $500 million", "0.5%")], "open-ended"),
     ([FeeBand("next $500 million", "0.5%"), FeeBand("thereafter", "0.4%")], "must start"),
@@ -60,6 +65,9 @@ def test_excess_threshold_must_match_the_bands():
     ([FeeBand("first $500 million", "half a percent"), FeeBand("thereafter", "0.4%")], "rate"),
     ([FeeBand("first tranche", "0.5%"), FeeBand("thereafter", "0.4%")], "amount"),
     ([], "no fee bands"),
+    ([FeeBand("Defiance Compute ETF", "0.79%")], "amount"),  # one row of a multi-fund table, not a flat fee
+    ([FeeBand("", "0.72%")], "amount"),
+    ([FeeBand("average daily net assets", "0.5%"), FeeBand("thereafter", "0.4%")], "amount"),
 ])
 def test_malformed_schedules(bands, message):
     with pytest.raises(FeeTextError, match=message):

@@ -1,3 +1,5 @@
+import dataclasses
+import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
@@ -28,21 +30,30 @@ def parse_and_redact(
         return
     session.commit()  # end the read transaction before minutes of CPU work
 
+    t0 = time.process_time()
     parsed = parser(store.original_path(store_root, version.file_sha256))
+    cpu_seconds = round(time.process_time() - t0, 3)
+
     tokens: dict[str, tuple[str, str]] = {}
     for ordinal, element in enumerate(parsed.elements):
         redaction = apply_redaction(element.text, detector.detect(element.text), tenant_id, hmac_key)
         tokens.update(redaction.tokens)
-        session.add(DocumentElement(
+        doc_element = DocumentElement(
             version_id=version_id, ordinal=ordinal, kind=element.kind, section_path=list(element.section_path),
             page_start=element.page_start, page_end=element.page_end, text_redacted=redaction.text,
             parser_version=parsed.parser_version,
-        ))
+        )
+        session.add(doc_element)
+        if element.boxes:
+            session.flush()
+            dao.save_boxes(session, doc_element.id, [dataclasses.asdict(b) for b in element.boxes])
+
     dao.save_tokens(session, tenant_id, tokens, vault_key)
     dao.append_event(session, version_id, VersionStage.parsed, {
         "element_count": len(parsed.elements),
         "pii_token_count": len(tokens),
         "page_grades": {str(page): grade for page, grade in parsed.page_grades.items()},
         "parser_version": parsed.parser_version,
+        "cpu_seconds": cpu_seconds,
     })
     session.commit()

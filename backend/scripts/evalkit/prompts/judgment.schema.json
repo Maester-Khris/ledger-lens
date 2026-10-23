@@ -1,0 +1,5 @@
+{"type": "object", "properties": {"judgments": {"type": "array", "items": {"type": "object",
+ "properties": {"case_id": {"type": "string"}, "correct": {"type": "boolean"},
+  "statements": {"type": "array", "items": {"type": "object", "properties": {"text": {"type": "string"}, "supported": {"type": "boolean"}}, "required": ["text", "supported"]}},
+  "citations": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "relevant": {"type": "boolean"}}, "required": ["id", "relevant"]}}},
+ "required": ["case_id", "correct", "statements", "citations"]}}}, "required": ["judgments"]}

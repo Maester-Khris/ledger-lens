@@ -75,9 +75,14 @@ def search(
     fused = reciprocal_rank_fusion([[str(i) for i in text_ids], [str(i) for i, _ in dense]])[:k]
     rows = dao.evidence_rows(session, [uuid.UUID(item) for item, _ in fused])
     results = []
+    # one read per section, shared by its hits
+    section_contexts: dict[tuple[uuid.UUID, tuple[str, ...]], str] = {}
     for item, _ in fused:
         element, version, document = rows[uuid.UUID(item)]
-        context = "\n\n".join(dao.section_texts(session, version.id, element.section_path))[:MAX_CONTEXT_CHARS]
+        key = (version.id, tuple(element.section_path))
+        if key not in section_contexts:
+            section_contexts[key] = "\n\n".join(dao.section_texts(session, version.id, element.section_path))[:MAX_CONTEXT_CHARS]
+        context = section_contexts[key]
         results.append(Evidence(element.id, document.id, document.title, version.version, version.id,
                                 element.page_start, element.page_end, tuple(element.section_path),
                                 element.text_redacted, context))

@@ -14,6 +14,8 @@ _AMOUNT = re.compile(r"\$\s*([\d,]+(?:\.\d+)?)\s*(thousand|million|billion)?", r
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*%")
 _BPS = re.compile(r"(\d+(?:\.\d+)?)\s*(?:bps|bp|basis points?)\b", re.I)
 _OPEN = re.compile(r"\b(in excess of|excess over|over|above|thereafter)\b", re.I)
+# A lone band with no amount is a flat fee only if it says what the rate applies to; a fund name or nothing stays in review.
+_FLAT = re.compile(r"\bassets\b", re.I)
 
 
 class FeeTextError(ValueError):
@@ -60,6 +62,9 @@ def tiers_from_bands(bands: Sequence[FeeBand]) -> tuple[Tier, ...]:
             if amount is not None and amount != cumulative:
                 raise FeeTextError(f"band {band.band_text!r} starts at {amount} but the bands above add up to {cumulative}")
             tiers.append(Tier(None, rate))
+            continue
+        if amount is None and len(bands) == 1 and _FLAT.search(wording):
+            tiers.append(Tier(None, rate))  # flat fee: one rate on all assets (the usual ETF shape)
             continue
         if amount is None:
             raise FeeTextError(f"no amount in band {band.band_text!r}")

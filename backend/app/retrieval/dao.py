@@ -64,6 +64,17 @@ def current_element_ids(session: Session, *, tenant_id: uuid.UUID, vector_ids: S
     return {pairs[(v, o)]: element_id for v, o, element_id in rows if (v, o) in pairs}
 
 
+def current_vectors(session: Session) -> list[tuple[str, str, str]]:
+    """(namespace, vector id, document id) of every current element: what the load-test stub index serves."""
+    rows = session.execute(
+        select(ElementSearch.tenant_id, DocumentElement.version_id, DocumentElement.ordinal, DocumentVersion.document_id)
+        .join(DocumentElement, DocumentElement.id == ElementSearch.element_id)
+        .join(DocumentVersion, DocumentVersion.id == DocumentElement.version_id)
+        .order_by(DocumentElement.version_id, DocumentElement.ordinal)
+    )
+    return [(str(tenant), f"{version}#{ordinal}", str(document)) for tenant, version, ordinal, document in rows]
+
+
 def evidence_rows(session: Session, element_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[DocumentElement, DocumentVersion, Document]]:
     rows = session.execute(
         select(DocumentElement, DocumentVersion, Document)

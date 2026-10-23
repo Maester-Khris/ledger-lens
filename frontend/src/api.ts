@@ -134,6 +134,16 @@ export function uploadDocument(file: File): Promise<{ document_id: string }> {
 
 export interface StreamChatOptions { documentId?: string }
 
+// Busy is the server shedding load, so the caller may retry; every other failure is final.
+export class BusyError extends Error {
+  readonly retryAfterSeconds: number;
+  constructor(message: string, retryAfterSeconds: number) {
+    super(message);
+    this.name = 'BusyError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 export async function streamChat(
   sessionId: string, message: string, onEvent: (event: ChatEvent) => void, options: StreamChatOptions = {},
 ): Promise<void> {
@@ -145,8 +155,16 @@ export async function streamChat(
   });
   if (!response.ok || !response.body) {
     // problem+json detail when the API sends one (e.g. the public demo's 429 "try again in N seconds")
-    const problem = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(problem?.detail ?? `Chat failed (${response.status})`);
+    const problem = (await response.json().catch(() => null)) as { type?: string; detail?: string; retry_after?: unknown } | null;
+    const detail = problem?.detail ?? `Chat failed (${response.status})`;
+    if (response.status === 503 && problem?.type === '/problems/busy') {
+      const header = Number(response.headers.get('Retry-After'));
+      const retryAfterSeconds = Number.isFinite(header) && header > 0
+        ? header
+        : typeof problem.retry_after === 'number' ? problem.retry_after : 3;
+      throw new BusyError(detail, retryAfterSeconds);
+    }
+    throw new Error(detail);
   }
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
@@ -266,9 +284,29 @@ export interface ToolInvocationDto {
   proposed_entries: ProposedEntryDto[] | null;
   approval_required: boolean;
   decision: ToolDecisionDto | null;
+  /** Proposals only: the contract and the clauses behind the amount (empty / null otherwise). */
+  document_title: string | null;
+  document_version: number | null;
+  sources: ApprovalSourceDto[];
+}
+
+export interface ApprovalSourceDto {
+  element_id: string;
+  page: number;
+  section: string;
+  quote: string;
 }
 
 export type ReviewDecision = 'confirmed' | 'corrected' | 'rejected';
+
+export interface VerificationDto {
+  layer: 'ocr_local' | 'vision' | string;
+  verifier: string;
+  read_value: unknown;      // the second reading; a fee table is a list of { band_text, rate_text }
+  outcome: 'disagree' | 'unreadable' | 'error' | string;
+  detail: string | null;    // e.g. "band 2: rate 85 vs 80 bps", or a provider error
+  crop_url: string;         // relative, e.g. "/reviews/<run>/crops/fee_tiers"; prefix API_BASE to load it
+}
 
 export interface ReviewItemDto {
   run_id: string;
@@ -282,6 +320,8 @@ export interface ReviewItemDto {
   document_title: string;
   version: number;
   page: number | null;
+  field_class: 'A' | 'B' | 'C' | string;
+  verification: VerificationDto | null;
 }
 
 export interface ReviewSubmission {
@@ -375,6 +415,10 @@ export function checkHealth(): Promise<boolean> {
 export function documentPageUrl(documentId: string, version: number, page: number | null): string {
   const url = `${API_BASE}/documents/${documentId}/versions/${version}/file`;
   return page === null ? url : `${url}#page=${page}`;
+}
+
+export function cropUrl(path: string): string {
+  return `${API_BASE}${path}`;
 }
 
 export type EvalDto = {

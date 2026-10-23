@@ -1,0 +1,284 @@
+{
+  "threshold_range": [
+    0.38,
+    0.39,
+    0.4,
+    0.41,
+    0.42,
+    0.43,
+    0.44,
+    0.45,
+    0.46,
+    0.47,
+    0.48,
+    0.49,
+    0.5
+  ],
+  "sweep": [
+    {
+      "threshold": 0.38,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 61
+    },
+    {
+      "threshold": 0.39,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 60
+    },
+    {
+      "threshold": 0.4,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 60
+    },
+    {
+      "threshold": 0.41,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 60
+    },
+    {
+      "threshold": 0.42,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 59
+    },
+    {
+      "threshold": 0.43,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 59
+    },
+    {
+      "threshold": 0.44,
+      "answerable_n": 190,
+      "answerable_gated": 1,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 57
+    },
+    {
+      "threshold": 0.45,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 56
+    },
+    {
+      "threshold": 0.46,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 55
+    },
+    {
+      "threshold": 0.47,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 55
+    },
+    {
+      "threshold": 0.48,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 55
+    },
+    {
+      "threshold": 0.49,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 52
+    },
+    {
+      "threshold": 0.5,
+      "answerable_n": 190,
+      "answerable_gated": 2,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "junk_n": 76,
+      "junk_through": 50
+    }
+  ],
+  "topk": {
+    "5": {
+      "n": 175,
+      "successes": 119,
+      "rate": 0.68,
+      "low": 0.607656528292455,
+      "high": 0.7446105057756814
+    },
+    "8": {
+      "n": 175,
+      "successes": 125,
+      "rate": 0.7142857142857143,
+      "low": 0.6433129253305845,
+      "high": 0.7760525914171967
+    }
+  },
+  "context_recall_by_threshold": [
+    {
+      "threshold": 0.38,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.39,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.4,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.41,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.42,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.43,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.44,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.45,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.46,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.47,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.48,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.49,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    },
+    {
+      "threshold": 0.5,
+      "gold_n": 175,
+      "gold_cut": 32,
+      "n": 175,
+      "successes": 143,
+      "rate": 0.8171428571428572,
+      "low": 0.7532688693053585,
+      "high": 0.8673920954813578
+    }
+  ]
+}

@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from app import config
 from app.assistant.contract_tools import contract_tools
+from app.assistant.graph import Answer
 from app.assistant.models import ChatTurn
 from app.assistant.tools import ToolContext, default_tools, execute
 from app.governance.dao import ModelConfig
@@ -92,3 +93,12 @@ def test_scoped_chat_turn_only_retrieves_the_scoped_document(client, session_fac
     cited = {h.element_id for h in search(db_session, tenant_id=tenant_id, query="billed quarterly",
                                          embeddings=embeddings, vector_index=index, document_ids=[a])}
     assert invocation.citation and {uuid.UUID(i) for i in invocation.citation["ids"]} <= cited
+
+
+def test_a_scoped_turn_tells_the_model_its_document(client, session_factory, db_session, tenant_id):
+    embeddings, index = RecordingEmbeddings(), InMemoryVectorIndex()
+    a, _ = _two_documents(db_session, tenant_id, embeddings, index)
+    model = ScriptedChatModel(replies=[AIMessage(content="done"), Answer(text="", citations=[], refused=True)])
+    _override(client, _runtime(model, embeddings, index), session_factory)
+    client.post("/chat", json={"session_id": "s-scope-line", "message": "What are the fees?", "document_id": str(a)})
+    assert f"This chat is limited to one contract: Tremblay IMA (document_id {a})." in model.prompts[0]

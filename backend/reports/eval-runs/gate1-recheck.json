@@ -1,0 +1,62 @@
+[
+  {
+    "attempt": 1,
+    "id": "management-fee-unscoped",
+    "event": "refused",
+    "behaviour_ok": false,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 7.01,
+    "answer": "I can't find that in the indexed contracts, so I won't guess."
+  },
+  {
+    "attempt": 1,
+    "id": "nomura-fee-schedule",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 5.18,
+    "answer": "The fee schedule for the Nomura Tax-Free Colorado Fund is as follows (based on average daily net assets, billed monthly):\n\n- 0.55% on the first $500 million\n- 0"
+  },
+  {
+    "attempt": 1,
+    "id": "nomura-billing-frequency",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 5.1,
+    "answer": "The management fee for the Nomura Tax-Free Colorado Fund is paid monthly, based on the average daily net assets of the fund during the month."
+  },
+  {
+    "attempt": 2,
+    "id": "management-fee-unscoped",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 10.43,
+    "answer": "**Tremblay household \u2014 Investment Management Agreement (synthetic)**\n\nThe management fee is 1.00% on the first $1,000,000 of the combined household market value"
+  },
+  {
+    "attempt": 2,
+    "id": "nomura-fee-schedule",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 4.78,
+    "answer": "The fee schedule for the Nomura Tax-Free Colorado Fund is as follows (calculated on average daily net assets, billed monthly):\n\n- 0.55% on the first $500 millio"
+  },
+  {
+    "attempt": 2,
+    "id": "nomura-billing-frequency",
+    "event": "answer",
+    "behaviour_ok": true,
+    "citation_hit": true,
+    "numbers_ok": true,
+    "seconds": 4.57,
+    "answer": "The management fee for the Nomura Tax-Free Colorado Fund is paid monthly, based on the average daily net assets of the fund during the month."
+  }
+]

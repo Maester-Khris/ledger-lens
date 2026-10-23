@@ -8,7 +8,7 @@ from app.documents.ingest import parse_and_redact
 from app.documents.parse import ParsedDocument, ParsedElement, parse_pdf
 from app.documents.redact import PiiDetector, PiiSpan
 from app.documents.sniff import PdfFacts
-from app.documents.types import ElementKind, VersionStage
+from app.documents.types import Box, ElementKind, VersionStage
 
 FIXTURE = Path(__file__).parent / "fixtures" / "documents" / "client_agreement.pdf"
 RAW_PII = ("Marie Tremblay", "130 692 544", "marie.tremblay@example.com", "514-555-0142")
@@ -24,7 +24,8 @@ def _fake_parser(_path: Path) -> ParsedDocument:
     return ParsedDocument(
         elements=(
             ParsedElement(ElementKind.heading, "3. Fees", ("3. Fees",), 1, 1),
-            ParsedElement(ElementKind.paragraph, "Client Marie Tremblay pays quarterly.", ("3. Fees",), 1, 2),
+            ParsedElement(ElementKind.paragraph, "Client Marie Tremblay pays quarterly.", ("3. Fees",), 1, 2,
+                          (Box(1, 72, 100, 540, 60, "BOTTOMLEFT"), Box(2, 72, 760, 540, 700, "BOTTOMLEFT"))),
         ),
         page_grades={1: "GOOD", 2: "EXCELLENT"},
         parser_version="fake 1",
@@ -74,3 +75,16 @@ def test_real_pipeline_leaves_no_raw_pii_in_elements(db_session, tenant_id):
     for value in RAW_PII:
         assert value not in stored_text
     assert "Ontario" in stored_text and "0.85%" in stored_text
+
+
+def test_stage_writes_element_boxes_and_cpu_seconds(db_session, tenant_id):
+    version = _stored_version(db_session, tenant_id)
+    _run(db_session, version.id)
+    elements = dao.list_elements(db_session, version.id)
+    boxes = dao.element_boxes(db_session, [e.id for e in elements])
+    assert elements[0].id not in boxes  # an element without provenance gets no row; verification falls back to the page
+    assert boxes[elements[1].id] == [
+        {"page_no": 1, "l": 72, "t": 100, "r": 540, "b": 60, "coord_origin": "BOTTOMLEFT"},
+        {"page_no": 2, "l": 72, "t": 760, "r": 540, "b": 700, "coord_origin": "BOTTOMLEFT"},
+    ]
+    assert dao.version_events(db_session, version.id)[-1].detail["cpu_seconds"] >= 0

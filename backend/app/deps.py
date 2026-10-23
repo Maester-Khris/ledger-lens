@@ -1,17 +1,22 @@
+import logging
 import math
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app import config
+from app.assistant import admission
 from app.assistant import dao as assistant_dao
-from app.errors import GuestRequired, RateLimited
+from app.assistant.admission import Slot
+from app.errors import AssistantBusy, GuestRequired, RateLimited
 from app.ledger.db import SessionLocal
 from app.ledger.types import DEMO_TENANT_ID
-from app.rate_limit import SlidingWindowLimiter, admit
+from app.rate_limit import RedisWindowLimiter, SlidingWindowLimiter, admit
+
+logger = logging.getLogger(__name__)
 
 # ponytail: no authentication yet; the acting user is fixed. Replace with the authenticated principal.
 DECIDED_BY = "demo_user"
@@ -65,11 +70,29 @@ def require_overlay_guest(guest_id: Annotated[uuid.UUID | None, Depends(get_gues
     return guest_id
 
 
-# Public demo (P3): one pair of chat windows per process, per guest and per client IP. Tests replace it.
-chat_limits = (
-    SlidingWindowLimiter(config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
-    SlidingWindowLimiter(config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
-)
+def build_chat_limits() -> tuple[RedisWindowLimiter, RedisWindowLimiter] | tuple[SlidingWindowLimiter, SlidingWindowLimiter]:
+    """Public demo (P3, N5): one pair of chat windows, per guest and per client IP; in Redis when REDIS_URL is set
+    (shared by every worker and replica), else in this process."""
+    if config.REDIS_URL:
+        # Only a deployment with Redis needs the client.
+        import redis
+
+        client = redis.Redis.from_url(
+            config.REDIS_URL,
+            socket_timeout=config.REDIS_TIMEOUT_SECONDS,
+            socket_connect_timeout=config.REDIS_TIMEOUT_SECONDS,
+        )
+        return (
+            RedisWindowLimiter(client, "chat:guest", config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
+            RedisWindowLimiter(client, "chat:ip", config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
+        )
+    return (
+        SlidingWindowLimiter(config.CHAT_LIMIT_PER_GUEST, config.CHAT_LIMIT_WINDOW_SECONDS),
+        SlidingWindowLimiter(config.CHAT_LIMIT_PER_IP, config.CHAT_LIMIT_WINDOW_SECONDS),
+    )
+
+
+chat_limits = build_chat_limits()  # tests replace it
 
 
 def client_ip(request: Request) -> str:
@@ -87,3 +110,25 @@ def limit_chat(request: Request, guest_id: Annotated[uuid.UUID | None, Depends(g
     wait = admit([(by_guest, f"guest:{guest_id}"), (by_ip, f"ip:{client_ip(request)}")])
     if wait > 0:
         raise RateLimited(math.ceil(wait))
+
+
+async def take_turn_slot() -> AsyncIterator[Slot]:
+    """Must be the first dependency of the chat route, because get_guest_id already writes (touch_guest) while
+    dependencies resolve, and a refused turn must write nothing and use none of the guest's rate-limit allowance.
+    Async on purpose: FastAPI runs a sync generator dependency in its thread pool, so the count would change on a worker
+    thread here and on the event loop in _TurnStream, and an unlocked += / -= across threads can lose an update for good.
+    Releases only when an exception passes through it (a later dependency or the route failed before a response
+    existed). Once a response exists, the response owns the slot. This relies only on exceptions reaching a yield
+    dependency, which every FastAPI version does, and not on when its normal exit runs (that differs between 0.115 and
+    0.143)."""
+    limit = config.CHAT_MAX_IN_FLIGHT
+    try:
+        slot = admission.admit(limit)
+    except admission.Busy:
+        logger.warning("chat_busy in_flight=%d limit=%d", admission.in_flight(), limit)
+        raise AssistantBusy(admission.retry_after_seconds(config.CHAT_BUSY_RETRY_SECONDS))
+    try:
+        yield slot
+    except BaseException:
+        slot.release()
+        raise

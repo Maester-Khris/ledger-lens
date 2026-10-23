@@ -10,6 +10,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from sqlalchemy.orm import Session
 
+from app import config as app_config
 from app.contracts import dao
 from app.contracts.fields import ElementRef, evaluate_terms
 from app.contracts.schema import SCHEMA_VERSION, ContractTerms
@@ -52,15 +53,26 @@ def render_input(elements: Sequence[DocumentElement]) -> str:
     return "<document>\n" + "\n".join(tags) + "\n</document>"
 
 
-def call_model(chat_model: BaseChatModel, document_text: str, config: dict | None = None) -> ContractTerms:
+def call_model(chat_model: BaseChatModel, document_text: str, config: dict | None = None) -> tuple[ContractTerms, dict[str, int]]:
     structured = chat_model.with_structured_output(ContractTerms, method="json_schema", include_raw=True)
     messages = [SystemMessage(PROMPT), HumanMessage(document_text)]
     if config is None:
         config = {}
+    input_tokens = 0
+    output_tokens = 0
+    error = None
     for _attempt in range(2):  # one repair attempt with the validation error, then give up
         result = structured.invoke(messages, config=config)
+        raw = result.get("raw")
+        if raw is not None:
+            usage = getattr(raw, "usage_metadata", None)
+            if usage is None and isinstance(raw, dict):
+                usage = raw.get("usage_metadata")
+            if isinstance(usage, dict):
+                input_tokens += int(usage.get("input_tokens") or 0)
+                output_tokens += int(usage.get("output_tokens") or 0)
         if result["parsed"] is not None:
-            return result["parsed"]
+            return result["parsed"], {"input_tokens": input_tokens, "output_tokens": output_tokens}
         error = str(result["parsing_error"])
         messages = [*messages, HumanMessage(f"Your output did not match the schema: {error}. Return it again, matching the schema exactly.")]
     raise ExtractionFailed(f"model output did not match the schema twice: {error}")
@@ -81,7 +93,7 @@ def run_extraction(session: Session, version_id: uuid.UUID, *, chat_model: BaseC
         run_config["metadata"] = {"langfuse_tags": ["extraction"], "run_id": str(run_id), "prompt_version": prompt_version()}
         run_config["run_name"] = f"extract_{run_id}"
 
-    terms = call_model(chat_model, document_text, config=run_config)
+    terms, token_counts = call_model(chat_model, document_text, config=run_config)
     refs = {f"E{e.ordinal}": ElementRef(e.id, e.text_redacted, e.page_start, e.page_end) for e in elements}
     results = evaluate_terms(terms, refs, detail.get("page_grades", {}))
 
@@ -89,9 +101,20 @@ def run_extraction(session: Session, version_id: uuid.UUID, *, chat_model: BaseC
                                config_hash(model_id, detail.get("parser_version", "unknown")), _sha256(document_text))
     run = dao.save_run(session, version_id, dao_run_config, terms.model_dump(mode="json"), results, run_id=run_id)
     accepted = sum(r.routing is FieldRouting.accepted for r in results)
-    
+
+    in_price, out_price = app_config.EXTRACTION_PRICE_PER_MTOK
+    in_tok = token_counts["input_tokens"]
+    out_tok = token_counts["output_tokens"]
+    cost = (Decimal(in_tok) * in_price + Decimal(out_tok) * out_price) / Decimal(1_000_000)
+    cost_usd = float(round(cost, 6))
+
     event_detail = {
-        "run_id": str(run.id), "accepted": accepted, "needs_review": len(results) - accepted,
+        "run_id": str(run.id),
+        "accepted": accepted,
+        "needs_review": len(results) - accepted,
+        "input_tokens": in_tok,
+        "output_tokens": out_tok,
+        "cost_usd": cost_usd,
     }
     if handler and hasattr(handler, "last_trace_id"):
         event_detail["trace_id"] = handler.last_trace_id

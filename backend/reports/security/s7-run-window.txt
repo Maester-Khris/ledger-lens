@@ -1,0 +1,7 @@
+# N8 S7 Promptfoo red team, run windows (UTC). Only the last run counts; the others were aborted config errors.
+2026-10-17T02:59:09Z to 02:59:12Z  aborted: transform path resolved against the generated file's folder
+2026-10-17T03:03:16Z to 03:03:19Z  aborted: jailbreak rewritten to jailbreak:meta (remote only)
+start not recorded, ended 03:05:33Z  aborted: same, strategyId still jailbreak:meta
+2026-10-17T03:05:54Z to about 03:07  stopped by hand: session_id empty on single-turn cases, 54 turns rejected (422)
+2026-10-17T03:08:13Z to 03:09:38Z  stopped by hand: crescendo sent the whole conversation as an array, 89 turns rejected (422)
+2026-10-17T03:12:28Z to 03:31:46Z  RUN OF RECORD: 138 cases, 665 target turns, 133 pass, 5 fail, 0 errors
