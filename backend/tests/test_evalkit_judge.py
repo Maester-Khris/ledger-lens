@@ -90,6 +90,22 @@ def test_api_backend_refuses_without_yes(capsys):
     assert stop.value.code != 0 and "estimate" in capsys.readouterr().out.lower()
 
 
+def test_api_backend_does_not_hide_a_failed_call():
+    # a bare `except: continue` turned thirty rejected calls into "judged: 0" with no reason
+    class Client:
+        def invoke(self, prompt):
+            raise RuntimeError("400 temperature is deprecated for this model")
+    with pytest.raises(RuntimeError, match="temperature is deprecated"):
+        run_api([build_input(_case(), ROW)], Client())
+
+
+def test_api_backend_still_skips_a_reply_it_cannot_read():
+    class Client:
+        def invoke(self, prompt):
+            return type("R", (), {"content": "not a judgment"})()
+    assert run_api([build_input(_case(), ROW)], Client()) == []
+
+
 def test_api_backend_judges_one_case_per_call():
     class Client:
         def __init__(self):

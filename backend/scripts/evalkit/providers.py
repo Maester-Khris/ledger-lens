@@ -142,11 +142,13 @@ def chat_client(
         raise RuntimeError(f"{key_var} is not set in {ENV_FILE} or environment")
     kwargs: dict[str, Any] = {
         "model": model,
-        "temperature": temperature,
         "timeout": timeout,
         "api_key": api_key,
         "max_retries": 2,
     }
+    # Anthropic rejects `temperature` for its current models (400 "deprecated for this model"), so it is left unset there.
+    if provider != "anthropic":
+        kwargs["temperature"] = temperature
     if reasoning_effort is not None:
         kwargs["reasoning_effort"] = reasoning_effort
     if max_tokens is not None:

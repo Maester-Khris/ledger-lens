@@ -197,7 +197,10 @@ def run_cli_batch(inputs: Sequence[dict[str, Any]], folder: Path) -> list[dict[s
 
 
 def run_api(inputs: Sequence[dict[str, Any]], client: Any) -> list[dict[str, Any]]:
-    """Judge each input individually via the Anthropic API client, skipping unreadable replies."""
+    """Judge each input individually via the Anthropic API client, skipping unreadable replies.
+
+    A failed call is not skipped: it raises, so a rejected request (a bad parameter, no credit, a bad key) stops the run
+    with its reason instead of ending as "judged: 0"; the checkpoint resumes from the last judged case."""
     instructions = (PROMPTS / "judge.md").read_text(encoding="utf-8")
     out: list[dict[str, Any]] = []
     for item in inputs:
@@ -205,10 +208,7 @@ def run_api(inputs: Sequence[dict[str, Any]], client: Any) -> list[dict[str, Any
             f"{instructions}\n\nOne case:\n{json.dumps(item)}\n"
             'Reply with the judgment object only: {"case_id": ...}'
         )
-        try:
-            reply = str(client.invoke(prompt).content)
-        except Exception:
-            continue
+        reply = str(client.invoke(prompt).content)
         parsed = parse_judgment(reply, default_case_id=str(item.get("case_id", "")))
         if parsed is not None:
             out.append(parsed)

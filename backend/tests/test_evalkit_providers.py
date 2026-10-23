@@ -100,6 +100,17 @@ def test_groq_client_points_at_groq(tmp_path, monkeypatch):
     assert client.temperature == 0.0
 
 
+def test_anthropic_client_sends_no_temperature(tmp_path, monkeypatch):
+    # Anthropic answers 400 "`temperature` is deprecated for this model" for claude-sonnet-5-5; every judge call failed on it
+    env = tmp_path / ".env.demo"
+    env.write_text("ANTHROPIC_API_KEY=test-key\n")
+    monkeypatch.setattr(providers, "ENV_FILE", env)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    client = chat_client("anthropic", "claude-sonnet-5-5")
+    assert client.openai_api_base == PROVIDERS["anthropic"]
+    assert client.temperature is None and "temperature" not in client._default_params
+
+
 def test_missing_key_is_an_error(tmp_path, monkeypatch):
     env = tmp_path / ".env.demo"
     env.write_text("")
