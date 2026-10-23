@@ -1,10 +1,11 @@
-"""Isolated Gemini checker (via agy CLI in temporary folders) and deterministic data checks for evaluation keys."""
+"""Isolated checker (headless Claude, or Gemini via the agy CLI, in temporary folders) and deterministic data checks for evaluation keys."""
 import argparse
 from collections.abc import Callable, Mapping, Sequence
 import concurrent.futures
 from dataclasses import asdict
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -20,10 +21,16 @@ from app.retrieval import dao as retrieval_dao
 from app.retrieval.search import dense_matches
 from scripts.evalkit.cases import Case
 from scripts.evalkit.checkpoint import Checkpoint, summary_line
+from scripts.evalkit.judge import DISALLOWED_TOOLS
 from scripts.evalkit.write_key import document_text
 
 CHECKER_MODEL: str = "gemini-4-argon-high"
 MEDIUM_MODEL: str = "gemini-4-argon-medium"
+# The settled checker: Gemini's quota ended and every free model accepted every case, even Opus at default effort did;
+# Opus at medium effort rejected all 20 corrupted negative controls and none of the 10 intact ones.
+CLAUDE_MODEL: str = "claude-opus-5-5"
+CLAUDE_EFFORT: str = "medium"
+CHECKER_SYSTEM_PROMPT: str = "You check evaluation cases against agreement text. Reply with the JSON object only."
 PROMPTS: Path = Path(__file__).parent / "prompts"
 HIDDEN_FIELDS: tuple[str, ...] = ("writer", "anchor_value")
 
@@ -119,6 +126,81 @@ def run_agy(
         print(f"agy envelope had no structured_output ({folder.name}): {detail}", file=sys.stderr)
         return {}
     return structured
+
+
+def checker_label(backend: str, model: str, effort: str) -> str:
+    """Name written on every verdict row; the effort is part of a Claude checker's identity, agy's is in its model id."""
+    return f"{model}@{effort}" if backend == "claude" else model
+
+
+def _inline_prompt(folder: Path) -> str:
+    """The batch folder's files as one prompt: the model cannot read a folder, so the instructions' own pointer to it is replaced."""
+    instructions = (folder / "instructions.md").read_text(encoding="utf-8")
+    parts = [
+        instructions.replace("Read only the files in this folder.", "The files are given below; use only them."),
+        "=== batch.jsonl ===\n" + (folder / "batch.jsonl").read_text(encoding="utf-8"),
+    ]
+    for sub in ("documents", "passages"):
+        for path in sorted((folder / sub).glob("*.txt")):
+            parts.append(f"=== {sub}/{path.name} ===\n" + path.read_text(encoding="utf-8"))
+    return "\n\n".join(parts)
+
+
+def run_claude(
+    folder: Path,
+    *,
+    model: str = CLAUDE_MODEL,
+    effort: str = CLAUDE_EFFORT,
+    timeout: int = 900,
+) -> dict:
+    """Run one batch through headless `claude -p` with the judge's isolation (fixed system prompt, no skills, MCP or tools), logging unusable calls to stderr."""
+    command = [
+        "claude",
+        "-p",
+        _inline_prompt(folder),
+        "--model",
+        model,
+        "--effort",
+        effort,
+        "--output-format",
+        "json",
+        "--system-prompt",
+        CHECKER_SYSTEM_PROMPT,
+        "--disable-slash-commands",
+        "--strict-mcp-config",
+        "--disallowedTools",
+        DISALLOWED_TOOLS,
+    ]
+    try:
+        proc = subprocess.run(command, cwd=folder, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print(f"claude call timed out after {timeout}s ({folder.name})", file=sys.stderr)
+        return {}
+    except subprocess.SubprocessError as exc:
+        print(f"claude call failed ({folder.name}): {str(exc)[:300]}", file=sys.stderr)
+        return {}
+
+    try:
+        envelope = json.loads(proc.stdout)
+    except (json.JSONDecodeError, TypeError):
+        tail = (proc.stderr or "")[-300:].replace("\r", " ").replace("\n", " ").strip()
+        print(f"claude output was not JSON (rc={proc.returncode}, {folder.name}): {tail}", file=sys.stderr)
+        return {}
+
+    result = envelope.get("result") if isinstance(envelope, dict) else None
+    if not isinstance(envelope, dict) or envelope.get("is_error") or not isinstance(result, str):
+        detail = str(result if isinstance(envelope, dict) else envelope)[:300].replace("\n", " ")
+        print(f"claude call failed ({folder.name}): {detail}", file=sys.stderr)
+        return {}
+    found = re.search(r"\{.*\}", result, re.S)
+    try:
+        reply = json.loads(found.group(0)) if found else None
+    except json.JSONDecodeError:
+        reply = None
+    if not isinstance(reply, dict):
+        print(f"claude reply was not JSON ({folder.name}): {result[:200]!r}", file=sys.stderr)
+        return {}
+    return reply
 
 
 def accept_verdicts(cases: Sequence[Case], reply: dict) -> list[dict] | None:
@@ -263,17 +345,22 @@ def _load_candidate_cases(candidates_path: Path) -> list[Case]:
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse CLI flags separately from main so defaults and mutually exclusive model options can be tested in isolation."""
-    parser = argparse.ArgumentParser(description="Check evaluation key candidates in isolated agy batches.")
+    parser = argparse.ArgumentParser(description="Check evaluation key candidates in isolated batches.")
     parser.add_argument("--key", type=Path, required=True, help="Directory holding candidates.jsonl.")
-    parser.add_argument("--batch-size", type=int, default=10, help="Number of cases per agy batch.")
-    parser.add_argument("--workers", type=int, default=3, help="Number of concurrent agy batch workers.")
-    parser.add_argument("--timeout", type=int, default=1500, help="Seconds allowed for one agy call.")
+    parser.add_argument("--backend", choices=("claude", "agy"), default="claude", help="Headless Claude, or Gemini through agy.")
+    parser.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"), default=CLAUDE_EFFORT,
+                        help="Reasoning effort of the Claude checker.")
+    parser.add_argument("--batch-size", type=int, default=10, help="Number of cases per batch.")
+    parser.add_argument("--workers", type=int, default=3, help="Number of concurrent batch workers.")
+    parser.add_argument("--timeout", type=int, default=1500, help="Seconds allowed for one call.")
     model_group = parser.add_mutually_exclusive_group()
-    model_group.add_argument("--model", default=CHECKER_MODEL, help="Checker model name.")
-    model_group.add_argument("--medium", action="store_true", help="Select the cheaper medium checker model.")
+    model_group.add_argument("--model", default=None, help="Checker model name (default depends on the backend).")
+    model_group.add_argument("--medium", action="store_true", help="agy backend only: the cheaper medium Gemini model.")
     args = parser.parse_args(argv)
-    if args.medium:
-        args.model = MEDIUM_MODEL
+    if args.medium and args.backend != "agy":
+        parser.error("--medium selects a Gemini model; use --backend agy, or --effort for the Claude checker")
+    if args.model is None:
+        args.model = CLAUDE_MODEL if args.backend == "claude" else MEDIUM_MODEL if args.medium else CHECKER_MODEL
     return args
 
 
@@ -339,6 +426,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         folder = Path(tempfile.mkdtemp(prefix="evalkit-check-"))
         try:
             prepare_batch(batch, folder, texts, corpus_passages, instructions)
+            if args.backend == "claude":
+                return run_claude(folder, model=args.model, effort=args.effort, timeout=args.timeout)
             return run_agy(folder, schema, model=args.model, timeout=args.timeout)
         finally:
             shutil.rmtree(folder, ignore_errors=True)
@@ -350,7 +439,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         failed,
         args.batch_size,
         workers=args.workers,
-        checker=args.model,
+        checker=checker_label(args.backend, args.model, args.effort),
     )
     summary["checked"] += data_checked
     summary["skipped"] += data_skipped

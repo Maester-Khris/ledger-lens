@@ -9,8 +9,9 @@ import pytest
 
 from scripts.evalkit import check_key
 from scripts.evalkit.cases import Case, read_cases
-from scripts.evalkit.check_key import (CHECKER_MODEL, MEDIUM_MODEL, accept_verdicts, check_batches, data_verdicts,
-                                       parse_args, passage_cases, prepare_batch, run_agy, underspecified_ok)
+from scripts.evalkit.check_key import (CHECKER_MODEL, CLAUDE_EFFORT, CLAUDE_MODEL, MEDIUM_MODEL, accept_verdicts,
+                                       check_batches, checker_label, data_verdicts, parse_args, passage_cases,
+                                       prepare_batch, run_agy, run_claude, underspecified_ok)
 from scripts.evalkit.checkpoint import Checkpoint
 
 
@@ -136,12 +137,87 @@ def _check(tmp_path, cases, runner, batch_size=2, **options):
 
 def test_models_and_defaults():
     assert MEDIUM_MODEL == "gemini-4-argon-medium"
-    args = parse_args(["--key", "k"])
+    args = parse_args(["--key", "k", "--backend", "agy"])
     assert (args.model, args.batch_size, args.workers, args.timeout) == (CHECKER_MODEL, 10, 3, 1500)
-    assert parse_args(["--key", "k", "--medium"]).model == MEDIUM_MODEL
-    assert parse_args(["--key", "k", "--model", "x"]).model == "x"
+    assert parse_args(["--key", "k", "--backend", "agy", "--medium"]).model == MEDIUM_MODEL
+    assert parse_args(["--key", "k", "--backend", "agy", "--model", "x"]).model == "x"
     with pytest.raises(SystemExit):
         parse_args(["--key", "k", "--medium", "--model", "x"])
+
+
+def test_claude_is_the_default_checker_at_medium_effort():
+    # Gemini's quota ended, and a free-model sweep showed only a long-reasoning model rejects; Opus at medium passed
+    # the negative controls (20 of 20 corrupted cases rejected, 0 of 10 intact ones) and is the settled checker
+    assert (CLAUDE_MODEL, CLAUDE_EFFORT) == ("claude-opus-5-5", "medium")
+    args = parse_args(["--key", "k"])
+    assert (args.backend, args.model, args.effort) == ("claude", CLAUDE_MODEL, CLAUDE_EFFORT)
+    assert parse_args(["--key", "k", "--effort", "max"]).effort == "max"
+    assert parse_args(["--key", "k", "--model", "claude-sonnet-5-5"]).model == "claude-sonnet-5-5"
+    with pytest.raises(SystemExit):
+        parse_args(["--key", "k", "--effort", "extreme"])
+
+
+def test_checker_label_names_the_effort_only_where_it_applies():
+    assert checker_label("claude", CLAUDE_MODEL, "medium") == "claude-opus-5-5@medium"
+    assert checker_label("agy", CHECKER_MODEL, "medium") == CHECKER_MODEL
+
+
+def _claude_folder(tmp_path):
+    cases = [_case("a#0"), _case("o#0", category="out_of_corpus", key=None, expect="refuse", reference=None,
+                                 expect_numbers=(), gold_element_ids=(), page=None)]
+    instructions = "Read the files. Read only the files in this folder."
+    prepare_batch(cases, tmp_path, {"acme": "[e2] p2: fee 0.75%"}, {"o#0": "[p9] p3: some passage"}, instructions)
+    return tmp_path
+
+
+def _claude_reply(monkeypatch, envelope, seen=None):
+    def fake_run(command, **kwargs):
+        if seen is not None:
+            seen.update(command=command, **kwargs)
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps(envelope), stderr="")
+    monkeypatch.setattr(check_key.subprocess, "run", fake_run)
+
+
+def test_run_claude_is_isolated_and_sends_the_files_inline(tmp_path, monkeypatch):
+    folder, seen = _claude_folder(tmp_path), {}
+    _claude_reply(monkeypatch, {"is_error": False, "result": json.dumps({"verdicts": []})}, seen)
+    run_claude(folder, model=CLAUDE_MODEL, effort="medium", timeout=77)
+    command, prompt = seen["command"], seen["command"][2]
+    assert command[:2] == ["claude", "-p"] and seen["cwd"] == folder and seen["timeout"] == 77
+    assert command[command.index("--model") + 1] == CLAUDE_MODEL
+    assert command[command.index("--effort") + 1] == "medium"
+    for flag in ("--system-prompt", "--disable-slash-commands", "--strict-mcp-config", "--disallowedTools"):
+        assert flag in command  # same isolation as the judge: no operator CLAUDE.md, skills, MCP or tools
+    assert "fee 0.75%" in prompt and "some passage" in prompt and '"id": "a#0"' in prompt
+    assert "Read only the files in this folder" not in prompt  # there is no folder to read from the model's side
+
+
+def test_run_claude_reads_a_fenced_reply(tmp_path, monkeypatch):
+    verdicts = {"verdicts": [{"case_id": "a#0", "agrees": True, "reason": "ok"}]}
+    _claude_reply(monkeypatch, {"is_error": False, "result": "```json\n" + json.dumps(verdicts) + "\n```"})
+    assert run_claude(_claude_folder(tmp_path)) == verdicts
+
+
+def test_run_claude_says_why_a_call_failed(tmp_path, monkeypatch, capsys):
+    folder = _claude_folder(tmp_path)
+    _claude_reply(monkeypatch, {"is_error": True, "result": "usage limit reached"})
+    assert run_claude(folder) == {}
+    assert "usage limit reached" in capsys.readouterr().err
+    monkeypatch.setattr(check_key.subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a, 1, stdout="oops", stderr="boom"))
+    assert run_claude(folder) == {}
+    assert "boom" in capsys.readouterr().err
+    _claude_reply(monkeypatch, {"is_error": False, "result": "no json here"})
+    assert run_claude(folder) == {}
+    assert "not JSON" in capsys.readouterr().err
+
+
+def test_run_claude_says_when_a_call_timed_out(tmp_path, monkeypatch, capsys):
+    def slow(command, **kwargs):
+        raise subprocess.TimeoutExpired(command, 1)
+    monkeypatch.setattr(check_key.subprocess, "run", slow)
+    assert run_claude(_claude_folder(tmp_path)) == {}
+    assert "timed out" in capsys.readouterr().err
 
 
 def test_verdict_rows_name_the_model_used(tmp_path):
