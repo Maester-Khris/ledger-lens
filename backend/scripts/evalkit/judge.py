@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from typing import Any
 
@@ -209,10 +210,25 @@ def run_api(inputs: Sequence[dict[str, Any]], client: Any) -> list[dict[str, Any
             'Reply with the judgment object only: {"case_id": ...}'
         )
         reply = str(client.invoke(prompt).content)
-        parsed = parse_judgment(reply, default_case_id=str(item.get("case_id", "")))
+        case_id = str(item.get("case_id", ""))
+        parsed = parse_judgment(_one_judgment(reply), default_case_id=case_id)
         if parsed is not None:
             out.append(parsed)
+        else:
+            print(f"judge reply for {case_id} was unreadable: {reply[:200]!r}", file=sys.stderr)
     return out
+
+
+def _one_judgment(reply: str) -> str | dict[str, Any]:
+    """judge.md is written for CLI batches ({"judgments": [...]}); for a single case the model answers in either shape."""
+    try:
+        data = json.loads(_strip_fence(reply))
+    except (json.JSONDecodeError, TypeError):
+        return reply
+    judgments = data.get("judgments") if isinstance(data, dict) else None
+    if isinstance(judgments, list) and len(judgments) == 1 and isinstance(judgments[0], dict):
+        return judgments[0]
+    return reply
 
 
 def _load_answers(answers_path: Path) -> list[dict[str, Any]]:

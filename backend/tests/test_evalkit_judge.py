@@ -99,11 +99,29 @@ def test_api_backend_does_not_hide_a_failed_call():
         run_api([build_input(_case(), ROW)], Client())
 
 
-def test_api_backend_still_skips_a_reply_it_cannot_read():
+def _reply_with(content):
     class Client:
         def invoke(self, prompt):
-            return type("R", (), {"content": "not a judgment"})()
-    assert run_api([build_input(_case(), ROW)], Client()) == []
+            return type("R", (), {"content": content})()
+    return Client()
+
+
+def test_api_backend_still_skips_a_reply_it_cannot_read_but_says_so(capsys):
+    assert run_api([build_input(_case(), ROW)], _reply_with("not a judgment")) == []
+    assert "c1" in capsys.readouterr().err  # fourteen of thirty replies were dropped without a word
+
+
+def test_api_backend_accepts_a_one_case_reply_wrapped_for_batches():
+    # judge.md is written for CLI batches ({"judgments": [...]}); for one case the model answers either shape
+    wrapped = json.dumps({"judgments": [_judgment()]})
+    out = run_api([build_input(_case(), ROW)], _reply_with("```json\n" + wrapped + "\n```"))
+    assert [j["case_id"] for j in out] == ["c1"]
+
+
+def test_api_backend_rejects_a_wrapped_reply_holding_several_cases(capsys):
+    wrapped = json.dumps({"judgments": [_judgment(), _judgment()]})
+    assert run_api([build_input(_case(), ROW)], _reply_with(wrapped)) == []
+    assert "c1" in capsys.readouterr().err
 
 
 def test_api_backend_judges_one_case_per_call():
